@@ -14,12 +14,12 @@ RUN apt-get -y install python-pip
 
 # Install PhantomJS
 # https://github.com/aeberhardo/phantomjs-linux-armv6l
-RUN apt-get install wget
+RUN apt-get -y install wget
 RUN wget https://github.com/aeberhardo/phantomjs-linux-armv6l/archive/master.zip
-RUN apt-get install unzip
+RUN apt-get -y install unzip
 RUN unzip master.zip
 RUN cd phantomjs-linux-armv6l-master 
-RUN apt-get install bunzip2 
+RUN apt-get -y install bunzip2 
 RUN bunzip2 *.bz2 && tar xf *.tar 
 
 
