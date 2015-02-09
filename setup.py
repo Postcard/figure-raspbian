@@ -12,7 +12,8 @@ setup(name="figure_raspbian",
           'requests==2.5.1',
           'Pillow==2.6',
           'selenium',
-          'gphoto2'
+          'gphoto2',
+          'pifacedigitalio'
       ],
       dependency_links=['https://github.com/benoitguigal/python-epson-printer/tarball/master#egg=python_epson_printer-1.5']
 )

@@ -6,22 +6,37 @@ MAINTAINER Benoit Guigal <benoit@postcardgroup.com>
 # Make sure installation is not asking for prompt 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update 
+RUN apt-get update && apt-get install -y \
+    python \
+    python-dev \
+    python-setuptools \
+    wget \
+    bzip2 \
+    gcc \
+    g++ \
+    make \
+    pkg-config
 
-RUN apt-get -y install python-dev
-RUN apt-get -y install python-pip 
+RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/releases/download/2.5.5/gphoto2-updater.sh && \
+    chmod +x gphoto2-updater.sh && \
+    ./gphoto2-updater.sh
 
-RUN apt-get -y install git
 
-# Install PhantomJS
-# https://github.com/aeberhardo/phantomjs-linux-armv6l
-RUN apt-get -y install wget
-RUN wget https://github.com/aeberhardo/phantomjs-linux-armv6l/archive/master.zip
-RUN apt-get -y install unzip
-RUN unzip master.zip
-RUN cd phantomjs-linux-armv6l-master 
-RUN apt-get -y install bunzip2 
-RUN bunzip2 *.bz2 && tar xf *.tar 
+RUN mkdir /figure
+WORKDIR /figure
+
+ADD setup.py /figure/setup.py
+ADD figureraspbian /figure/figureraspbian
+
+RUN python setup.py install
+
+
+
+
+
+
+
+
 
 
 
