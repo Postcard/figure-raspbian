@@ -22,6 +22,15 @@ RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/relea
     ./gphoto2-updater.sh
 
 
+RUN apt-get install -y unzip tar libfreetype6 libfontconfig
+RUN wget --no-check-certificate https://github.com/aeberhardo/phantomjs-linux-armv6l/archive/master.zip && \
+    unzip master.zip && \
+    cd phantomjs-linux-armv6l-master && \
+    bunzip2 *.bz2 && \
+    tar xf *.tar
+RUN cd phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/ && ./phantomjs --version
+
+
 RUN mkdir /figure
 WORKDIR /figure
 
