@@ -30,6 +30,8 @@ ADD figureraspbian /figure/figureraspbian
 
 RUN python setup.py install
 
+RUN echo "hello figure"
+
 
 
 
