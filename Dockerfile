@@ -28,8 +28,8 @@ RUN wget --no-check-certificate https://github.com/aeberhardo/phantomjs-linux-ar
     cd phantomjs-linux-armv6l-master && \
     bunzip2 *.bz2 && \
     tar xf *.tar
-RUN cd phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/ && ./phantomjs --version
-
+ENV PATH phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/:$PATH
+RUN phantomjs --version
 
 RUN mkdir /figure
 WORKDIR /figure
