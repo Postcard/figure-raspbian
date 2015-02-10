@@ -1,6 +1,5 @@
 import requests
 from . import settings
-from PIL import Image
 from selenium import webdriver
 
 s = requests.Session()
@@ -15,7 +14,7 @@ def create_snapshot(snapshot):
         raise Exception("Failed uploading snapshot")
 
 
-phantomjs = webdriver.PhantomJS()
+phantomjs = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
 
 # TODO find a way to protect resource but still be able to use PhantomJS
 

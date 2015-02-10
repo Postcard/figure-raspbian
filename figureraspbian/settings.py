@@ -27,6 +27,9 @@ SNAPSHOT_DIR = get_env_setting('SNAPSHOT_DIR')
 # Ticket file path
 TICKET = get_env_setting('TICKET')
 
+# Path to PhantomJS executable
+PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH')
+
 
 
 
