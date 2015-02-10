@@ -11,7 +11,7 @@ def run():
         snapshot = devices.CAMERA.capture()
 
         # Start blinking
-        devices.OUTPUT.blink()
+        blinking_task = devices.OUTPUT.blink()
 
         # Send picture to API
         api.create_snapshot(snapshot)
@@ -21,6 +21,9 @@ def run():
 
         # Print ticket
         devices.PRINTER.print_ticket(ticket)
+
+        # Stop blinking
+        blinking_task.terminate()
 
         # Set Output to True
         devices.OUTPUT.set(True)
