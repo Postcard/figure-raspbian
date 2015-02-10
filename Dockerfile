@@ -44,7 +44,7 @@ WORKDIR /figure
 RUN mkdir -p var/snapshots
 RUN touch var/ticket.png
 RUN python setup.py install
-CMD python -m figureraspbian.trigger
+RUN python -m figureraspbian.trigger
 
 
 
