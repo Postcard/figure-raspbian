@@ -37,11 +37,14 @@ RUN wget --no-check-certificate https://github.com/piface/pifacecommon/archive/v
 RUN unzip v4.1.2.zip
 RUN cd pifacecommon-4.1.2 && python setup.py install
 
+RUN wget --no-check-certificate https://github.com/piface/pifacedigitalio/archive/v3.0.4.zip
+RUN unzip v3.0.4.zip
+RUN cd pifacecommon-4.1.2 && python setup.py install
+
 RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.5.zip
 RUN unzip v1.5.zip
-RUN cd python-epson-printer-1.5 && python setup.py install
+RUN cd pifacedigitalio-3.0.4 && python setup.py install
 
-RUN apt-get install -y python-pifacedigitalio
 
 RUN apt-get install -y python-pip
 RUN pip install requests==2.5.1
