@@ -31,7 +31,7 @@ RUN wget --no-check-certificate https://github.com/aeberhardo/phantomjs-linux-ar
 
 RUN mkdir /figure
 
-ADD setup.py /figure/setup.py
+ADD requirements.txt /figure/requirements.txt
 ADD figureraspbian /figure/figureraspbian
 
 RUN apt-get install -y libjpeg-dev zlib1g-dev libpng12-dev unzip
@@ -40,10 +40,24 @@ RUN wget --no-check-certificate https://github.com/piface/pifacecommon/archive/v
 RUN unzip v4.1.2.zip
 RUN cd pifacecommon-4.1.2 && python setup.py install
 
+RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.5.zip
+RUN unzip v1.5.zip
+RUN cd python-epson-printer-1.5 && python setup.py install
+
 WORKDIR /figure
 RUN mkdir -p var/snapshots
 RUN touch var/ticket.png
-RUN python setup.py install
+RUN apt-get install -y python-pip
+RUN pip install -r requirements.txt
+
+
+ENV TOKEN fOLu1GpLaRtt77Gf7gr5D1KsLmOxwP
+ENV SCENARIO 1
+ENV API_HOST http://api.figuredevices.com
+ENV SNAPSHOT_DIR /figure/var/snapshots
+ENV TICKET /figure/var/ticket.png
+ENV PHANTOMJS_PATH /home/pi/phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
+
 RUN python -m figureraspbian.trigger
 
 
