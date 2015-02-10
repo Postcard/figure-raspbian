@@ -41,12 +41,13 @@ RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-pri
 RUN unzip v1.5.zip
 RUN cd python-epson-printer-1.5 && python setup.py install
 
+RUN apt-get install -y python-pifacedigitalio
+
 RUN apt-get install -y python-pip
 RUN pip install requests==2.5.1
 RUN pip install Pillow==2.6
 RUN pip install selenium==2.44.0
 RUN pip install gphoto2==0.11.0
-RUN pip intall pifacedigitalio==3.0.4
 
 ADD figureraspbian /figure/figureraspbian
 WORKDIR /figure
