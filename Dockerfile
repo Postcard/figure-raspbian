@@ -37,6 +37,8 @@ WORKDIR /figure
 ADD setup.py /figure/setup.py
 ADD figureraspbian /figure/figureraspbian
 
+RUN apt-get install -y libjpeg-dev zlib1g-dev libpng12-dev
+
 RUN python setup.py install
 
 # Enable SPI module.
