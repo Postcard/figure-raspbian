@@ -2,15 +2,14 @@ import requests
 from . import settings
 from selenium import webdriver
 
-s = requests.Session()
-s.headers.update({'Authorization': 'Bearer %s' % settings.TOKEN})
 
 def create_snapshot(snapshot):
     url = "%s/%s" % (settings.API_HOST, 'snapshots')
     files = {'file': open(snapshot, 'rb')}
     data = {'scenario': settings.SCENARIO}
-    r = requests.post(url, files=files, data=data, timeout=15)
-    if r.status_code != 200:
+    headers = {'Authorization': 'Bearer %s' % settings.TOKEN}
+    r = requests.post(url, files=files, data=data, headers=headers, timeout=15)
+    if r.status_code != 201:
         raise Exception("Failed uploading snapshot")
 
 
