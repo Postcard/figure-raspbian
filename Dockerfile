@@ -28,24 +28,25 @@ RUN wget --no-check-certificate https://github.com/aeberhardo/phantomjs-linux-ar
     cd phantomjs-linux-armv6l-master && \
     bunzip2 *.bz2 && \
     tar xf *.tar
-ENV PATH phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/:$PATH
-RUN phantomjs --version
 
 RUN mkdir /figure
-WORKDIR /figure
 
 ADD setup.py /figure/setup.py
 ADD figureraspbian /figure/figureraspbian
 
-RUN apt-get install -y libjpeg-dev zlib1g-dev libpng12-dev
+RUN apt-get install -y libjpeg-dev zlib1g-dev libpng12-dev unzip
 
+RUN wget --no-check-certificate https://github.com/piface/pifacecommon/archive/v4.1.2.zip
+RUN unzip v4.1.2.zip
+RUN cd pifacecommon-4.1.2 && python setup.py install
+
+WORKDIR /figure
+RUN mkdir -p var/snapshots
+RUN touch var/ticket.png
 RUN python setup.py install
+CMD python -m figureraspbian.trigger
 
-# Enable SPI module.
-# See http://piface.github.io/pifacecommon/installation.html#enable-the-spi-module
-RUN modprobe spi-bcm2708
 
-RUN echo "hello figure"
 
 
 
