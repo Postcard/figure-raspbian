@@ -29,6 +29,10 @@ def run():
         devices.OUTPUT.set(True)
     except Exception as e:
         print(e)
+    finally:
+        if blinking_task:
+            blinking_task.terminate()
+
 
 
 
