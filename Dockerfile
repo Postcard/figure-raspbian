@@ -39,6 +39,10 @@ ADD figureraspbian /figure/figureraspbian
 
 RUN python setup.py install
 
+# Enable SPI module.
+# See http://piface.github.io/pifacecommon/installation.html#enable-the-spi-module
+RUN modprobe spi-bcm2708
+
 RUN echo "hello figure"
 
 
