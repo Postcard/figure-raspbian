@@ -23,7 +23,7 @@ def run():
         devices.PRINTER.print_ticket(ticket)
 
         # Set Output to True
-        devices.output.set(True)
+        devices.OUTPUT.set(True)
     except Exception as e:
         print(e)
 
