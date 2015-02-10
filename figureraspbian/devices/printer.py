@@ -1,15 +1,10 @@
-import os
 import re
 import subprocess
-from PIL import Image
-import logging
-
-logger = logging.getLogger(__name__)
 
 try:
     from epson_printer import epsonprinter
 except ImportError:
-    logger.warning("Could not import epsonprinter")
+    print("Could not import epsonprinter")
 
 
 class Printer(object):
@@ -63,4 +58,4 @@ class DummyPrinter(Printer):
         pass
 
     def print_ticket(self):
-        logger.info("Print ticket")
+        print("Print ticket")

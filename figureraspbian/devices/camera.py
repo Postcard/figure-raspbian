@@ -1,15 +1,12 @@
 import os
 from PIL import Image
 from datetime import datetime
-import logging
 from .. import settings
-
-logger = logging.getLogger(__name__)
 
 try:
     import gphoto2 as gp
 except ImportError:
-    logger.warning("Could not import gphoto2")
+    print("Could not import gphoto2")
 
 
 class Camera(object):
@@ -81,6 +78,6 @@ class DummyCamera(Camera):
 
 
     def capture(self):
-        logger.info("Capture picture")
+        print("Capture picture")
 
 

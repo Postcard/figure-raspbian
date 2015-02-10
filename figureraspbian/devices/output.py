@@ -1,13 +1,11 @@
 import time
-import logging
 from threading import Thread
 
-logger = logging.getLogger(__name__)
 
 try:
     import pifacedigitalio
 except ImportError:
-    logger.warning("Could not import pifacedigitalio")
+    print("Could not import pifacedigitalio")
 
 
 class BlinkingTask(object):
@@ -76,4 +74,4 @@ class DummyOutput():
 
     def set(self, state):
         stmt = "Setting output state to {state}".format(state=state)
-        logger.info(stmt)
+        print(stmt)

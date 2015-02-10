@@ -1,8 +1,6 @@
-import logging
 from . import devices
 from . import api
 
-logger = logging.getLogger(__name__)
 
 def run():
     try:
@@ -27,7 +25,7 @@ def run():
         # Set Output to True
         devices.output.set(True)
     except Exception as e:
-        logger.error(e)
+        print(e)
 
 
 
