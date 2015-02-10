@@ -48,7 +48,7 @@ class DSLRCamera(Camera):
             error, camerafile = gp.gp_camera_file_get(self.camera, filepath.folder, filepath.name, gp.GP_FILE_TYPE_NORMAL, self.context)
             # Create file path on the RaspberryPi
             now = datetime.now().strftime('%Y%m%d%H%M%S')
-            basename = "{scenario}_{now}.jpg".format(event=settings.SCENARIO, now=now)
+            basename = "{scenario}_{now}.jpg".format(scenario=settings.SCENARIO, now=now)
             path = os.path.join(settings.SNAPSHOT_DIR, basename)
             # Save the file to the Raspberry Pi
             camerafile.save(path)
