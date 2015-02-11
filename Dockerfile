@@ -50,6 +50,7 @@ RUN wget --no-check-certificate https://github.com/piface/pifacedigitalio/archiv
 RUN unzip v3.0.4.zip
 RUN cd pifacedigitalio-3.0.4 && python setup.py install
 
+RUN apt-get install lsusb
 
 ADD figureraspbian /figure/figureraspbian
 WORKDIR /figure
