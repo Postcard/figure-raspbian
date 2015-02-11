@@ -57,13 +57,6 @@ WORKDIR /figure
 RUN mkdir -p var/snapshots
 RUN touch var/ticket.png
 
-ENV TOKEN fOLu1GpLaRtt77Gf7gr5D1KsLmOxwP
-ENV SCENARIO 1
-ENV API_HOST http://api.figuredevices.com
-ENV SNAPSHOT_DIR /figure/var/snapshots
-ENV TICKET /figure/var/ticket.png
-ENV PHANTOMJS_PATH /home/pi/phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
-
 CMD modprobe i2c-dev && python -m figureraspbian.trigger
 
 
