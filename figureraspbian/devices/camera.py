@@ -29,14 +29,14 @@ class DSLRCamera(Camera):
         self.context = gp.Context()
         self.camera = gp.Camera()
         self.camera.init(self.context)
-        try:
+        #try:
             # set to black and white
-            error, widget = gp.gp_camera_get_config(self.camera, self.context)
-            error, child = gp.gp_widget_get_child_by_name(widget, 'picturestyle')
-            gp.gp_widget_set_value(child, '5')
-            gp.gp_camera_set_config(self.camera, widget, self.context)
-        finally:
-            self.camera.exit(self.context)
+            #error, widget = gp.gp_camera_get_config(self.camera, self.context)
+            #error, child = gp.gp_widget_get_child_by_name(widget, 'picturestyle')
+            #gp.gp_widget_set_value(child, '5')
+            #gp.gp_camera_set_config(self.camera, widget, self.context)
+        #finally:
+            #self.camera.exit(self.context)
 
 
     def capture(self):
@@ -57,12 +57,16 @@ class DSLRCamera(Camera):
         finally:
             self.camera.exit(self.context)
         im = Image.open(path)
-        im = im.rotate(90)
+        #im = im.rotate(90)
         w, h = im.size
-        left = 0
-        top = (h - w) / 2
-        right = w
-        bottom = h - top
+        #left = 0
+        #top = (h - w) / 2
+        #right = w
+        #bottom = h - top
+        left = (w - h) / 2
+        top = 0
+        right = w - left
+        bottom = h
         im = im.crop((left, top, right, bottom))
         im.save("/mnt/{basename}".format(basename=basename))
         im.save(path)
