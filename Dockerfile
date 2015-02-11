@@ -64,7 +64,7 @@ ENV SNAPSHOT_DIR /figure/var/snapshots
 ENV TICKET /figure/var/ticket.png
 ENV PHANTOMJS_PATH /home/pi/phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
 
-CMD python -m figureraspbian.trigger
+CMD modprobe i2c-dev && python -m figureraspbian.trigger
 
 
 
