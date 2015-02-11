@@ -13,7 +13,8 @@ def create_snapshot(snapshot):
         raise Exception("Failed uploading snapshot")
 
 
-phantomjs = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
+phantomjs = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH, service_args=['--ignore-ssl-errors=true'])
+
 
 # TODO find a way to protect resource but still be able to use PhantomJS
 
