@@ -33,6 +33,13 @@ RUN mkdir /figure
 
 RUN apt-get install -y libjpeg-dev zlib1g-dev libpng12-dev unzip
 
+
+RUN apt-get install -y python-pip
+RUN pip install requests==2.5.1
+RUN pip install Pillow==2.6
+RUN pip install selenium==2.44.0
+RUN pip install gphoto2==0.11.0
+
 RUN wget --no-check-certificate https://github.com/piface/pifacecommon/archive/v4.1.2.zip
 RUN unzip v4.1.2.zip
 RUN cd pifacecommon-4.1.2 && python setup.py install
@@ -44,13 +51,6 @@ RUN cd pifacecommon-4.1.2 && python setup.py install
 RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.5.zip
 RUN unzip v1.5.zip
 RUN cd pifacedigitalio-3.0.4 && python setup.py install
-
-
-RUN apt-get install -y python-pip
-RUN pip install requests==2.5.1
-RUN pip install Pillow==2.6
-RUN pip install selenium==2.44.0
-RUN pip install gphoto2==0.11.0
 
 ADD figureraspbian /figure/figureraspbian
 WORKDIR /figure
