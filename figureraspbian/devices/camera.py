@@ -68,7 +68,7 @@ class DSLRCamera(Camera):
         right = w - left
         bottom = h
         im = im.crop((left, top, right, bottom))
-        im.save("/mnt/{basename}".format(basename=basename))
+        # im.save("/mnt/{basename}".format(basename=basename))
         im.save(path)
         return path
 
