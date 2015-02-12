@@ -28,7 +28,7 @@ class DSLRCamera(Camera):
     def __init__(self):
         self.context = gp.Context()
         self.camera = gp.Camera()
-        self.camera.init(self.context)
+        #self.camera.init(self.context)
         #try:
             # set to black and white
             #error, widget = gp.gp_camera_get_config(self.camera, self.context)
