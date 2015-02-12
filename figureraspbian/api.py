@@ -10,6 +10,7 @@ def create_snapshot(snapshot):
     headers = {'Authorization': 'Bearer %s' % settings.TOKEN}
     r = requests.post(url, files=files, data=data, headers=headers, timeout=15)
     if r.status_code != 201:
+        print r.text
         raise Exception("Failed uploading snapshot")
 
 
