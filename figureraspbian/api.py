@@ -6,7 +6,7 @@ from selenium import webdriver
 
 def create_ticket(snapshot):
     url = "%s/tickets/" % settings.API_HOST
-    files = {'file': open(snapshot, 'rb')}
+    files = {'snapshot': open(snapshot, 'rb')}
     data = {'scenario': settings.SCENARIO}
     headers = {
         'Authorization': 'Bearer %s' % settings.TOKEN,
