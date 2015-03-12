@@ -37,20 +37,15 @@ RUN apt-get install -y python-pip
 RUN pip install requests==2.5.1
 RUN pip install selenium==2.44.0
 RUN pip install gphoto2==0.11.0
+RUN pip install pifacecommon==4.1.2
+RUN pip install pifacedigitalio==3.0.5
+
 
 RUN apt-get install -y usbutils
 
 RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.6.zip
 RUN unzip v1.6.zip
 RUN cd python-epson-printer-1.6 && python setup.py install
-
-RUN wget --no-check-certificate https://github.com/piface/pifacecommon/archive/v4.1.2.zip
-RUN unzip v4.1.2.zip
-RUN cd pifacecommon-4.1.2 && python setup.py install
-
-RUN wget --no-check-certificate https://github.com/piface/pifacedigitalio/archive/v3.0.4.zip
-RUN unzip v3.0.4.zip
-RUN cd pifacedigitalio-3.0.4 && python setup.py install
 
 
 ADD figureraspbian /figure/figureraspbian
