@@ -14,7 +14,7 @@ def create_ticket(snapshot):
     }
     r = requests.post(url, files=files, data=data, headers=headers, timeout=15)
     if r.status_code == 201:
-        return json.loads(r.text).id
+        return json.loads(r.text)['id']
     else:
         raise Exception("Failed creating ticket with message %s" % r.text)
 
