@@ -40,9 +40,9 @@ RUN pip install gphoto2==0.11.0
 
 RUN apt-get install -y usbutils
 
-RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.5.zip
-RUN unzip v1.5.zip
-RUN cd python-epson-printer-1.5 && python setup.py install
+RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.6.zip
+RUN unzip v1.6.zip
+RUN cd python-epson-printer-1.6 && python setup.py install
 
 RUN wget --no-check-certificate https://github.com/piface/pifacecommon/archive/v4.1.2.zip
 RUN unzip v4.1.2.zip
@@ -58,7 +58,7 @@ WORKDIR /figure
 RUN mkdir -p var/snapshots
 RUN touch var/ticket.png
 
-CMD modprobe i2c-dev && python -m figureraspbian.trigger
+CMD modprobe i2c-dev && mount /dev/sda1 /mnt && chmod 775 /mnt && python -m figureraspbian.trigger
 
 
 
