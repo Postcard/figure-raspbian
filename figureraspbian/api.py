@@ -25,7 +25,7 @@ phantomjs = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH, service
 # TODO find a way to protect resource but still be able to use PhantomJS
 
 def render_ticket(id):
-    url = "%s/scenarios/tickets/%s/render/" % (settings.API_HOST, id)
+    url = "%s/tickets/%s/render/" % (settings.API_HOST, id)
     phantomjs.get(url)
     phantomjs.save_screenshot(settings.TICKET)
     return settings.TICKET
