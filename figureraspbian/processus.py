@@ -13,11 +13,11 @@ def run():
         # Start blinking
         blinking_task = devices.OUTPUT.blink()
 
-        # Send picture to API
-        api.create_snapshot(snapshot)
+        # Generate a ticket on the API and get back the id
+        id = api.create_ticket(snapshot)
 
-        #  Render ticket
-        ticket = api.render_ticket()
+        #  Render ticket to image
+        ticket = api.render_ticket(id)
 
         # Print ticket
         devices.PRINTER.print_ticket(ticket)
