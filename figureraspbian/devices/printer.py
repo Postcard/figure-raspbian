@@ -44,7 +44,7 @@ class EpsonPrinter(Printer):
         vendor_id = '0x%s' % EPSON_VENDOR_ID
         product_id = '0x%s' % get_product_id(EPSON_VENDOR_ID)
         self.printer = epsonprinter.EpsonPrinter(int(vendor_id, 16), int(product_id, 16))
-        self.printer.set_print_speed(2)
+        self.printer.set_print_speed(1)
 
     def print_ticket(self, ticket):
         self.printer.print_image_from_file(ticket)

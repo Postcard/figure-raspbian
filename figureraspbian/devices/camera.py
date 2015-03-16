@@ -1,6 +1,6 @@
 import os
 import shutil
-from PIL import Image
+from PIL import Image, ImageEnhance
 from datetime import datetime
 from .. import settings
 
@@ -53,7 +53,9 @@ class DSLRCamera(Camera):
         right = w - left
         bottom = h
         im = im.crop((left, top, right, bottom))
-        im.resize((512, 512))
+        im = im.resize((512, 512), Image.ANTIALIAS)
+        enhancer = ImageEnhance.Color(im)
+        im = enhancer.enhance(0.0)
         im.save(path)
         return path
 
@@ -64,8 +66,6 @@ class DummyCamera(Camera):
 
     def __init__(self):
         pass
-
-
     def capture(self):
         print("Capture picture")
 
