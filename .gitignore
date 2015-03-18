@@ -5,3 +5,4 @@ eggs
 *.pyc
 *.pyo
 .DS_Store
+virtualenv

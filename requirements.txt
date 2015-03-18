@@ -3,3 +3,4 @@ Pillow==2.6
 selenium==2.44.0
 gphoto2==0.11.0
 pifacedigitalio
+pykka-1.2.0

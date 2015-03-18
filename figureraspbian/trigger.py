@@ -1,8 +1,8 @@
-import requests
 import time
 import os
 import pifacedigitalio
 from . import processus
+
 
 
 TRIGGER_PIN = 0
@@ -36,7 +36,6 @@ def get_listener():
     l.register(REBOOT_PIN, pifacedigitalio.IODIR_RISING_EDGE, reboot)
     l.activate()
     return l
-
 
 
 if __name__ == '__main__':

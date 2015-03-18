@@ -15,8 +15,8 @@ def get_env_setting(setting):
 # Http host of the API
 API_HOST = get_env_setting('API_HOST')
 
-# Id of the scenario
-SCENARIO = get_env_setting('SCENARIO')
+# Id of the installation
+INSTALLATION = get_env_setting('INSTALLATION')
 
 # Access Token to authenticate user to the API
 TOKEN = get_env_setting('TOKEN')
@@ -29,6 +29,9 @@ TICKET = get_env_setting('TICKET')
 
 # Path to PhantomJS executable
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH')
+
+# Path to database file
+DB_PATH = get_env_setting('DB_FILE')
 
 
 
