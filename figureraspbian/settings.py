@@ -16,7 +16,7 @@ def get_env_setting(setting):
 API_HOST = get_env_setting('API_HOST')
 
 # Id of the installation
-INSTALLATION = get_env_setting('INSTALLATION')
+INSTALLATION_ID = get_env_setting('INSTALLATION_ID')
 
 # Access Token to authenticate user to the API
 TOKEN = get_env_setting('TOKEN')
