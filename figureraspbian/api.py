@@ -4,7 +4,6 @@ from . import settings
 from selenium import webdriver
 
 
-
 def get_data():
     installation = get_installation(settings.INSTALLATION_ID)
     scenario = get_scenario(installation['scenario_obj']['id'])
