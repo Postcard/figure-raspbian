@@ -1,27 +1,18 @@
 import json
 import requests
+import urllib2
+from os.path import join
 from . import settings
-from selenium import webdriver
+from .utils import url2name
 
 
-def get_data():
-    installation = get_installation(settings.INSTALLATION_ID)
-    scenario = get_scenario(installation['scenario_obj']['id'])
-    ticket_template = scenario['ticket_template']
-    text_variables = [get_text_variables(variable_id) for variable_id in ticket_template['text_variables']]
-    image_variables = [get_image_variables(variable_id) for variable_id in ticket_template['image_variables']]
-    data = {
-        'installation': installation,
-        'scenario': scenario,
-        'ticket_template': ticket_template,
-        'text_variables': text_variables,
-        'image_variables': image_variables
-    }
-    return data
+class ApiException(Exception):
+    """Something went wrong while querying the API"""
+    pass
 
 
 def get_installation():
-    url = "%s/installations/%s" % (settings.API_HOST, settings.INSTALLATION)
+    url = "%s/installations/%s" % (settings.API_HOST, settings.INSTALLATION_ID)
     headers = {
         'Authorization': 'Bearer %s' % settings.TOKEN,
         'Accept': 'application/json'
@@ -30,7 +21,7 @@ def get_installation():
     if r.status_code == 200:
         return json.loads(r.text)
     else:
-        return Exception("Failed retrieving installation")
+        return ApiException("Failed retrieving installation")
 
 
 def get_scenario(scenario_id):
@@ -43,40 +34,70 @@ def get_scenario(scenario_id):
     if r.status_code == 200:
         return json.loads(r.text)
     else:
-        return Exception("Failed retrieving scenario")
+        return ApiException("Failed retrieving scenario")
 
 
-def get_text_variables(variable_id):
-    url = "%s/textvariables/%s/" % (settings.API_HOST, variable_id)
+def download(resource, path):
+    """
+    Download a file from a remote url and copy it to the local path
+    """
+    url = "%s/%s" % (settings.API_HOST, resource)
+    local_name = url2name(url)
+    req = urllib2.Request(url)
+    r = urllib2.urlopen(req)
+    if r.url != url:
+        # if we were redirected, the real file name we take from the final URL
+        local_name = url2name(r.url)
+    path_to_file = join(path, local_name)
+    with open(path_to_file, 'wb') as f:
+        f.write(r.read())
+    return path_to_file
+
+
+def create_random_text_selection(variable, value):
+    url = "%s/randomtextselections/" % settings.API_HOST
+    data = {
+        'variable': variable,
+        'value': value
+    }
     headers = {
         'Authorization': 'Bearer %s' % settings.TOKEN,
         'Accept': 'application/json'
     }
-    r = requests.get(url=url, headers=headers, timeout=3)
-    if r.status_code == 200:
-        return json.loads(r.text)
+    r = requests.post(url, data=data, headers=headers, timeout=10)
+    if r.status_code == 201:
+        return json.loads(r.text)['id']
     else:
-        return Exception("Failed retrieving textvariable")
+        raise ApiException("Failed creating ticket with message %s" % r.text)
 
 
-def get_image_variables(variable_id):
-    url = "%s/textvariables/%s/" % (settings.API_HOST, variable_id)
+def create_random_image_selection(variable, value):
+    url = "%s/randomimageselections/" % settings.API_HOST
+    data = {
+        'variable': variable,
+        'value': value
+    }
     headers = {
         'Authorization': 'Bearer %s' % settings.TOKEN,
         'Accept': 'application/json'
     }
-    r = requests.get(url, headers=headers, timeout=3)
-    if r.status_code == 200:
-        return json.loads(r.text)
+    r = requests.post(url, data=data, headers=headers, timeout=10)
+    if r.status_code == 201:
+        return json.loads(r.text)['id']
     else:
-        return Exception("Failed retrieving imagevariable")
+        raise ApiException("Failed creating ticket with message %s" % r.text)
 
 
-def create_ticket(snapshot, ticket, code, datetime, random_text_selections, random_image_selections):
+def create_ticket(snapshot, ticket, datetime, code, random_text_selections, random_image_selections):
     url = "%s/tickets/" % settings.API_HOST
     files = {'snapshot': open(snapshot, 'rb'), 'ticket': open(ticket, 'rb')}
-    data = {'installation': settings.INSTALLATION_ID, 'code': code, 'datetime': datetime,
-            'random_text_selections': random_text_selections, 'random_image_selections': random_image_selections}
+    data = {
+        'datetime': datetime,
+        'code': code,
+        'random_text_selections': random_text_selections,
+        'random_image_selections': random_image_selections,
+        'installation': settings.INSTALLATION_ID
+    }
     headers = {
         'Authorization': 'Bearer %s' % settings.TOKEN,
         'Accept': 'application/json'
@@ -85,18 +106,7 @@ def create_ticket(snapshot, ticket, code, datetime, random_text_selections, rand
     if r.status_code == 201:
         return json.loads(r.text)['id']
     else:
-        raise Exception("Failed creating ticket with message %s" % r.text)
-
-
-phantomjs = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH, service_args=['--ignore-ssl-errors=true'])
-
-# TODO find a way to protect resource but still be able to use PhantomJS
-
-def render_ticket(id):
-    url = "%s/tickets/%s/render/" % (settings.API_HOST, id)
-    phantomjs.get(url)
-    phantomjs.save_screenshot(settings.TICKET)
-    return settings.TICKET
+        raise ApiException("Failed creating ticket with message %s" % r.text)
 
 
 

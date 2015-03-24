@@ -6,3 +6,10 @@ eggs
 *.pyo
 .DS_Store
 virtualenv
+media/images
+media/tickets
+media/snapshots
+resources/ticket.css
+resources/ticket.html
+db.*
+zeosocket

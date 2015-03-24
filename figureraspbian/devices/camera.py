@@ -60,13 +60,13 @@ class DSLRCamera(Camera):
         return path
 
 
-
 class DummyCamera(Camera):
     """ Dummy camera used for tests purposes. It prints a message to the console """
 
     def __init__(self):
         pass
+
     def capture(self):
-        print("Capture picture")
+        return os.path.join(settings.FIGURE_DIR, 'resources/2_20150331.jpg')
 
 

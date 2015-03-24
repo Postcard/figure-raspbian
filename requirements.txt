@@ -4,6 +4,8 @@ selenium==2.44.0
 gphoto2==0.11.0
 pifacecommon==4.1.2
 pifacedigitalio==3.0.5
-pykka==1.2.0
 jinja2==2.7.3
 hashids==1.0.3
+persistent==4.0.8
+ZODB==4.1.0
+pytz==2015.2

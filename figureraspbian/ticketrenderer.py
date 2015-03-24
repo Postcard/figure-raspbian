@@ -3,11 +3,34 @@
 import random
 import time
 from datetime import datetime
+import pytz
 from hashids import Hashids
 from jinja2 import Environment
+from . import settings
+from string import Template as StringTemplate
 
 
 FIGURE_TIME_ORIGIN = 1409529600.0
+
+
+def with_base_html(rendered):
+    """
+    add html boilerplate to rendered template
+    """
+    base = """<!doctype html>
+            <html>
+                <head>
+                    <meta charset="utf-8">
+                    <link rel="stylesheet" href="file:///%s">
+                    </head>
+                <body>
+                    <div class="figure figure-ticket">
+                    $content
+                    </div>
+                </body>
+            </html>
+        """
+    return StringTemplate(base).substitute(content=rendered)
 
 
 def datetimeformat(value, format='%Y-%m-%d'):
@@ -44,14 +67,15 @@ class TicketRenderer(object):
         Randomly selects variables items
         :return: a random selection
         """
-        variables = []
-        variables.extend(self.text_variables)
-        variables.extend(self.image_variables)
-        random_selection = {}
-        for variable in variables:
-            variable_id = 'variable_%s' % variable['id']
-            random_selection[variable_id] = random.choice(variable['items'])
-        return random_selection
+        random_text_selections = []
+        random_image_selections = []
+        for text_variable in self.text_variables:
+            selection = (text_variable['id'], random.choice(text_variable['items']))
+            random_text_selections.append(selection)
+        for image_variable in self.image_variables:
+            selection = (image_variable['id'], random.choice(image_variable['items']))
+            random_image_selections.append(selection)
+        return random_text_selections, random_image_selections
 
     def generics(self):
         """
@@ -59,21 +83,27 @@ class TicketRenderer(object):
         deterministically calculated
         :return:
         """
-        now = datetime.now()
+        now = datetime.now(pytz.timezone(settings.TIMEZONE))
         epoch = int(time.mktime(now.timetuple()) - FIGURE_TIME_ORIGIN)
         hashids = Hashids()
         code = hashids.encode(epoch, int(self.installation)).upper()
-        return {'datetime': now, 'code': code}
+        return now, code
 
     def render(self, snapshot):
         context = {'snapshot': snapshot}
-        context.update(self.random_selection())
-        context.update(self.generics())
+        (random_text_selections, random_image_selections) = self.random_selection()
+        for (text_variable_id, item) in random_text_selections:
+            context['textvariable_%s' % text_variable_id] = item
+        for (image_variable_id, item) in random_image_selections:
+            context['imagevariable_%s' % image_variable_id] = item
+        now, code = self.generics()
+        context['datetime'] = now
+        context['code'] = code
         for im in self.images:
-            image_id = 'image_%s' % im['id']
-            context[image_id] = im['media_url']
-            template = JINJA_ENV.from_string(self.html)
-        return template.render(context)
+            context['image_%s' % im['id']] = im['media_url']
+        template = JINJA_ENV.from_string(self.html)
+        html = with_base_html(template.render(context))
+        return html, now, code, random_text_selections, random_image_selections
 
 
 

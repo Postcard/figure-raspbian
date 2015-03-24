@@ -57,5 +57,5 @@ class DummyPrinter(Printer):
     def __init__(self):
         pass
 
-    def print_ticket(self):
+    def print_ticket(self, ticket):
         print("Print ticket")

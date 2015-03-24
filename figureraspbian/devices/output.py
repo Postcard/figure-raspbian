@@ -50,7 +50,6 @@ class PiFaceOutput(Output):
         self.pin = pin
         self.set(init)
 
-
     def set(self, state):
         if state:
             self.pifacedigital.output_pins[self.pin].turn_on()
