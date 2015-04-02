@@ -44,6 +44,8 @@ TICKET_DIR = get_env_setting('TICKET_DIR', 'media/tickets')
 if not os.path.exists(TICKET_DIR):
     os.makedirs(TICKET_DIR)
 
+RESOURCE_DIR = get_env_setting('RESOURCE_DIR', 'resources')
+
 # Path to PhantomJS executable
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 
@@ -64,6 +66,9 @@ ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(FIGURE_DIR, 'zeosocket')
 
 # Timezone information
 TIMEZONE = get_env_setting('TIMEZONE', 'Europe/Paris')
+
+
+
 
 
 

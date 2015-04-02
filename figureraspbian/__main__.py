@@ -1,8 +1,8 @@
 import time
+import sys
 import pifacedigitalio
-from . import processus, settings
-from . import settings
-
+from . import processus, settings, celery, utils
+from .db import Database, managed
 
 refresh_listener = False
 
@@ -11,9 +11,7 @@ def trigger(event):
     global refresh_listener
     refresh_listener = True
 
-
 pifacedigital = pifacedigitalio.PiFaceDigital()
-
 
 
 def get_listener():
@@ -25,7 +23,17 @@ def get_listener():
 
 if __name__ == '__main__':
 
-    # make sure database is correctly
+    # start celery
+    celery.app.start()
+
+    # Make sure database is correctly initialized
+    with managed(Database(settings.ENVIRONMENT)) as db:
+        if utils.internet_on():
+            db.update()
+        elif db.is_initialized():
+            pass
+        else:
+            sys.exit('Database is not initialized')
 
     listener = get_listener()
 
@@ -40,25 +48,5 @@ if __name__ == '__main__':
         print e
     finally:
         listener.deactivate()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-if __name__ == '__main__':
 
 

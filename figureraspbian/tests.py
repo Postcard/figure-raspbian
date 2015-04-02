@@ -5,8 +5,8 @@ from datetime import datetime
 import pytz
 from .ticketrenderer import TicketRenderer
 from .utils import url2name
-from .db import Database, NotInitializedError
-from . import api, settings
+from .db import Database, NotInitializedError, managed
+from . import api, settings, processus
 from mock import MagicMock
 
 
@@ -18,9 +18,9 @@ class TestTicketRenderer(unittest.TestCase):
         self.chiefs = ['Titi', 'Vicky', 'Benni']
         text_variables = [{'id': '1', 'items': self.chiefs}]
         self.paths = ['/path/to/variable/image1', '/path/to/variable/image2']
-        image_variables = [{'id': '2', 'items': self.paths}]
+        image_variables = [{'id': '2', 'items': self.paths}, {'id': '3', 'items': []}]
         images = [{'id': '1', 'media_url': 'path/to/image'}]
-        self.ticket_renderer = TicketRenderer(installation, html, text_variables, image_variables, images)
+        self.ticket_renderer = TicketRenderer(html, text_variables, image_variables, images)
 
     def test_random_selection(self):
         """
@@ -119,7 +119,7 @@ class TestApi(unittest.TestCase):
         """
         api should create a random text selection
         """
-        created = api.create_random_image_selection('6', '47')
+        created = api.create_random_image_selection('1', '1')
         self.assertIsNotNone(created)
 
     def test_create_ticket(self):
@@ -134,13 +134,12 @@ class TestApi(unittest.TestCase):
         random_image_selections = ['1']
         created = api.create_ticket(snapshot_path, ticket_path, dt, code,
                                     random_text_selections, random_image_selections)
-        print created
+        self.assertIsNotNone(created)
 
 
 class TestDatabase(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('development')
         self.mock_installation = {
             "scenario_obj": {
                 "id": 1,
@@ -203,14 +202,20 @@ class TestDatabase(unittest.TestCase):
         """
         Database should not be initialized when first created
         """
-        self.assertFalse(self.database.is_initialized())
+        database = Database('development')
+        with managed(database) as db:
+            self.assertFalse(db.is_initialized())
+            db.clear()
 
     def test_raise_not_initialized_error(self):
         """
         Database should raise exception when not initialized and trying to access data
         """
-        with self.assertRaises(NotInitializedError):
-            self.database.installation()
+        database = Database('development')
+        with managed(database) as db:
+            with self.assertRaises(NotInitializedError):
+                db.installation()
+                db.clear()
 
     def test_update(self):
         """
@@ -219,9 +224,12 @@ class TestDatabase(unittest.TestCase):
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_scenario = MagicMock(return_value=self.mock_scenario)
         api.download = MagicMock()
-        self.database.update()
-        api.get_scenario.assert_called_with(1)
-        self.assertTrue(self.database.is_initialized())
+        database = Database('development')
+        with managed(database) as db:
+            db.update()
+            api.get_scenario.assert_called_with(1)
+            self.assertTrue(db.is_initialized())
+            db.clear()
 
     def test_installation(self):
         """
@@ -230,8 +238,11 @@ class TestDatabase(unittest.TestCase):
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_scenario = MagicMock(return_value=self.mock_scenario)
         api.download = MagicMock()
-        self.database.update()
-        self.assertIsNotNone(self.database.installation())
+        database = Database('development')
+        with managed(database) as db:
+            db.update()
+            self.assertIsNotNone(db.installation())
+            db.clear()
 
     def test_scenario(self):
         """
@@ -240,8 +251,11 @@ class TestDatabase(unittest.TestCase):
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_scenario = MagicMock(return_value=self.mock_scenario)
         api.download = MagicMock()
-        self.database.update()
-        self.assertIsNotNone(self.database.scenario())
+        database = Database('development')
+        with managed(database) as db:
+            db.update()
+            self.assertIsNotNone(db.scenario())
+            db.clear()
 
     def test_ticket_template(self):
         """
@@ -250,8 +264,11 @@ class TestDatabase(unittest.TestCase):
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_scenario = MagicMock(return_value=self.mock_scenario)
         api.download = MagicMock()
-        self.database.update()
-        self.assertIsNotNone(self.database.ticket_template())
+        database = Database('development')
+        with managed(database) as db:
+            db.update()
+            self.assertIsNotNone(db.ticket_template())
+            db.clear()
 
     def test_text_variables(self):
         """
@@ -260,8 +277,11 @@ class TestDatabase(unittest.TestCase):
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_scenario = MagicMock(return_value=self.mock_scenario)
         api.download = MagicMock()
-        self.database.update()
-        self.assertTrue(len(self.database.text_variables()), 1)
+        database = Database('development')
+        with managed(database) as db:
+            db.update()
+            self.assertTrue(len(db.text_variables()), 1)
+            db.clear()
 
     def test_image_variables(self):
         """
@@ -270,8 +290,11 @@ class TestDatabase(unittest.TestCase):
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_scenario = MagicMock(return_value=self.mock_scenario)
         api.download = MagicMock()
-        self.database.update()
-        self.assertTrue(len(self.database.image_variables()), 1)
+        database = Database('development')
+        with managed(database)as db:
+            db.update()
+            self.assertTrue(len(db.image_variables()), 1)
+            db.clear()
 
     def test_images(self):
         """
@@ -280,9 +303,22 @@ class TestDatabase(unittest.TestCase):
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_scenario = MagicMock(return_value=self.mock_scenario)
         api.download = MagicMock()
-        self.database.update()
-        self.assertTrue(len(self.database.images()), 1)
+        database = Database('development')
+        with managed(database) as db:
+            db.update()
+            self.assertTrue(len(db.images()), 1)
+            db.clear()
 
+
+class TestProcessus(unittest.TestCase):
+
+    def test_processus(self):
+        """
+        Processus should execute successfully
+        """
+        with managed(Database('development')) as db:
+            db.update()
+        processus.run()
 
 if __name__ == '__main__':
     unittest.main()

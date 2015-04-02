@@ -13,3 +13,4 @@ resources/ticket.css
 resources/ticket.html
 db.*
 zeosocket
+ghostdriver.log

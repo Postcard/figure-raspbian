@@ -15,7 +15,9 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     make \
-    pkg-config
+    pkg-config \
+    rabbitmq-server
+
 
 RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/releases/download/2.5.5/gphoto2-updater.sh && \
     chmod +x gphoto2-updater.sh && \
@@ -35,18 +37,23 @@ RUN apt-get install -y libjpeg-dev zlib1g-dev libpng12-dev unzip
 
 RUN apt-get install -y python-pip
 RUN pip install requests==2.5.1
+RUN pip install Pillow==2.7.0
 RUN pip install selenium==2.44.0
 RUN pip install gphoto2==0.11.0
 RUN pip install pifacecommon==4.1.2
 RUN pip install pifacedigitalio==3.0.5
-
+RUN pip install jinja2==2.7.3
+RUN pip install hashids==1.0.3
+RUN pip install persistent==4.0.8
+RUN pip install ZODB==4.1.0
+RUN pip install pytz==2015.2
+RUN pip install celery==3.1.17
 
 RUN apt-get install -y usbutils
 
 RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.6.zip
 RUN unzip v1.6.zip
 RUN cd python-epson-printer-1.6 && python setup.py install
-
 
 ADD figureraspbian /figure/figureraspbian
 WORKDIR /figure

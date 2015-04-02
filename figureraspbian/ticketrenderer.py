@@ -18,19 +18,19 @@ def with_base_html(rendered):
     add html boilerplate to rendered template
     """
     base = """<!doctype html>
-            <html>
+            <html class="figure figure-ticket-container">
                 <head>
                     <meta charset="utf-8">
-                    <link rel="stylesheet" href="file:///%s">
+                    <link rel="stylesheet" href="file://$ticket_css">
                     </head>
-                <body>
+                <body class="figure figure-ticket-container">
                     <div class="figure figure-ticket">
                     $content
                     </div>
                 </body>
             </html>
         """
-    return StringTemplate(base).substitute(content=rendered)
+    return StringTemplate(base).substitute(content=rendered, ticket_css=settings.TICKET_CSS_PATH)
 
 
 def datetimeformat(value, format='%Y-%m-%d'):
@@ -48,7 +48,7 @@ JINJA_ENV.filters['datetimeformat'] = datetimeformat
 
 class TicketRenderer(object):
 
-    def __init__(self, installation, html, text_variables, image_variables, images):
+    def __init__(self, html, text_variables, image_variables, images):
         """
         :param template_html: Jinja template HTML + CSS
         :param text_variables: an array of text variables {id: "5689", items: ["un peu", "beaucoup", "à la folie"]}
@@ -56,7 +56,6 @@ class TicketRenderer(object):
         :param images: an array of images {id: "5896", media_url: "media_url"}
         :return:
         """
-        self.installation = installation
         self.html = html
         self.text_variables = text_variables
         self.image_variables = image_variables
@@ -67,14 +66,11 @@ class TicketRenderer(object):
         Randomly selects variables items
         :return: a random selection
         """
-        random_text_selections = []
-        random_image_selections = []
-        for text_variable in self.text_variables:
-            selection = (text_variable['id'], random.choice(text_variable['items']))
-            random_text_selections.append(selection)
-        for image_variable in self.image_variables:
-            selection = (image_variable['id'], random.choice(image_variable['items']))
-            random_image_selections.append(selection)
+        random_text_selections = [(text_variable['id'], random.choice(text_variable['items'])) for
+                                  text_variable in self.text_variables if len(text_variable['items']) > 0]
+
+        random_image_selections = [(image_variable['id'], random.choice(image_variable['items'])) for
+                                   image_variable in self.image_variables if len(image_variable['items']) > 0]
         return random_text_selections, random_image_selections
 
     def generics(self):
@@ -86,11 +82,11 @@ class TicketRenderer(object):
         now = datetime.now(pytz.timezone(settings.TIMEZONE))
         epoch = int(time.mktime(now.timetuple()) - FIGURE_TIME_ORIGIN)
         hashids = Hashids()
-        code = hashids.encode(epoch, int(self.installation)).upper()
+        code = hashids.encode(epoch, int(settings.INSTALLATION_ID)).upper()
         return now, code
 
     def render(self, snapshot):
-        context = {'snapshot': snapshot}
+        context = {'snapshot': 'file://%s' % snapshot}
         (random_text_selections, random_image_selections) = self.random_selection()
         for (text_variable_id, item) in random_text_selections:
             context['textvariable_%s' % text_variable_id] = item

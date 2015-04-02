@@ -1,6 +1,6 @@
 import os
 import shutil
-from PIL import Image, ImageEnhance
+from PIL import Image
 from datetime import datetime
 from .. import settings
 
@@ -45,7 +45,8 @@ class DSLRCamera(Camera):
             camerafile.save(path)
         finally:
             self.camera.exit(self.context)
-        shutil.copy2(path, "/mnt/%s" % os.path.basename(path))
+        if settings.ENVIRONMENT is 'production':
+            shutil.copy2(path, "/mnt/%s" % os.path.basename(path))
         im = Image.open(path)
         w, h = im.size
         left = (w - h) / 2
@@ -54,8 +55,6 @@ class DSLRCamera(Camera):
         bottom = h
         im = im.crop((left, top, right, bottom))
         im = im.resize((512, 512), Image.ANTIALIAS)
-        enhancer = ImageEnhance.Color(im)
-        im = enhancer.enhance(0.0)
         im.save(path)
         return path
 
@@ -67,6 +66,7 @@ class DummyCamera(Camera):
         pass
 
     def capture(self):
+        print "Capture snapshot"
         return os.path.join(settings.FIGURE_DIR, 'resources/2_20150331.jpg')
 
 

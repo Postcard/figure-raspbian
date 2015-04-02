@@ -2,7 +2,8 @@ from ZEO import ClientStorage
 from ZODB import DB
 import transaction
 import persistent
-from . import settings, utils, api
+from . import settings, api
+from contextlib import contextmanager
 
 
 class NotInitializedError(Exception):
@@ -10,39 +11,46 @@ class NotInitializedError(Exception):
     pass
 
 
+@contextmanager
+def managed(database):
+    database.open()
+    yield database
+    database.close()
+
+
 class Database(persistent.Persistent):
 
     def __init__(self, env):
         storage = ClientStorage.ClientStorage(settings.ZEO_SOCKET)
         self.db = DB(storage)
-        self.data = self.db.open().root()
+        self.data = None
         self.env = env
-        # flush data if in development
-        if env is 'development':
-            self.data.clear()
+
+    def open(self):
+        self.data = self.db.open().root()
+
+    def clear(self):
+        self.data.clear()
         transaction.commit()
 
     def update(self):
-        if utils.internet_on():
-            try:
-                installation = api.get_installation()
-                scenario = api.get_scenario(installation['scenario_obj']['id'])
-                ticket_template = scenario['ticket_template']
-                for image in ticket_template['images_objects']:
+        try:
+            installation = api.get_installation()
+            scenario = api.get_scenario(installation['scenario_obj']['id'])
+            ticket_template = scenario['ticket_template']
+            for image in ticket_template['images_objects']:
+                api.download(image['media'], settings.IMAGE_DIR)
+            for image_variable in ticket_template['image_variables_objects']:
+                for image in image_variable['items']:
                     api.download(image['media'], settings.IMAGE_DIR)
-                for image_variable in ticket_template['image_variables_objects']:
-                    for image in image_variable['items']:
-                        api.download(image['media'], settings.IMAGE_DIR)
-            except api.ApiException:
-                #TODO log error
-                pass
-            self.data[self.env] = {}
-            self.data[self.env]['installation'] = installation
-            self.data[self.env]['scenario'] = scenario
-            transaction.commit()
-        else:
-            #TODO log something
+            api.download('static/css/ticket.css', settings.RESOURCE_DIR)
+        except api.ApiException:
+            #TODO log error
             pass
+        self.data[self.env] = {}
+        self.data[self.env]['installation'] = installation
+        self.data[self.env]['scenario'] = scenario
+        transaction.commit()
 
     def is_initialized(self):
         return self.env in self.data
@@ -77,5 +85,8 @@ class Database(persistent.Persistent):
     @check_initialized
     def images(self):
         return self.ticket_template()['images_objects']
+
+    def close(self):
+        self.db.close()
 
 

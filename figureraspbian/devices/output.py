@@ -31,9 +31,12 @@ class Output(object):
         """ Set the value of the output, either True or False """
         raise NotImplementedError
 
-    def blink(self):
+    def blink(self, init_state=False, t=0.5):
         """ Blink the output """
-        raise NotImplementedError
+        b = BlinkingTask()
+        t = Thread(target=b.run, args=(self, init_state, t))
+        t.start()
+        return b
 
 
 class PiFaceOutput(Output):
@@ -56,14 +59,8 @@ class PiFaceOutput(Output):
         else:
             self.pifacedigital.output_pins[self.pin].turn_off()
 
-    def blink(self, init_state=False, t=0.5):
-        b = BlinkingTask()
-        t = Thread(target=b.run, args=(self, init_state, t))
-        t.start()
-        return b
 
-
-class DummyOutput():
+class DummyOutput(Output):
     """
     Output used for test purposes. It prints its state to the console.
     """
