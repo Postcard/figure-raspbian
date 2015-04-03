@@ -11,13 +11,16 @@ class ApiException(Exception):
     pass
 
 
-def get_installation():
-    url = "%s/installations/%s" % (settings.API_HOST, settings.INSTALLATION_ID)
-    headers = {
+session = requests.Session()
+session.headers.update({
         'Authorization': 'Bearer %s' % settings.TOKEN,
         'Accept': 'application/json'
-    }
-    r = requests.get(url=url, headers=headers, timeout=3)
+})
+
+
+def get_installation():
+    url = "%s/installations/%s" % (settings.API_HOST, settings.INSTALLATION_ID)
+    r = session.get(url=url, timeout=3)
     if r.status_code == 200:
         return json.loads(r.text)
     else:
@@ -26,11 +29,7 @@ def get_installation():
 
 def get_scenario(scenario_id):
     url = "%s/scenarios/%s/?fields=name,ticket_template" % (settings.API_HOST, scenario_id)
-    headers = {
-        'Authorization': 'Bearer %s' % settings.TOKEN,
-        'Accept': 'application/json'
-    }
-    r = requests.get(url=url, headers=headers, timeout=3)
+    r = session.get(url=url, timeout=3)
     if r.status_code == 200:
         return json.loads(r.text)
     else:
@@ -60,11 +59,7 @@ def create_random_text_selection(variable, value):
         'variable': variable,
         'value': value
     }
-    headers = {
-        'Authorization': 'Bearer %s' % settings.TOKEN,
-        'Accept': 'application/json'
-    }
-    r = requests.post(url, data=data, headers=headers, timeout=10)
+    r = session.post(url, data=data, timeout=10)
     if r.status_code == 201:
         return json.loads(r.text)['id']
     else:
@@ -77,11 +72,7 @@ def create_random_image_selection(variable, value):
         'variable': variable,
         'value': value
     }
-    headers = {
-        'Authorization': 'Bearer %s' % settings.TOKEN,
-        'Accept': 'application/json'
-    }
-    r = requests.post(url, data=data, headers=headers, timeout=10)
+    r = session.post(url, data=data, timeout=10)
     if r.status_code == 201:
         return json.loads(r.text)['id']
     else:
@@ -98,11 +89,7 @@ def create_ticket(snapshot, ticket, datetime, code, random_text_selections, rand
         'random_image_selections': random_image_selections,
         'installation': settings.INSTALLATION_ID
     }
-    headers = {
-        'Authorization': 'Bearer %s' % settings.TOKEN,
-        'Accept': 'application/json'
-    }
-    r = requests.post(url, files=files, data=data, headers=headers, timeout=15)
+    r = session.post(url, files=files, data=data, timeout=15)
     if r.status_code == 201:
         return json.loads(r.text)['id']
     else:
