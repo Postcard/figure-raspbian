@@ -58,6 +58,7 @@ RUN pip install jinja2==2.7.3
 RUN pip install hashids==1.0.3
 RUN pip install persistent==4.0.8
 RUN pip install ZODB==4.1.0
+RUN pip install ZODB3==3.11.0
 RUN pip install pytz==2015.2
 RUN pip install celery==3.1.17
 
@@ -70,6 +71,7 @@ WORKDIR /figure
 RUN mkdir -p /var
 RUN cd /var && mkdir -p run log data images snapshots tickets
 
+RUN pip install supervisor
 
 ADD ./start.sh /start.sh
 RUN chmod 755 /start.sh

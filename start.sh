@@ -8,4 +8,4 @@ mount /dev/sda1 /mnt && chmod 775 /mnt
 
 # Launch supervisor in the foreground
 echo 'Starting supervisor'
-supervisord -n
+supervisord --nodaemon --configuration /etc/supervisord.conf
