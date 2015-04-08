@@ -1,7 +1,7 @@
 import time
 import sys
 import pifacedigitalio
-from . import processus, settings, celery, utils
+from . import processus, settings, utils
 from .db import Database, managed
 
 refresh_listener = False
@@ -22,9 +22,6 @@ def get_listener():
 
 
 if __name__ == '__main__':
-
-    # start celery
-    celery.app.start()
 
     # Make sure database is correctly initialized
     with managed(Database(settings.ENVIRONMENT)) as db:

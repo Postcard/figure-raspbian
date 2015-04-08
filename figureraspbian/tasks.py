@@ -1,6 +1,20 @@
+from __future__ import absolute_import
+
 from . import api, settings
 from .db import Database, managed
-from .celery import app
+from celery import Celery
+from datetime import timedelta
+
+app = Celery('tasks', broker='amqp://guest@localhost//')
+
+app.conf.update(
+    CELERYBEAT_SCHEDULE = {
+        'update-every-2-minutes': {
+            'task': 'figureraspbian.tasks.update_db',
+            'schedule': timedelta(120)
+        }
+    },
+)
 
 
 @app.task
