@@ -1,6 +1,8 @@
 from selenium import webdriver
 from os.path import exists, join, basename
 from os import makedirs
+from datetime import datetime
+import pytz
 from .ticketrenderer import TicketRenderer
 from . import devices, settings
 from .db import Database, managed
@@ -16,39 +18,48 @@ if not exists(settings.TICKET_DIR):
 def run():
     try:
         with managed(Database(settings.ENVIRONMENT)) as db:
-            # Initialize blinking task
-            blinking_task = None
-            # Set Output to False
-            devices.OUTPUT.set(True)
 
-            # Take a snapshot
-            snapshot = devices.CAMERA.capture()
-            # Start blinking
-            blinking_task = devices.OUTPUT.blink()
+            # check if installation is not finished
+            end = datetime.strptime(db.installation()['end'], '%Y-%m-%dT%H:%M:%SZ')
 
-            # Render ticket
-            t = db.ticket_template()
-            renderer = TicketRenderer(t['html'], t['text_variables_objects'], t['image_variables_objects'],
-                                      t['images_objects'])
-            html, datetime, code, random_text_selections, random_image_selections = renderer.render(snapshot)
-            with open(settings.TICKET_HTML_PATH, 'w') as ticket:
-                ticket.write(html)
-            url = "file://%s" % settings.TICKET_HTML_PATH
-            phantom_js.get(url)
-            ticket = join(settings.TICKET_DIR, basename(snapshot))
-            phantom_js.save_screenshot(ticket)
+            if end > datetime.now(pytz.timezone(settings.TIMEZONE)):
 
-            # Print ticket
-            devices.PRINTER.print_ticket(ticket)
+                # Initialize blinking task
+                blinking_task = None
+                # Set Output to False
+                devices.OUTPUT.set(True)
 
-            # Stop blinking
-            blinking_task.terminate()
+                # Take a snapshot
+                snapshot = devices.CAMERA.capture()
+                # Start blinking
+                blinking_task = devices.OUTPUT.blink()
 
-            # Set Output to True
-            devices.OUTPUT.set(False)
+                # Render ticket
+                t = db.ticket_template()
+                renderer = TicketRenderer(t['html'], t['text_variables_objects'], t['image_variables_objects'],
+                                          t['images_objects'])
+                html, dt, code, random_text_selections, random_image_selections = renderer.render(snapshot)
+                with open(settings.TICKET_HTML_PATH, 'w') as ticket:
+                    ticket.write(html)
+                url = "file://%s" % settings.TICKET_HTML_PATH
+                phantom_js.get(url)
+                ticket = join(settings.TICKET_DIR, basename(snapshot))
+                phantom_js.save_screenshot(ticket)
 
-            # add task upload ticket task to the queue
-            tasks.create_ticket.delay(snapshot, ticket, datetime, code, random_text_selections, random_image_selections)
+                # Print ticket
+                devices.PRINTER.print_ticket(ticket)
+
+                # Stop blinking
+                blinking_task.terminate()
+
+                # Set Output to True
+                devices.OUTPUT.set(False)
+
+                # add task upload ticket task to the queue
+                tasks.create_ticket.delay(snapshot, ticket, dt, code, random_text_selections, random_image_selections)
+            else:
+                # TODO log something
+                pass
     except Exception as e:
         print(e)
     finally:

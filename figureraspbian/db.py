@@ -36,21 +36,22 @@ class Database(persistent.Persistent):
     def update(self):
         try:
             installation = api.get_installation()
-            scenario = api.get_scenario(installation['scenario_obj']['id'])
-            ticket_template = scenario['ticket_template']
-            for image in ticket_template['images_objects']:
-                api.download(image['media'], settings.IMAGE_DIR)
-            for image_variable in ticket_template['image_variables_objects']:
-                for image in image_variable['items']:
+            if installation is not None:
+                scenario = api.get_scenario(installation['scenario_obj']['id'])
+                ticket_template = scenario['ticket_template']
+                for image in ticket_template['images_objects']:
                     api.download(image['media'], settings.IMAGE_DIR)
-            api.download('static/css/ticket.css', settings.RESOURCE_DIR)
+                for image_variable in ticket_template['image_variables_objects']:
+                    for image in image_variable['items']:
+                        api.download(image['media'], settings.IMAGE_DIR)
+                api.download('static/css/ticket.css', settings.RESOURCE_DIR)
+                self.data[self.env] = {}
+                self.data[self.env]['installation'] = installation
+                self.data[self.env]['scenario'] = scenario
+                transaction.commit()
         except api.ApiException:
             #TODO log error
             pass
-        self.data[self.env] = {}
-        self.data[self.env]['installation'] = installation
-        self.data[self.env]['scenario'] = scenario
-        transaction.commit()
 
     def is_initialized(self):
         return self.env in self.data

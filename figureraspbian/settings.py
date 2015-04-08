@@ -14,6 +14,9 @@ def get_env_setting(setting, default=None):
         error_msg = "Set the %s env variable" % setting
         raise ImproperlyConfigured(error_msg)
 
+# Resin IO unique identifier
+RESIN_DEVICE_UUID = get_env_setting('RESIN_DEVICE_UUID')
+
 # Environment. Dev if local machine. Prod if Raspberry Pi
 ENVIRONMENT = get_env_setting('ENVIRONMENT', 'development')
 
@@ -22,9 +25,6 @@ FIGURE_DIR = get_env_setting('FIGURE_DIR', '/Users/benoit/git/figure-raspbian')
 
 # Http host of the API
 API_HOST = get_env_setting('API_HOST', 'http://localhost:8000')
-
-# Id of the installation
-INSTALLATION_ID = get_env_setting('INSTALLATION_ID', 1)
 
 # Access Token to authenticate user to the API
 TOKEN = get_env_setting('TOKEN')

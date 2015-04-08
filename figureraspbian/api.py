@@ -19,10 +19,10 @@ session.headers.update({
 
 
 def get_installation():
-    url = "%s/installations/%s" % (settings.API_HOST, settings.INSTALLATION_ID)
+    url = "%s/resiniodevices/%s" % (settings.API_HOST, settings.RESIN_DEVICE_UUID)
     r = session.get(url=url, timeout=3)
     if r.status_code == 200:
-        return json.loads(r.text)
+        return json.loads(r.text)['active_installation']
     else:
         return ApiException("Failed retrieving installation")
 
