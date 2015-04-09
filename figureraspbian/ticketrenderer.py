@@ -73,7 +73,7 @@ class TicketRenderer(object):
                                    image_variable in self.image_variables if len(image_variable['items']) > 0]
         return random_text_selections, random_image_selections
 
-    def generics(self):
+    def generics(self, installation):
         """
         Calculate generics variables like datetime, code. These variables are not randomly calculated but
         deterministically calculated
@@ -82,17 +82,17 @@ class TicketRenderer(object):
         now = datetime.now(pytz.timezone(settings.TIMEZONE))
         epoch = int(time.mktime(now.timetuple()) - FIGURE_TIME_ORIGIN)
         hashids = Hashids()
-        code = hashids.encode(epoch, int(settings.INSTALLATION_ID)).upper()
+        code = hashids.encode(epoch, int(installation)).upper()
         return now, code
 
-    def render(self, snapshot):
+    def render(self, installation, snapshot):
         context = {'snapshot': 'file://%s' % snapshot}
         (random_text_selections, random_image_selections) = self.random_selection()
         for (text_variable_id, item) in random_text_selections:
             context['textvariable_%s' % text_variable_id] = item
         for (image_variable_id, item) in random_image_selections:
             context['imagevariable_%s' % image_variable_id] = item
-        now, code = self.generics()
+        now, code = self.generics(installation)
         context['datetime'] = now
         context['code'] = code
         for im in self.images:

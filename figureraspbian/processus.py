@@ -24,13 +24,16 @@ def run():
             end = end.replace(tzinfo=pytz.UTC)
             if end > datetime.now(pytz.timezone(settings.TIMEZONE)):
 
+                # Get installation id
+                installation = db.installation()['id']
+
                 # Initialize blinking task
                 blinking_task = None
                 # Set Output to False
                 devices.OUTPUT.set(True)
 
                 # Take a snapshot
-                snapshot = devices.CAMERA.capture(db.installation()['id'])
+                snapshot = devices.CAMERA.capture(installation)
                 # Start blinking
                 blinking_task = devices.OUTPUT.blink()
 
@@ -38,8 +41,10 @@ def run():
                 t = db.ticket_template()
                 renderer = TicketRenderer(t['html'], t['text_variables_objects'], t['image_variables_objects'],
                                           t['images_objects'])
-                html, dt, code, random_text_selections, random_image_selections = renderer.render(snapshot)
-                with open(settings.TICKET_HTML_PATH, 'w') as ticket:
+                html, dt, code, random_text_selections, random_image_selections = \
+                    renderer.render(installation, snapshot)
+
+                with open(settings.TICKET_HTML_PATH, 'wb+') as ticket:
                     ticket.write(html)
                 url = "file://%s" % settings.TICKET_HTML_PATH
                 phantom_js.get(url)
@@ -56,7 +61,7 @@ def run():
                 devices.OUTPUT.set(False)
 
                 # add task upload ticket task to the queue
-                tasks.create_ticket.delay(snapshot, ticket, dt, code, random_text_selections, random_image_selections)
+                tasks.create_ticket.delay(installation, snapshot, ticket, dt, code, random_text_selections, random_image_selections)
             else:
                 print "Skip processus. Installation is ended"
     except Exception as e:

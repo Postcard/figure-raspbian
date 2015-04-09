@@ -81,7 +81,7 @@ def create_random_image_selection(variable, value):
         raise ApiException("Failed creating ticket with message %s" % r.text)
 
 
-def create_ticket(snapshot, ticket, datetime, code, random_text_selections, random_image_selections):
+def create_ticket(installation, snapshot, ticket, datetime, code, random_text_selections, random_image_selections):
     url = "%s/tickets/" % settings.API_HOST
     files = {'snapshot': open(snapshot, 'rb'), 'ticket': open(ticket, 'rb')}
     data = {
@@ -89,7 +89,7 @@ def create_ticket(snapshot, ticket, datetime, code, random_text_selections, rand
         'code': code,
         'random_text_selections': random_text_selections,
         'random_image_selections': random_image_selections,
-        'installation': settings.INSTALLATION_ID
+        'installation': installation
     }
     r = session.post(url, files=files, data=data, timeout=15)
     if r.status_code == 201:
