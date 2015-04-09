@@ -21,7 +21,7 @@ def run():
 
             # check if installation is not finished
             end = datetime.strptime(db.installation()['end'], '%Y-%m-%dT%H:%M:%SZ')
-
+            end = end.replace(tzinfo=pytz.UTC)
             if end > datetime.now(pytz.timezone(settings.TIMEZONE)):
 
                 # Initialize blinking task
