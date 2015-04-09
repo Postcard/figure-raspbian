@@ -30,7 +30,7 @@ def run():
                 devices.OUTPUT.set(True)
 
                 # Take a snapshot
-                snapshot = devices.CAMERA.capture()
+                snapshot = devices.CAMERA.capture(db.installation()['id'])
                 # Start blinking
                 blinking_task = devices.OUTPUT.blink()
 

@@ -31,7 +31,7 @@ class DSLRCamera(Camera):
         self.context = gp.Context()
         self.camera = gp.Camera()
 
-    def capture(self):
+    def capture(self, installation):
         self.camera.init(self.context)
         try:
             # Capture image
@@ -41,7 +41,7 @@ class DSLRCamera(Camera):
             # Create file path on the RaspberryPi
             now = datetime.now().strftime('%Y%m%d%H%M%S')
             datetime.now(pytz.timezone(settings.TIMEZONE))
-            basename = "{scenario}_{now}.jpg".format(scenario=settings.SCENARIO, now=now)
+            basename = "{installation}_{now}.jpg".format(installation=installation, now=now)
             path = os.path.join(settings.SNAPSHOT_DIR, basename)
             # Save the file to the Raspberry Pi
             camerafile.save(path)
