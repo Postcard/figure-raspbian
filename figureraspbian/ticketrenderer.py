@@ -2,6 +2,7 @@
 
 import random
 import time
+import os
 from datetime import datetime
 import pytz
 from hashids import Hashids
@@ -89,14 +90,14 @@ class TicketRenderer(object):
         context = {'snapshot': 'file://%s' % snapshot}
         (random_text_selections, random_image_selections) = self.random_selection()
         for (text_variable_id, item) in random_text_selections:
-            context['textvariable_%s' % text_variable_id] = item
+            context['textvariable_%s' % text_variable_id] = item['text']
         for (image_variable_id, item) in random_image_selections:
-            context['imagevariable_%s' % image_variable_id] = item
+            context['imagevariable_%s' % image_variable_id] = 'file://%s/%s' % (settings.IMAGE_DIR, os.path.basename(item['media']))
         now, code = self.generics(installation)
         context['datetime'] = now
         context['code'] = code
         for im in self.images:
-            context['image_%s' % im['id']] = im['media_url']
+            context['image_%s' % im['id']] = 'file://%s/%s' % (settings.IMAGE_DIR, os.path.basename(im['media']))
         template = JINJA_ENV.from_string(self.html)
         html = with_base_html(template.render(context))
         return html, now, code, random_text_selections, random_image_selections
