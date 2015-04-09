@@ -22,11 +22,12 @@ def create_ticket(installation, snapshot, ticket, datetime, code, random_text_se
             for selection in random_image_selections:
                 created = api.create_random_image_selection(selection[0], selection[1]['id'])
                 random_image_selection_ids.append(created)
-            api.create_ticket(installation, snapshot, ticket, datetime, code, random_image_selection_ids, random_image_selection_ids)
+            api.create_ticket(installation, snapshot, ticket, datetime, code, random_image_selection_ids,
+                              random_image_selection_ids)
         else:
             raise Exception('Disconnected from internet')
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    except Exception:
+        raise self.retry()
 
 
 
