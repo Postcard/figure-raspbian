@@ -58,13 +58,13 @@ def run():
                 # add task upload ticket task to the queue
                 tasks.create_ticket.delay(snapshot, ticket, dt, code, random_text_selections, random_image_selections)
             else:
-                # TODO log something
-                pass
+                print "Skip processus. Installation is ended"
     except Exception as e:
         print(e)
     finally:
-        if blinking_task:
-            blinking_task.terminate()
+        if 'blinking_task' in locals():
+            if blinking_task is not None:
+                blinking_task.terminate()
 
 
 
