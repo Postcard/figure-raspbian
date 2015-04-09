@@ -68,6 +68,7 @@ RUN cd python-epson-printer-1.6 && python setup.py install
 
 ADD figureraspbian /figure/figureraspbian
 WORKDIR /figure
+RUN mkdir -p media/images media/snapshots media/tickets resources 
 RUN mkdir -p /var
 RUN cd /var && mkdir -p run log data images snapshots tickets
 
