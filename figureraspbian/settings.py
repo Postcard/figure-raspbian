@@ -67,6 +67,9 @@ ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(FIGURE_DIR, 'zeosocket')
 # Timezone information
 TIMEZONE = get_env_setting('TIMEZONE', 'Europe/Paris')
 
+# Countdown for retrying uploading a ticket
+RETRY_DELAY = get_env_setting('RETRY_DELAY', 60)
+
 
 
 

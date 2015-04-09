@@ -7,7 +7,7 @@ from .ticketrenderer import TicketRenderer
 from . import devices, settings
 from .db import Database, managed
 import tasks
-
+from .utils import internet_on
 
 phantom_js = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
 
@@ -61,7 +61,13 @@ def run():
                 devices.OUTPUT.set(False)
 
                 # add task upload ticket task to the queue
-                tasks.create_ticket.delay(installation, snapshot, ticket, dt, code, random_text_selections, random_image_selections)
+                tasks.create_ticket.delay(installation, snapshot, ticket, dt, code, random_text_selections,
+                                          random_image_selections)
+                # update db
+                if internet_on():
+                    db.update()
+                else:
+                    print "No internet connection, cannot update database"
             else:
                 print "Skip processus. Installation is ended"
     except Exception as e:
