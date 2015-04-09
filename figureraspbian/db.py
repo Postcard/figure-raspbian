@@ -50,8 +50,7 @@ class Database(persistent.Persistent):
                 self.data[self.env]['scenario'] = scenario
                 transaction.commit()
         except api.ApiException:
-            #TODO log error
-            pass
+            print "An error occured while connecting to the API"
 
     def is_initialized(self):
         return self.env in self.data

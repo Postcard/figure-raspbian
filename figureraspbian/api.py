@@ -19,12 +19,14 @@ session.headers.update({
 
 
 def get_installation():
-    url = "%s/resiniodevices/%s" % (settings.API_HOST, settings.RESIN_DEVICE_UUID)
-    r = session.get(url=url, timeout=3)
+    url = "%s/resiniodevices/%s/" % (settings.API_HOST, settings.RESIN_DEVICE_UUID)
+    print url
+    r = session.get(url=url, timeout=6)
+    print r
     if r.status_code == 200:
         return json.loads(r.text)['active_installation']
     else:
-        return ApiException("Failed retrieving installation")
+        raise ApiException("Failed retrieving installation")
 
 
 def get_scenario(scenario_id):
@@ -33,7 +35,7 @@ def get_scenario(scenario_id):
     if r.status_code == 200:
         return json.loads(r.text)
     else:
-        return ApiException("Failed retrieving scenario")
+        raise ApiException("Failed retrieving scenario")
 
 
 def download(resource, path):
