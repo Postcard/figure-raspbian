@@ -92,7 +92,8 @@ class TicketRenderer(object):
         for (text_variable_id, item) in random_text_selections:
             context['textvariable_%s' % text_variable_id] = item['text']
         for (image_variable_id, item) in random_image_selections:
-            context['imagevariable_%s' % image_variable_id] = 'file://%s/%s' % (settings.IMAGE_DIR, os.path.basename(item['media']))
+            context['imagevariable_%s' % image_variable_id] = 'file://%s/%s' % (settings.IMAGE_DIR,
+                                                                                os.path.basename(item['media']))
         now, code = self.generics(installation)
         context['datetime'] = now
         context['code'] = code
