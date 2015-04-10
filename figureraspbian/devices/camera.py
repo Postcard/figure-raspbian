@@ -47,8 +47,6 @@ class DSLRCamera(Camera):
             camerafile.save(path)
         finally:
             self.camera.exit(self.context)
-        if settings.ENVIRONMENT is 'production':
-            shutil.copy2(path, "/mnt/%s" % os.path.basename(path))
         im = Image.open(path)
         w, h = im.size
         left = (w - h) / 2
