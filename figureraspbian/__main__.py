@@ -1,6 +1,6 @@
 import time
-import sys
 import logging
+logging.basicConfig(level='INFO')
 
 import pifacedigitalio
 
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # Make sure database is correctly initialized
     with managed(Database(settings.ENVIRONMENT)) as db:
         if utils.internet_on():
-            logging.info("Got on internet connection. Initializing database...")
+            logging.info("Got an internet connection. Initializing database...")
             db.update()
         elif db.is_initialized():
             logging.info("No internet connection but database was already initialized during a previous runtime")

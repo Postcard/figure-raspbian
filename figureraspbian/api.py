@@ -22,9 +22,7 @@ session.headers.update({
 
 def get_installation():
     url = "%s/resiniodevices/%s/" % (settings.API_HOST, settings.RESIN_DEVICE_UUID)
-    print url
     r = session.get(url=url, timeout=6)
-    print r
     if r.status_code == 200:
         return json.loads(r.text)['active_installation']
     else:

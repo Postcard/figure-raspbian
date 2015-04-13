@@ -4,6 +4,7 @@ from datetime import datetime
 import time
 import pytz
 import logging
+logging.basicConfig(level='INFO')
 
 from selenium import webdriver
 import tasks
