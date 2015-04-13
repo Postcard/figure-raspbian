@@ -1,7 +1,9 @@
 import json
-import requests
 import urllib2
 from os.path import join
+
+import requests
+
 from . import settings
 from .utils import url2name
 

@@ -1,12 +1,17 @@
 import time
 import sys
+import logging
+
 import pifacedigitalio
+
 from . import processus, settings, utils
 from .db import Database, managed
 
 refresh_listener = False
 
+
 def trigger(event):
+    logging.info("A trigger occurred ! Running processus...")
     processus.run()
     global refresh_listener
     refresh_listener = True
@@ -23,14 +28,18 @@ def get_listener():
 
 if __name__ == '__main__':
 
+    logging.info("Initializing Figure application...")
+
     # Make sure database is correctly initialized
     with managed(Database(settings.ENVIRONMENT)) as db:
         if utils.internet_on():
+            logging.info("Got on internet connection. Initializing database...")
             db.update()
         elif db.is_initialized():
+            logging.info("No internet connection but database was already initialized during a previous runtime")
             pass
         else:
-            sys.exit('Database is not initialized')
+            logging.warning("Database could not be initialized.")
 
     listener = get_listener()
 

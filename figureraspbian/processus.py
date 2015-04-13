@@ -1,13 +1,18 @@
-from selenium import webdriver
 from os.path import exists, join, basename
 from os import makedirs
 from datetime import datetime
+import time
 import pytz
+import logging
+
+from selenium import webdriver
+import tasks
+
 from .ticketrenderer import TicketRenderer
 from . import devices, settings
 from .db import Database, managed
-import tasks
 from .utils import internet_on
+
 
 phantom_js = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
 
@@ -22,6 +27,7 @@ def run():
             # check if installation is not finished
             end = datetime.strptime(db.installation()['end'], '%Y-%m-%dT%H:%M:%SZ')
             end = end.replace(tzinfo=pytz.UTC)
+
             if end > datetime.now(pytz.timezone(settings.TIMEZONE)):
 
                 # Get installation id
@@ -33,11 +39,15 @@ def run():
                 devices.OUTPUT.set(True)
 
                 # Take a snapshot
+                start = time.time()
                 snapshot = devices.CAMERA.capture(installation)
+                end = time.time()
+                logging.info('Snapshot capture successfully executed in %s seconds', end - start)
                 # Start blinking
                 blinking_task = devices.OUTPUT.blink()
 
                 # Render ticket
+                start = time.time()
                 t = db.ticket_template()
                 renderer = TicketRenderer(t['html'], t['text_variables_objects'], t['image_variables_objects'],
                                           t['images_objects'])
@@ -50,9 +60,14 @@ def run():
                 phantom_js.get(url)
                 ticket = join(settings.TICKET_DIR, basename(snapshot))
                 phantom_js.save_screenshot(ticket)
+                end = time.time()
+                logging.info('Ticket successfully rendered in %s seconds', end - start)
 
                 # Print ticket
+                start = time.time()
                 devices.PRINTER.print_ticket(ticket)
+                end = time.time()
+                logging.info('Ticket successfully printed in %s seconds', end - start)
 
                 # Stop blinking
                 blinking_task.terminate()
@@ -64,14 +79,15 @@ def run():
                 tasks.create_ticket.delay(installation, snapshot, ticket, dt, code, random_text_selections,
                                           random_image_selections)
             else:
-                print "Skip processus. Installation is ended"
+                logging.warning("Current installation has ended. Skipping processus execution")
             # update db
             if internet_on():
+                logging.info("Got internet connection. Updating database...")
                 db.update()
             else:
-                print "No internet connection, cannot update database"
+                logging.warning("No internet connection. Could not update database")
     except Exception as e:
-        print(e)
+        logging.error(e.message)
     finally:
         if 'blinking_task' in locals():
             if blinking_task is not None:

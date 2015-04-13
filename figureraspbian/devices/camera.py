@@ -1,9 +1,11 @@
 import os
-import shutil
-from PIL import Image
 from datetime import datetime
 import pytz
+
+from PIL import Image
+
 from .. import settings
+
 
 try:
     import gphoto2 as gp

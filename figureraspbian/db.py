@@ -1,9 +1,12 @@
+from contextlib import contextmanager
+import logging
+
 from ZEO import ClientStorage
 from ZODB import DB
 import transaction
 import persistent
+
 from . import settings, api
-from contextlib import contextmanager
 
 
 class NotInitializedError(Exception):
@@ -49,8 +52,8 @@ class Database(persistent.Persistent):
                 self.data[self.env]['installation'] = installation
                 self.data[self.env]['scenario'] = scenario
                 transaction.commit()
-        except api.ApiException:
-            print "An error occured while connecting to the API"
+        except api.ApiException as e:
+            logging.error(e.message)
 
     def is_initialized(self):
         return self.env in self.data

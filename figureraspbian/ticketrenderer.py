@@ -5,10 +5,12 @@ import time
 import os
 from datetime import datetime
 import pytz
+from string import Template as StringTemplate
+
 from hashids import Hashids
 from jinja2 import Environment
+
 from . import settings
-from string import Template as StringTemplate
 
 
 FIGURE_TIME_ORIGIN = 1409529600.0
