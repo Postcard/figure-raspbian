@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 from . import camera, output, printer
 from .. import settings
 

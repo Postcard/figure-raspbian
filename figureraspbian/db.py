@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 from contextlib import contextmanager
 import logging
 logging.basicConfig(level='INFO')

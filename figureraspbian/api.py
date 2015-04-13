@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 import json
 import urllib2
 from os.path import join

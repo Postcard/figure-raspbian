@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 from os.path import exists, join, basename
 from os import makedirs
 from datetime import datetime

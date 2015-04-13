@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf8 -*-
 
 import unittest
 import re
@@ -69,6 +69,7 @@ class TestTicketRenderer(unittest.TestCase):
         html = "Du texte avec un accent ici: é"
         self.ticket_renderer.html = html
         rendered_html, _, _, _, _ = self.ticket_renderer.render('1', '/path/to/snapshot')
+        print rendered_html
         self.assertTrue(u'Du texte avec un accent ici: é' in rendered_html)
 
 

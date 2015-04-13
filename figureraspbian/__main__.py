@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 import time
 import logging
 logging.basicConfig(level='INFO')
