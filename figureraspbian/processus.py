@@ -6,6 +6,7 @@ import pytz
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
+import traceback
 
 from selenium import webdriver
 import tasks
@@ -84,6 +85,7 @@ def run():
                 logger.warning("Current installation has ended. Skipping processus execution")
     except Exception as e:
         logger.error(e.message)
+        logger.error(traceback.format_exc())
     finally:
         if 'blinking_task' in locals():
             if blinking_task is not None:

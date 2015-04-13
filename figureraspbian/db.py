@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
+import traceback
 
 from ZEO import ClientStorage
 from ZODB import DB
@@ -56,6 +57,7 @@ class Database(persistent.Persistent):
                 transaction.commit()
         except api.ApiException as e:
             logger.error(e.message)
+            logger.error(traceback.format_exc())
 
     def is_initialized(self):
         return self.env in self.data
