@@ -66,6 +66,11 @@ RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-pri
 RUN unzip v1.6.zip
 RUN cd python-epson-printer-1.6 && python setup.py install
 
+RUN apt-get install -y locales
+RUN locale-gen en_US.UTF-8
+RUN dpkg-reconfigure locales
+
+ENV LANG en_US.UTF-8
 
 ADD figureraspbian /figure/figureraspbian
 WORKDIR /figure
