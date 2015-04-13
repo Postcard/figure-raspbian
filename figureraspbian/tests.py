@@ -1,3 +1,5 @@
+# coding=utf-8
+
 import unittest
 import re
 import os
@@ -16,10 +18,11 @@ class TestTicketRenderer(unittest.TestCase):
         installation = '1'
         html = '{{snapshot}} {{code}} {{datetime | datetimeformat}} {{textvariable_1}} {{imagevariable_2}} {{image_1}}'
         self.chiefs = ['Titi', 'Vicky', 'Benni']
+        self.chiefs = [{'id': '1', 'text': 'Titi'}, {'id': '2', 'text': 'Vicky'}, {'id': '3', 'text': 'Benni'}]
         text_variables = [{'id': '1', 'items': self.chiefs}]
-        self.paths = ['/path/to/variable/image1', '/path/to/variable/image2']
+        self.paths = [{'id': '1', 'media': '/path/to/variable/image1'}, {'id': '2', 'media': '/path/to/variable/image2'}]
         image_variables = [{'id': '2', 'items': self.paths}, {'id': '3', 'items': []}]
-        images = [{'id': '1', 'media_url': 'path/to/image'}]
+        images = [{'id': '1', 'media': 'path/to/image'}]
         self.ticket_renderer = TicketRenderer(html, text_variables, image_variables, images)
 
     def test_random_selection(self):
@@ -38,7 +41,7 @@ class TestTicketRenderer(unittest.TestCase):
         """
         generics function should return a proper code
         """
-        _, code = self.ticket_renderer.generics()
+        _, code = self.ticket_renderer.generics('1')
         self.assertTrue(len(code) == 8)
         self.assertTrue(code.isupper())
 
@@ -46,7 +49,7 @@ class TestTicketRenderer(unittest.TestCase):
         """
         TicketRenderer should render a ticket
         """
-        rendered_html, _, _, _, _ = self.ticket_renderer.render('/path/to/snapshot')
+        rendered_html, _, _, _, _ = self.ticket_renderer.render('1', '/path/to/snapshot')
         expected = re.compile("/path/to/snapshot \w{8} \d{4}-\d{2}-\d{2} (Titi|Vicky|Benni) /path/to/variable/image(1|2) path/to/image")
         self.assertRegexpMatches(rendered_html, expected)
 
@@ -56,8 +59,17 @@ class TestTicketRenderer(unittest.TestCase):
         """
         html = '{{datetime | datetimeformat("%Y")}}'
         self.ticket_renderer.html = html
-        rendered_html, _, _, _, _ = self.ticket_renderer.render('/path/to/snapshot')
+        rendered_html, _, _, _, _ = self.ticket_renderer.render('1', '/path/to/snapshot')
         self.assertRegexpMatches(rendered_html, re.compile("\d{4}"))
+
+    def test_encode_non_unicode_character(self):
+        """
+        Ticket renderer should encode non unicode character
+        """
+        html = "Du texte avec un accent ici: é"
+        self.ticket_renderer.html = html
+        rendered_html, _, _, _, _ = self.ticket_renderer.render('1', '/path/to/snapshot')
+        self.assertTrue(u'Du texte avec un accent ici: é' in rendered_html)
 
 
 class TestUtilityFunction(unittest.TestCase):

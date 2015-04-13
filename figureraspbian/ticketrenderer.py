@@ -1,11 +1,10 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 
 import random
 import time
 import os
 from datetime import datetime
 import pytz
-from string import Template as StringTemplate
 
 from hashids import Hashids
 from jinja2 import Environment
@@ -20,20 +19,20 @@ def with_base_html(rendered):
     """
     add html boilerplate to rendered template
     """
-    base = """<!doctype html>
+    base = u"""<!doctype html>
             <html class="figure figure-ticket-container">
                 <head>
                     <meta charset="utf-8">
-                    <link rel="stylesheet" href="file://$ticket_css">
+                    <link rel="stylesheet" href="file://{ticket_css}">
                     </head>
                 <body class="figure figure-ticket-container">
                     <div class="figure figure-ticket">
-                    $content
+                    {content}
                     </div>
                 </body>
             </html>
         """
-    return StringTemplate(base).substitute(content=rendered, ticket_css=settings.TICKET_CSS_PATH)
+    return base.format(content=rendered, ticket_css=settings.TICKET_CSS_PATH)
 
 
 def datetimeformat(value, format='%Y-%m-%d'):
@@ -101,9 +100,10 @@ class TicketRenderer(object):
         context['code'] = code
         for im in self.images:
             context['image_%s' % im['id']] = 'file://%s/%s' % (settings.IMAGE_DIR, os.path.basename(im['media']))
-        template = JINJA_ENV.from_string(self.html)
-        html = with_base_html(template.render(context))
-        return html, now, code, random_text_selections, random_image_selections
+        template = JINJA_ENV.from_string(self.html.decode('utf-8'))
+        rendered_html = template.render(context)
+        rendered_html = with_base_html(rendered_html)
+        return rendered_html, now, code, random_text_selections, random_image_selections
 
 
 
