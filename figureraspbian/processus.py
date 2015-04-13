@@ -82,18 +82,18 @@ def run():
                                           random_image_selections)
             else:
                 logger.warning("Current installation has ended. Skipping processus execution")
-            # update db
-            if internet_on():
-                logger.info("Got internet connection. Updating database...")
-                db.update()
-            else:
-                logger.warning("No internet connection. Could not update database")
     except Exception as e:
         logger.error(e.message)
     finally:
         if 'blinking_task' in locals():
             if blinking_task is not None:
                 blinking_task.terminate()
+        # update db
+        if internet_on():
+            logger.info("Got internet connection. Updating database...")
+            db.update()
+        else:
+            logger.warning("No internet connection. Could not update database")
 
 
 
