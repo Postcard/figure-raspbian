@@ -1,6 +1,7 @@
 import time
 import logging
 logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
 import pifacedigitalio
 
@@ -11,7 +12,7 @@ refresh_listener = False
 
 
 def trigger(event):
-    logging.info("A trigger occurred ! Running processus...")
+    logger.info("A trigger occurred ! Running processus...")
     processus.run()
     global refresh_listener
     refresh_listener = True
@@ -28,7 +29,7 @@ def get_listener():
 
 if __name__ == '__main__':
 
-    logging.info("Initializing Figure application...")
+    logger.info("Initializing Figure application...")
 
     # Make sure database is correctly initialized
     with managed(Database(settings.ENVIRONMENT)) as db:

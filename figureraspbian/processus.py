@@ -5,6 +5,7 @@ import time
 import pytz
 import logging
 logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
 from selenium import webdriver
 import tasks
@@ -43,7 +44,7 @@ def run():
                 start = time.time()
                 snapshot = devices.CAMERA.capture(installation)
                 end = time.time()
-                logging.info('Snapshot capture successfully executed in %s seconds', end - start)
+                logger.info('Snapshot capture successfully executed in %s seconds', end - start)
                 # Start blinking
                 blinking_task = devices.OUTPUT.blink()
 
@@ -62,13 +63,13 @@ def run():
                 ticket = join(settings.TICKET_DIR, basename(snapshot))
                 phantom_js.save_screenshot(ticket)
                 end = time.time()
-                logging.info('Ticket successfully rendered in %s seconds', end - start)
+                logger.info('Ticket successfully rendered in %s seconds', end - start)
 
                 # Print ticket
                 start = time.time()
                 devices.PRINTER.print_ticket(ticket)
                 end = time.time()
-                logging.info('Ticket successfully printed in %s seconds', end - start)
+                logger.info('Ticket successfully printed in %s seconds', end - start)
 
                 # Stop blinking
                 blinking_task.terminate()
@@ -80,15 +81,15 @@ def run():
                 tasks.create_ticket.delay(installation, snapshot, ticket, dt, code, random_text_selections,
                                           random_image_selections)
             else:
-                logging.warning("Current installation has ended. Skipping processus execution")
+                logger.warning("Current installation has ended. Skipping processus execution")
             # update db
             if internet_on():
-                logging.info("Got internet connection. Updating database...")
+                logger.info("Got internet connection. Updating database...")
                 db.update()
             else:
-                logging.warning("No internet connection. Could not update database")
+                logger.warning("No internet connection. Could not update database")
     except Exception as e:
-        logging.error(e.message)
+        logger.error(e.message)
     finally:
         if 'blinking_task' in locals():
             if blinking_task is not None:

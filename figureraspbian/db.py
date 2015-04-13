@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import logging
 logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
 from ZEO import ClientStorage
 from ZODB import DB
@@ -54,7 +55,7 @@ class Database(persistent.Persistent):
                 self.data[self.env]['scenario'] = scenario
                 transaction.commit()
         except api.ApiException as e:
-            logging.error(e.message)
+            logger.error(e.message)
 
     def is_initialized(self):
         return self.env in self.data
