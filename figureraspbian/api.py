@@ -56,8 +56,8 @@ def download(resource, path):
         with open(path_to_file, 'wb+') as f:
             f.write(r.read())
         return path_to_file
-    except urllib2.HTTPError:
-        raise ApiException('HTTP 404 Resource not found: %s' % resource)
+    except urllib2.HTTPError as e:
+        raise ApiException('Failed downloading resource %s with error %s' % (resource, e.msg))
 
 
 

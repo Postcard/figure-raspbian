@@ -33,7 +33,7 @@ def run():
                 end = end.replace(tzinfo=pytz.UTC)
 
                 if end > datetime.now(pytz.timezone(settings.TIMEZONE)):
-    
+
                     # Get installation id
                     installation = db.installation()['id']
 
