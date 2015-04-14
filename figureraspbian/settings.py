@@ -73,7 +73,7 @@ TIMEZONE = get_env_setting('TIMEZONE', 'Europe/Paris')
 RETRY_DELAY = get_env_setting('RETRY_DELAY', 60)
 
 # Camera type
-CAMERA_TYPE = get_env_setting('CAMERA_TYPE', 'NIKON')
+CAMERA_TYPE = get_env_setting('CAMERA_TYPE', 'CANON')
 
 
 
