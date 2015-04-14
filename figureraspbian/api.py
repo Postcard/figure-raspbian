@@ -47,14 +47,19 @@ def download(resource, path):
     url = "%s/%s" % (settings.API_HOST, resource)
     local_name = url2name(url)
     req = urllib2.Request(url)
-    r = urllib2.urlopen(req)
-    if r.url != url:
-        # if we were redirected, the real file name we take from the final URL
-        local_name = url2name(r.url)
-    path_to_file = join(path, local_name)
-    with open(path_to_file, 'wb+') as f:
-        f.write(r.read())
-    return path_to_file
+    try:
+        r = urllib2.urlopen(req)
+        if r.url != url:
+            # if we were redirected, the real file name we take from the final URL
+            local_name = url2name(r.url)
+        path_to_file = join(path, local_name)
+        with open(path_to_file, 'wb+') as f:
+            f.write(r.read())
+        return path_to_file
+    except urllib2.HTTPError:
+        raise ApiException('HTTP 404 Resource not found: %s' % resource)
+
+
 
 
 def create_random_text_selection(variable, value):
