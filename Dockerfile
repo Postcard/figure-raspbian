@@ -66,13 +66,24 @@ RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-pri
 RUN unzip v1.6.zip
 RUN cd python-epson-printer-1.6 && python setup.py install
 
-ENV LANG C.UTF-8
-
 ADD figureraspbian /figure/figureraspbian
 WORKDIR /figure
 RUN mkdir -p media/images media/snapshots media/tickets resources 
 RUN mkdir -p /var
 RUN cd /var && mkdir -p run log data images snapshots tickets
+
+ENV LANG C.UTF-8
+ENV C_FORCE_ROOT true
+ENV DB_PATH /var/data/db.fs
+ENV FIGURE_DIR /figure/figureraspbian
+ENV IMAGE_DIR /var/images
+ENV PHANTOMJS_PATH /phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
+ENV RESOURCE_DIR /figure/resources
+ENV SNAPSHOT_DIR /var/snapshots
+ENV TICKET_CSS_PATH /var/ticket.css
+ENV TICKET_HTML_PATH /var/ticket.html
+ENV TICKET_DIR /var/tickets
+ENV ZEO_SOCKET /var/run/zeo.sock
 
 RUN pip install supervisor
 
