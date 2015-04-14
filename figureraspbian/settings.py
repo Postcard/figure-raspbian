@@ -72,6 +72,9 @@ TIMEZONE = get_env_setting('TIMEZONE', 'Europe/Paris')
 # Countdown for retrying uploading a ticket
 RETRY_DELAY = get_env_setting('RETRY_DELAY', 60)
 
+# Camera type
+CAMERA_TYPE = get_env_setting('CAMERA_TYPE', 'NIKON')
+
 
 
 

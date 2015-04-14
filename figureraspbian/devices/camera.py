@@ -53,11 +53,20 @@ class DSLRCamera(Camera):
             self.camera.exit(self.context)
         im = Image.open(path)
         w, h = im.size
-        left = (w - h) / 2
-        top = 0
-        right = w - left
-        bottom = h
-        im = im.crop((left, top, right, bottom))
+        if settings.CAMERA_TYPE is 'NIKON':
+            left = (w - h) / 2
+            top = 0
+            right = w - left
+            bottom = h
+            im = im.crop((left, top, right, bottom))
+        elif settings.CAMERA_TYPE is 'CANON':
+            left = 0
+            top = (h - w) / 2
+            right = w
+            bottom = h - top
+            im = im.crop((left, top, right, bottom))
+        else:
+            raise Exception("Unknown camera type")
         im = im.resize((512, 512), Image.ANTIALIAS)
         im.save(path)
         return path
