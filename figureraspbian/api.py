@@ -40,11 +40,10 @@ def get_scenario(scenario_id):
         raise ApiException("Failed retrieving scenario")
 
 
-def download(resource, path):
+def download(url, path):
     """
     Download a file from a remote url and copy it to the local path
     """
-    url = "%s/%s" % (settings.API_HOST, resource)
     local_name = url2name(url)
     req = urllib2.Request(url)
     try:
@@ -57,9 +56,7 @@ def download(resource, path):
             f.write(r.read())
         return path_to_file
     except urllib2.HTTPError as e:
-        raise ApiException('Failed downloading resource %s with error %s' % (resource, e.msg))
-
-
+        raise ApiException('Failed downloading resource %s with error %s' % (url, e.msg))
 
 
 def create_random_text_selection(variable, value):

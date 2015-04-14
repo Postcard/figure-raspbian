@@ -52,7 +52,8 @@ class Database(persistent.Persistent):
                 for image_variable in ticket_template['image_variables_objects']:
                     for image in image_variable['items']:
                         api.download(image['media'], settings.IMAGE_DIR)
-                api.download('static/css/ticket.css', settings.RESOURCE_DIR)
+                ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
+                api.download(ticket_css_url, settings.RESOURCE_DIR)
                 self.data[self.env] = {}
                 self.data[self.env]['installation'] = installation
                 self.data[self.env]['scenario'] = scenario
