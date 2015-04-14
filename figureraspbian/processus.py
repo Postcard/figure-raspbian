@@ -26,78 +26,77 @@ if not exists(settings.TICKET_DIR):
 
 
 def run():
-    try:
-        with managed(Database(settings.ENVIRONMENT)) as db:
+    with managed(Database(settings.ENVIRONMENT)) as db:
+        try:
+                # check if installation is not finished
+                end = datetime.strptime(db.installation()['end'], '%Y-%m-%dT%H:%M:%SZ')
+                end = end.replace(tzinfo=pytz.UTC)
 
-            # check if installation is not finished
-            end = datetime.strptime(db.installation()['end'], '%Y-%m-%dT%H:%M:%SZ')
-            end = end.replace(tzinfo=pytz.UTC)
+                if end > datetime.now(pytz.timezone(settings.TIMEZONE)):
+    
+                    # Get installation id
+                    installation = db.installation()['id']
 
-            if end > datetime.now(pytz.timezone(settings.TIMEZONE)):
+                    # Initialize blinking task
+                    blinking_task = None
+                    # Set Output to False
+                    devices.OUTPUT.set(True)
 
-                # Get installation id
-                installation = db.installation()['id']
+                    # Take a snapshot
+                    start = time.time()
+                    snapshot = devices.CAMERA.capture(installation)
+                    end = time.time()
+                    logger.info('Snapshot capture successfully executed in %s seconds', end - start)
+                    # Start blinking
+                    blinking_task = devices.OUTPUT.blink()
 
-                # Initialize blinking task
-                blinking_task = None
-                # Set Output to False
-                devices.OUTPUT.set(True)
+                    # Render ticket
+                    start = time.time()
+                    t = db.ticket_template()
+                    renderer = TicketRenderer(t['html'], t['text_variables_objects'], t['image_variables_objects'],
+                                              t['images_objects'])
+                    html, dt, code, random_text_selections, random_image_selections = \
+                        renderer.render(installation, snapshot)
 
-                # Take a snapshot
-                start = time.time()
-                snapshot = devices.CAMERA.capture(installation)
-                end = time.time()
-                logger.info('Snapshot capture successfully executed in %s seconds', end - start)
-                # Start blinking
-                blinking_task = devices.OUTPUT.blink()
+                    with open(settings.TICKET_HTML_PATH, 'wb+') as ticket:
+                        ticket.write(html)
+                    url = "file://%s" % settings.TICKET_HTML_PATH
+                    phantom_js.get(url)
+                    ticket = join(settings.TICKET_DIR, basename(snapshot))
+                    phantom_js.save_screenshot(ticket)
+                    end = time.time()
+                    logger.info('Ticket successfully rendered in %s seconds', end - start)
 
-                # Render ticket
-                start = time.time()
-                t = db.ticket_template()
-                renderer = TicketRenderer(t['html'], t['text_variables_objects'], t['image_variables_objects'],
-                                          t['images_objects'])
-                html, dt, code, random_text_selections, random_image_selections = \
-                    renderer.render(installation, snapshot)
+                    # Print ticket
+                    start = time.time()
+                    devices.PRINTER.print_ticket(ticket)
+                    end = time.time()
+                    logger.info('Ticket successfully printed in %s seconds', end - start)
 
-                with open(settings.TICKET_HTML_PATH, 'wb+') as ticket:
-                    ticket.write(html)
-                url = "file://%s" % settings.TICKET_HTML_PATH
-                phantom_js.get(url)
-                ticket = join(settings.TICKET_DIR, basename(snapshot))
-                phantom_js.save_screenshot(ticket)
-                end = time.time()
-                logger.info('Ticket successfully rendered in %s seconds', end - start)
+                    # Stop blinking
+                    blinking_task.terminate()
 
-                # Print ticket
-                start = time.time()
-                devices.PRINTER.print_ticket(ticket)
-                end = time.time()
-                logger.info('Ticket successfully printed in %s seconds', end - start)
+                    # Set Output to True
+                    devices.OUTPUT.set(False)
 
-                # Stop blinking
-                blinking_task.terminate()
-
-                # Set Output to True
-                devices.OUTPUT.set(False)
-
-                # add task upload ticket task to the queue
-                tasks.create_ticket.delay(installation, snapshot, ticket, dt, code, random_text_selections,
-                                          random_image_selections)
+                    # add task upload ticket task to the queue
+                    tasks.create_ticket.delay(installation, snapshot, ticket, dt, code, random_text_selections,
+                                              random_image_selections)
+                else:
+                    logger.warning("Current installation has ended. Skipping processus execution")
+        except Exception as e:
+            logger.error(e.message)
+            logger.error(traceback.format_exc())
+        finally:
+            if 'blinking_task' in locals():
+                if blinking_task is not None:
+                    blinking_task.terminate()
+            # update db
+            if internet_on():
+                logger.info("Got internet connection. Updating database...")
+                db.update()
             else:
-                logger.warning("Current installation has ended. Skipping processus execution")
-    except Exception as e:
-        logger.error(e.message)
-        logger.error(traceback.format_exc())
-    finally:
-        if 'blinking_task' in locals():
-            if blinking_task is not None:
-                blinking_task.terminate()
-        # update db
-        if internet_on():
-            logger.info("Got internet connection. Updating database...")
-            db.update()
-        else:
-            logger.warning("No internet connection. Could not update database")
+                logger.warning("No internet connection. Could not update database")
 
 
 
