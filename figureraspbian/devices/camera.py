@@ -52,14 +52,14 @@ class DSLRCamera(Camera):
         finally:
             self.camera.exit(self.context)
         im = Image.open(path)
-        if settings.CAMERA_TYPE is 'NIKON':
+        if settings.CAMERA_TYPE == 'NIKON':
             w, h = im.size
             left = (w - h) / 2
             top = 0
             right = w - left
             bottom = h
             im = im.crop((left, top, right, bottom))
-        elif settings.CAMERA_TYPE is 'CANON':
+        elif settings.CAMERA_TYPE == 'CANON':
             im = im.rotate(90)
             w, h = im.size
             left = 0

@@ -3,6 +3,7 @@
 import re
 import subprocess
 
+
 try:
     from epson_printer import epsonprinter
 except ImportError:

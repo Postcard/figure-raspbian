@@ -10,6 +10,9 @@ import pifacedigitalio
 from . import processus, settings, utils
 from .db import Database, managed
 
+# Log configuration
+settings.log_config()
+
 refresh_listener = False
 
 

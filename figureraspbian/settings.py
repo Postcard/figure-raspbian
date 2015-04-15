@@ -2,6 +2,10 @@
 
 import os
 
+import logging
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
+
 class ImproperlyConfigured(Exception):
     pass
 
@@ -74,6 +78,26 @@ RETRY_DELAY = get_env_setting('RETRY_DELAY', 60)
 
 # Camera type
 CAMERA_TYPE = get_env_setting('CAMERA_TYPE', 'CANON')
+
+
+def log_config():
+    logger.info('RESIN_DEVICE_UUID: %s' % RESIN_DEVICE_UUID)
+    logger.info('ENVIRONMENT: %s' % ENVIRONMENT)
+    logger.info('FIGURE_DIR: %s' % FIGURE_DIR)
+    logger.info('API_HOST: %s' % API_HOST)
+    logger.info('IMAGE_DIR: %s' % IMAGE_DIR)
+    logger.info('SNAPSHOT_DIR: %s' % SNAPSHOT_DIR)
+    logger.info('TICKET_DIR: %s' % TICKET_DIR)
+    logger.info('RESOURCE_DIR: %s' % RESOURCE_DIR)
+    logger.info('PHANTOMJS_PATH: %s' % PHANTOMJS_PATH)
+    logger.info('DB_PATH: %s' % DB_PATH)
+    logger.info('TICKET_CSS_PATH: %s' % TICKET_CSS_PATH)
+    logger.info('TICKET_HTML_PATH: %s' % TICKET_HTML_PATH)
+    logger.info('TRIGGER_PIN: %s' % TRIGGER_PIN)
+    logger.info('ZEO_SOCKET: %s' % TRIGGER_PIN)
+    logger.info('TIMEZONE: %s' % TIMEZONE)
+    logger.info('RETRY_DELAY: %s' % RETRY_DELAY)
+    logger.info('CAMERA_TYPE: %s' % CAMERA_TYPE)
 
 
 
