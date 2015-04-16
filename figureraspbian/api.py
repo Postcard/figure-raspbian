@@ -88,11 +88,17 @@ def create_random_image_selection(variable, value):
 def create_ticket(installation, snapshot, ticket, datetime, code, random_text_selections, random_image_selections):
     url = "%s/tickets/" % settings.API_HOST
     files = {'snapshot': open(snapshot, 'rb'), 'ticket': open(ticket, 'rb')}
+
+    # serialize random selections to be posted as a multipart/form-data
+    def serialize(selections):
+        serialized = ','.join(['%s:%s' % (selection[0], selection[1]['id']) for selection in selections])
+        return serialized
+
     data = {
         'datetime': datetime,
         'code': code,
-        'random_text_selections': random_text_selections,
-        'random_image_selections': random_image_selections,
+        'rdm_text_selections': serialize(random_text_selections),
+        'rdm_image_selections': serialize(random_image_selections),
         'installation': installation
     }
     r = session.post(url, files=files, data=data, timeout=15)
