@@ -26,7 +26,7 @@ if not exists(settings.TICKET_DIR):
 
 
 def run():
-    with managed(Database(settings.ENVIRONMENT)) as db:
+    with managed(Database()) as db:
         try:
                 # check if installation is not finished
                 end = datetime.strptime(db.installation()['end'], '%Y-%m-%dT%H:%M:%SZ')

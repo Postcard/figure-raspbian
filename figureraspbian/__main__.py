@@ -37,7 +37,7 @@ if __name__ == '__main__':
     logger.info("Initializing Figure application...")
 
     # Make sure database is correctly initialized
-    with managed(Database(settings.ENVIRONMENT)) as db:
+    with managed(Database()) as db:
         if utils.internet_on():
             logging.info("Got an internet connection. Initializing database...")
             db.update()

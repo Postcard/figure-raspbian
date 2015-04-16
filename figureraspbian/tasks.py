@@ -12,14 +12,12 @@ from . import settings
 app = Celery('tasks', broker='amqp://guest@localhost//')
 
 @app.task(rate_limit='10/m')
-def create_ticket(installation, snapshot, ticket, datetime, code, random_text_selections, random_image_selections):
+def upload_tickets():
+    with managed(Database()) as db:
     if internet_on():
-        api.create_ticket(installation, snapshot, ticket, datetime, code, random_text_selections,
-                          random_image_selections)
+        while
     else:
-        create_ticket.apply_async(
-            (installation, snapshot, ticket, datetime, code, random_text_selections, random_image_selections),
-            countdown=settings.RETRY_DELAY)
+
 
 
 
