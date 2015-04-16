@@ -58,8 +58,7 @@ class Database(persistent.Persistent):
                 self.data[self.env]['installation'] = installation
                 self.data[self.env]['scenario'] = scenario
                 transaction.commit()
-        except api.ApiException as e:
-            logger.error(e.message)
+        except Exception:
             logger.error(traceback.format_exc())
 
     def is_initialized(self):
