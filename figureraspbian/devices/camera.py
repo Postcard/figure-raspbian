@@ -8,7 +8,7 @@ import time
 from PIL import Image
 
 from .. import settings
-from . import LIGHT
+from . import light
 
 
 try:
@@ -36,13 +36,13 @@ class DSLRCamera(Camera):
     def __init__(self):
         self.context = gp.Context()
         self.camera = gp.Camera()
+        self.light = light.LEDPanelLight()
 
     def capture(self, installation):
         self.camera.init(self.context)
         try:
-
             if settings.FLASH_ON:
-                LIGHT.flash_on()
+                self.light.flash_on()
                 # Let the time for the camera to adjust
                 time.sleep(2)
 
@@ -50,7 +50,7 @@ class DSLRCamera(Camera):
             error, filepath = gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, self.context)
 
             if settings.FLASH_ON:
-                LIGHT.flash_off()
+                self.light.flash_off()
 
             # Create a CameraFile from the FilePath
             error, camerafile = gp.gp_camera_file_get(self.camera, filepath.folder, filepath.name, gp.GP_FILE_TYPE_NORMAL, self.context)
