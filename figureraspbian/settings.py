@@ -79,6 +79,10 @@ RETRY_DELAY = get_env_setting('RETRY_DELAY', 60)
 # Camera type
 CAMERA_TYPE = get_env_setting('CAMERA_TYPE', 'CANON')
 
+# Flash
+flash_on = get_env_setting('FLASH_ON', '0')
+FLASH_ON = True if flash_on == '1' else False
+
 
 def log_config():
     logger.info('RESIN_DEVICE_UUID: %s' % RESIN_DEVICE_UUID)
@@ -98,6 +102,7 @@ def log_config():
     logger.info('TIMEZONE: %s' % TIMEZONE)
     logger.info('RETRY_DELAY: %s' % RETRY_DELAY)
     logger.info('CAMERA_TYPE: %s' % CAMERA_TYPE)
+    logger.info('FLASH_ON: %s' % FLASH_ON)
 
 
 
