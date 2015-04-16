@@ -85,9 +85,9 @@ def create_random_image_selection(variable, value):
         raise ApiException("Failed creating ticket with message %s" % r.text)
 
 
-def create_ticket(installation, snapshot, ticket, datetime, code, random_text_selections, random_image_selections):
+def create_ticket(ticket):
     url = "%s/tickets/" % settings.API_HOST
-    files = {'snapshot': open(snapshot, 'rb'), 'ticket': open(ticket, 'rb')}
+    files = {'snapshot': open(ticket['snapshot'], 'rb'), 'ticket': open(ticket['ticket'], 'rb')}
 
     # serialize random selections to be posted as a multipart/form-data
     def serialize(selections):
@@ -95,11 +95,11 @@ def create_ticket(installation, snapshot, ticket, datetime, code, random_text_se
         return serialized
 
     data = {
-        'datetime': datetime,
-        'code': code,
-        'rdm_text_selections': serialize(random_text_selections),
-        'rdm_image_selections': serialize(random_image_selections),
-        'installation': installation
+        'datetime': ticket['dt'],
+        'code': ticket['code'],
+        'rdm_text_selections': serialize(ticket['random_text_selections']),
+        'rdm_image_selections': serialize(ticket['random_image_selections']),
+        'installation': ticket['installation']
     }
     r = session.post(url, files=files, data=data, timeout=15)
     if r.status_code == 201:

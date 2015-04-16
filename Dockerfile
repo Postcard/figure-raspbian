@@ -61,6 +61,7 @@ RUN pip install ZODB==4.1.0
 RUN pip install ZODB3==3.11.0
 RUN pip install pytz==2015.2
 RUN pip install celery==3.1.17
+RUN pip install Django==1.8
 
 RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.6.zip
 RUN unzip v1.6.zip

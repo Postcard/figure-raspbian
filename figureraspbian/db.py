@@ -93,32 +93,12 @@ class Database(persistent.Persistent):
     def images(self):
         return self.ticket_template()['images_objects']
 
-    def add_ticket(self, installation, snapshot, ticket, dt, code, random_text_selections, random_image_selections):
-        ticket = {
-            'installation': installation,
-            'snapshot': snapshot,
-            'ticket': ticket,
-            'dt': dt,
-            'code': code,
-            'random_text_selections': random_text_selections,
-            'random_image_selections': random_image_selections
-        }
+    def add_ticket(self, ticket):
         if 'tickets' in self.data:
             self.data['tickets'].append(ticket)
         else:
             self.data['tickets'] = [ticket]
-
         transaction.commit()
-
-    def pop_ticket(self):
-        if 'tickets' in self.data:
-            try:
-                ticket = self.data['ticket'].pop(0)
-                transaction.commit()
-                return ticket
-            except IndexError:
-                return None
-        return None
 
     def close(self):
         self.db.close()
