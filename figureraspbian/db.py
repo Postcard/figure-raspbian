@@ -93,13 +93,6 @@ class Database(persistent.Persistent):
     def images(self):
         return self.ticket_template()['images_objects']
 
-    def add_ticket(self, ticket):
-        if 'tickets' in self.data:
-            self.data['tickets'].append(ticket)
-        else:
-            self.data['tickets'] = [ticket]
-        transaction.commit()
-
     def close(self):
         self.db.close()
 

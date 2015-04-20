@@ -11,12 +11,10 @@ logger = logging.getLogger(__name__)
 import traceback
 
 from selenium import webdriver
-import tasks
 
 from .ticketrenderer import TicketRenderer
-from . import devices, settings
+from . import devices, settings, tasks
 from .db import Database, managed
-from .utils import internet_on
 
 
 phantom_js = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
@@ -91,7 +89,7 @@ def run():
                     'random_text_selections': random_text_selections,
                     'random_image_selections': random_image_selections
                 }
-                db.add_ticket(ticket)
+                tasks.create_ticket.delay(ticket)
             else:
                 logger.warning("Current installation has ended. Skipping processus execution")
         except Exception as e:
@@ -101,10 +99,6 @@ def run():
             if 'blinking_task' in locals():
                 if blinking_task is not None:
                     blinking_task.terminate()
-            # update db
-            if internet_on():
-                logger.info("Got internet connection. Updating database...")
-                db.update()
             else:
                 logger.warning("No internet connection. Could not update database")
 

@@ -34,10 +34,6 @@ app.conf.update(
         'upload-ticket-every-minute': {
             'task': 'figureraspbian.tasks.upload_tickets',
             'schedule': timedelta(seconds=60)
-        },
-        'update-db-every-minute': {
-            'task': 'figureraspbian.tasks.update_db',
-            'schedule': timedelta(seconds=60)
         }
     },
     CELERY_TIMEZONE='UTC'
@@ -61,22 +57,16 @@ def single_instance_task(timeout):
     return task_exc
 
 
-@app.task
-@single_instance_task(60*10)
-def upload_tickets():
+
+@app.task(rate_limit='10/m')
+def create_ticket(ticket):
     if internet_on():
-        with managed(Database()) as db:
-            while True:
-                if 'ticket' in db.data:
-                    try:
-                        ticket = db.data['ticket'].pop(0)
-                        api.create_ticket(ticket)
-                        transaction.commit()
-                    except (IndexError, api.ApiException, Timeout, ConnectionError) as e:
-                        logger.error(e)
-                        break
-                else:
-                    break
+        api.create_ticket(ticket)
+    else:
+        create_ticket.apply_async(
+            ticket,
+            countdown=settings.RETRY_DELAY)
+
 
 @app.task
 def update_db():
