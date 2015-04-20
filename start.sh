@@ -6,6 +6,9 @@ modprobe i2c-dev
 #Check local variables are set
 locale
 
+# build directory tree in data folder
+mkdir -p /data && cd /data && mkdir -p db images snapshots tickets rabbitmq
+
 # Mount USB storage
 mount /dev/sda1 /mnt && chmod 775 /mnt
 

@@ -71,7 +71,6 @@ ADD figureraspbian /figure/figureraspbian
 WORKDIR /figure
 RUN mkdir -p media/images media/snapshots media/tickets resources
 RUN mkdir -p /var/log /var/run
-RUN mkdir -p /data && cd /data && mkdir -p db images snapshots tickets rabbitmq
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
