@@ -2,34 +2,74 @@
 
 from __future__ import absolute_import
 
+import functools
+from datetime import timedelta
+import logging
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
+
+
+from django.conf import settings
+settings.configure(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache'
+        }
+    }
+)
+from django.core.cache import cache
 from celery import Celery
+import transaction
+from requests.exceptions import Timeout, ConnectionError
+
+from .utils import internet_on
+from .db import Database, managed
 
 from . import api
-from .utils import internet_on
-from . import settings
-
 
 app = Celery('tasks', broker='amqp://guest@localhost//')
 
-@app.task(rate_limit='30/m')
-def create_ticket(installation, snapshot, ticket, datetime, code, random_text_selections, random_image_selections):
+app.conf.update(
+    CELERYBEAT_SCHEDULE={
+        'upload-ticket-every-minute': {
+            'task': 'figureraspbian.tasks.upload_tickets',
+            'schedule': timedelta(seconds=60)
+        }
+    },
+    CELERY_TIMEZONE='UTC'
+)
+
+
+def single_instance_task(timeout):
+    def task_exc(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            lock_id = "celery-single-instance-" + func.__name__
+            print lock_id
+            acquire_lock = lambda: cache.add(lock_id, "true", timeout)
+            release_lock = lambda: cache.delete(lock_id)
+            if acquire_lock():
+                try:
+                    func(*args, **kwargs)
+                finally:
+                    release_lock()
+        return wrapper
+    return task_exc
+
+
+
+@app.task(rate_limit='10/m')
+def create_ticket(ticket):
     if internet_on():
-        # TODO handle writing nested field relation in TicketSerializer in the API
-        random_text_selection_ids = []
-        for selection in random_text_selections:
-            created = api.create_random_text_selection(selection[0], selection[1]['id'])
-            random_text_selection_ids.append(created)
-        random_image_selection_ids = []
-        for selection in random_image_selections:
-            created = api.create_random_image_selection(selection[0], selection[1]['id'])
-            random_image_selection_ids.append(created)
-        api.create_ticket(installation, snapshot, ticket, datetime, code, random_text_selection_ids,
-                          random_image_selection_ids)
+        api.create_ticket(ticket)
     else:
         create_ticket.apply_async(
-            (installation, snapshot, ticket, datetime, code, random_text_selections, random_image_selections),
+            ticket,
             countdown=settings.RETRY_DELAY)
 
 
-
-
+@app.task
+def update_db():
+    if internet_on():
+        with managed(Database()) as db:
+            db.update()

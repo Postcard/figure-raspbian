@@ -28,11 +28,10 @@ def managed(database):
 
 class Database(persistent.Persistent):
 
-    def __init__(self, env):
+    def __init__(self):
         storage = ClientStorage.ClientStorage(settings.ZEO_SOCKET)
         self.db = DB(storage)
         self.data = None
-        self.env = env
 
     def open(self):
         self.data = self.db.open().root()
@@ -54,15 +53,14 @@ class Database(persistent.Persistent):
                         api.download(image['media'], settings.IMAGE_DIR)
                 ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
                 api.download(ticket_css_url, settings.RESOURCE_DIR)
-                self.data[self.env] = {}
-                self.data[self.env]['installation'] = installation
-                self.data[self.env]['scenario'] = scenario
+                self.data['installation'] = installation
+                self.data['scenario'] = scenario
                 transaction.commit()
         except Exception:
             logger.error(traceback.format_exc())
 
     def is_initialized(self):
-        return self.env in self.data
+        return 'installation' in self.data
 
     def check_initialized(func):
         def check(self):
@@ -73,11 +71,11 @@ class Database(persistent.Persistent):
 
     @check_initialized
     def installation(self):
-        return self.data[self.env]['installation']
+        return self.data['installation']
 
     @check_initialized
     def scenario(self):
-        return self.data[self.env]['scenario']
+        return self.data['scenario']
 
     @check_initialized
     def ticket_template(self):

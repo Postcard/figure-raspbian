@@ -143,9 +143,10 @@ class TestApi(unittest.TestCase):
         ticket_path = snapshot_path # for testing purposes
         code = '8HDT54D7'
         dt = datetime.now(pytz.timezone(settings.TIMEZONE))
-        random_text_selections = ['1']
-        random_image_selections = ['1']
-        created = api.create_ticket(snapshot_path, ticket_path, dt, code,
+        random_text_selections = [('1', {'id': '1', 'value': 'toto'})]
+        random_image_selections = []
+        installation = '1'
+        created = api.create_ticket(installation, snapshot_path, ticket_path, dt, code,
                                     random_text_selections, random_image_selections)
         self.assertIsNotNone(created)
 

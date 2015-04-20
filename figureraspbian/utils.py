@@ -7,8 +7,6 @@ from urlparse import urlsplit
 import requests
 from requests.exceptions import Timeout, ConnectionError
 
-
-
 def internet_on():
     """
     Check if our device has access to the internet

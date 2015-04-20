@@ -61,6 +61,7 @@ RUN pip install ZODB==4.1.0
 RUN pip install ZODB3==3.11.0
 RUN pip install pytz==2015.2
 RUN pip install celery==3.1.17
+RUN pip install Django==1.8
 
 RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.6.zip
 RUN unzip v1.6.zip
@@ -68,13 +69,13 @@ RUN cd python-epson-printer-1.6 && python setup.py install
 
 ADD figureraspbian /figure/figureraspbian
 WORKDIR /figure
-RUN mkdir -p media/images media/snapshots media/tickets resources 
-RUN mkdir -p /var
-RUN cd /var && mkdir -p run log data images snapshots tickets
+RUN mkdir -p media/images media/snapshots media/tickets resources
+RUN mkdir -p /var/log /var/run /var/db /var/images /var/snapshots /var/tickets /var/rabbitmq
+
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
-ENV DB_PATH /var/data/db.fs
+ENV DB_PATH /var/db/db.fs
 ENV FIGURE_DIR /figure/figureraspbian
 ENV IMAGE_DIR /var/images
 ENV PHANTOMJS_PATH /phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
