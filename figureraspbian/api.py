@@ -24,7 +24,7 @@ session.headers.update({
 
 def get_installation():
     url = "%s/resiniodevices/%s/" % (settings.API_HOST, settings.RESIN_DEVICE_UUID)
-    r = session.get(url=url, timeout=6)
+    r = session.get(url=url, timeout=10)
     if r.status_code == 200:
         return json.loads(r.text)['active_installation']
     else:
@@ -33,7 +33,7 @@ def get_installation():
 
 def get_scenario(scenario_id):
     url = "%s/scenarios/%s/?fields=name,ticket_template" % (settings.API_HOST, scenario_id)
-    r = session.get(url=url, timeout=3)
+    r = session.get(url=url, timeout=10)
     if r.status_code == 200:
         return json.loads(r.text)
     else:
@@ -47,7 +47,7 @@ def download(url, path):
     local_name = url2name(url)
     req = urllib2.Request(url)
     try:
-        r = urllib2.urlopen(req)
+        r = urllib2.urlopen(req, timeout=10)
         if r.url != url:
             # if we were redirected, the real file name we take from the final URL
             local_name = url2name(r.url)
@@ -57,32 +57,6 @@ def download(url, path):
         return path_to_file
     except urllib2.HTTPError as e:
         raise ApiException('Failed downloading resource %s with error %s' % (url, e.msg))
-
-
-def create_random_text_selection(variable, value):
-    url = "%s/randomtextselections/" % settings.API_HOST
-    data = {
-        'variable': variable,
-        'value': value
-    }
-    r = session.post(url, data=data, timeout=10)
-    if r.status_code == 201:
-        return json.loads(r.text)['id']
-    else:
-        raise ApiException("Failed creating ticket with message %s" % r.text)
-
-
-def create_random_image_selection(variable, value):
-    url = "%s/randomimageselections/" % settings.API_HOST
-    data = {
-        'variable': variable,
-        'value': value
-    }
-    r = session.post(url, data=data, timeout=10)
-    if r.status_code == 201:
-        return json.loads(r.text)['id']
-    else:
-        raise ApiException("Failed creating ticket with message %s" % r.text)
 
 
 def create_ticket(ticket):
@@ -101,7 +75,7 @@ def create_ticket(ticket):
         'rdm_image_selections': serialize(ticket['random_image_selections']),
         'installation': ticket['installation']
     }
-    r = session.post(url, files=files, data=data, timeout=15)
+    r = session.post(url, files=files, data=data, timeout=20)
     if r.status_code == 201:
         return json.loads(r.text)['id']
     else:
