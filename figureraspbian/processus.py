@@ -99,8 +99,6 @@ def run():
             if 'blinking_task' in locals():
                 if blinking_task is not None:
                     blinking_task.terminate()
-            else:
-                logger.warning("No internet connection. Could not update database")
 
 
 

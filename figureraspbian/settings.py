@@ -83,6 +83,9 @@ CAMERA_TYPE = get_env_setting('CAMERA_TYPE', 'CANON')
 flash_on = get_env_setting('FLASH_ON', '0')
 FLASH_ON = True if flash_on == '1' else False
 
+# Ping adress
+PING_ADDRESS = get_env_setting('PING_ADDRESS', 'https://api.figuredevices.com')
+
 
 def log_config():
     logger.info('RESIN_DEVICE_UUID: %s' % RESIN_DEVICE_UUID)

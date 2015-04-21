@@ -19,8 +19,6 @@ settings.configure(
 )
 from django.core.cache import cache
 from celery import Celery
-import transaction
-from requests.exceptions import Timeout, ConnectionError
 
 from .utils import internet_on
 from .db import Database, managed

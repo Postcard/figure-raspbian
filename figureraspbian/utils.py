@@ -7,13 +7,15 @@ from urlparse import urlsplit
 import requests
 from requests.exceptions import Timeout, ConnectionError
 
+from . import settings
+
+
 def internet_on():
     """
     Check if our device has access to the internet
-    74.125.228.100 is one of the Google IP address
     """
     try:
-        requests.get('http://74.125.228.100', timeout=1)
+        requests.get(settings.PING_ADDRESS, timeout=1)
         return True
     except Timeout:
         pass
