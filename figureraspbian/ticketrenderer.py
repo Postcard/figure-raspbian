@@ -5,9 +5,6 @@ import time
 import os
 from datetime import datetime
 import pytz
-import logging
-logging.basicConfig(level='INFO')
-logger = logging.getLogger(__name__)
 
 from hashids import Hashids
 from jinja2 import Environment
@@ -103,8 +100,7 @@ class TicketRenderer(object):
         context['code'] = code
         for im in self.images:
             context['image_%s' % im['id']] = 'file://%s/%s' % (settings.IMAGE_DIR, os.path.basename(im['media']))
-        logger.info("Decoding html %s" % self.html)
-        template = JINJA_ENV.from_string(self.html.decode('utf-8'))
+        template = JINJA_ENV.from_string(self.html)
         rendered_html = template.render(context)
         rendered_html = with_base_html(rendered_html)
         return rendered_html, now, code, random_text_selections, random_image_selections

@@ -9,6 +9,7 @@ import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 import traceback
+import codecs
 
 from selenium import webdriver
 
@@ -58,7 +59,7 @@ def run():
                 html, dt, code, random_text_selections, random_image_selections = \
                     renderer.render(installation, snapshot)
 
-                with open(settings.TICKET_HTML_PATH, 'wb+') as ticket:
+                with codecs.open(settings.TICKET_HTML_PATH, 'wb+', 'utf-8') as ticket:
                     ticket.write(html)
                 url = "file://%s" % settings.TICKET_HTML_PATH
                 phantom_js.get(url)

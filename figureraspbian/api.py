@@ -26,6 +26,7 @@ def get_installation():
     url = "%s/resiniodevices/%s/" % (settings.API_HOST, settings.RESIN_DEVICE_UUID)
     r = session.get(url=url, timeout=10)
     if r.status_code == 200:
+        r.encoding = 'utf-8'
         return json.loads(r.text)['active_installation']
     else:
         raise ApiException("Failed retrieving installation")
@@ -35,6 +36,7 @@ def get_scenario(scenario_id):
     url = "%s/scenarios/%s/?fields=name,ticket_template" % (settings.API_HOST, scenario_id)
     r = session.get(url=url, timeout=10)
     if r.status_code == 200:
+        r.encoding = 'utf-8'
         return json.loads(r.text)
     else:
         raise ApiException("Failed retrieving scenario")
@@ -77,6 +79,7 @@ def create_ticket(ticket):
     }
     r = session.post(url, files=files, data=data, timeout=20)
     if r.status_code == 201:
+        r.encoding = 'utf-8'
         return json.loads(r.text)['id']
     else:
         raise ApiException("Failed creating ticket with message %s" % r.text)

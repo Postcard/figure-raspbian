@@ -36,11 +36,6 @@ if __name__ == '__main__':
 
     logger.info("Initializing Figure application...")
 
-    logger.info("Checking utf8 configuration...")
-    decoded = "é".decode('utf-8')
-    logger.info("My awesome utf-8 character is %s" % decoded)
-
-
     # Make sure database is correctly initialized
     with managed(Database()) as db:
         if utils.internet_on():
