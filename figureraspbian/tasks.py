@@ -29,8 +29,8 @@ app = Celery('tasks', broker='amqp://guest@localhost//')
 
 app.conf.update(
     CELERYBEAT_SCHEDULE={
-        'upload-ticket-every-minute': {
-            'task': 'figureraspbian.tasks.upload_tickets',
+        'update-db-every-minute': {
+            'task': 'figureraspbian.tasks.update_db',
             'schedule': timedelta(seconds=60)
         }
     },
