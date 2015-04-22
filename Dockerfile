@@ -89,6 +89,7 @@ ENV ZEO_SOCKET /var/run/zeo.sock
 RUN pip install supervisor
 
 ADD ./start.sh /start.sh
+ADD ./print_utf8.py /figure/print_utf8.py
 RUN chmod 755 /start.sh
 
 ADD ./supervisord.conf /etc/supervisord.conf

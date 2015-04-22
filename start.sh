@@ -4,7 +4,7 @@
 modprobe i2c-dev
 
 #Check local variables are set
-locale
+python -m print_utf8
 
 # Mount USB storage
 mount /dev/sda1 /mnt && chmod 775 /mnt
