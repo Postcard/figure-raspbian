@@ -9,7 +9,9 @@ from .ticketrenderer import TicketRenderer
 from .utils import url2name
 from .db import Database, NotInitializedError, managed
 from . import api, settings, processus
-from mock import MagicMock
+from mock import MagicMock, Mock
+import transaction
+import urllib2
 
 
 class TestTicketRenderer(unittest.TestCase):
@@ -155,173 +157,170 @@ class TestDatabase(unittest.TestCase):
 
     def setUp(self):
         self.mock_installation = {
-            "scenario_obj": {
-                "id": 1,
+            "scenario": {
+                "name": "Marabouts",
+                "ticket_template": {
+                    "html": "<html></html>",
+                    "text_variables": [
+                        {
+                            "owner": "test@figuredevices.com",
+                            "id": 1,
+                            "name": "Profession",
+                            "items": [
+                                {
+                                    "owner": "test@figuredevices.com",
+                                    "id": 1,
+                                    "text": "Professeur",
+                                    "variable": 1
+                                },
+                                {
+                                    "owner": "test@figuredevices.com",
+                                    "id": 2,
+                                    "text": "Monsieur",
+                                    "variable": 1
+                                }
+                            ]
+                        }
+                    ],
+                    "image_variables": [
+                        {
+                            "owner": "test@figuredevices.com",
+                            "id": 1,
+                            "name": "animaux",
+                            "items": [
+                                {
+                                    "id": 2,
+                                    "media": "http://api-integration.figuredevices.com/media/images/1427817820717.jpg",
+                                    "variable": 1
+                                }
+                            ]
+                        }
+                    ],
+                    "images": [
+                        {
+                            "id": 2,
+                            "media": "http://api-integration.figuredevices.com/media/images/1427817820718.jpg",
+                            "variable": None
+                        }
+                    ]
+                }
             },
             "place": None,
             "start": "2016-07-01T12:00:00Z",
-            "end": "2016-07-02T12:00:00Z"
+            "end": "2016-07-02T12:00:00Z",
+            "id": "1"
         }
-
-        self.mock_scenario = {
-            "name": "Marabouts",
-            "ticket_template": {
-                "html": "<html></html>",
-                "text_variables_objects": [
-                    {
-                        "owner": "test@figuredevices.com",
-                        "id": 1,
-                        "name": "Profession",
-                        "items": [
-                            {
-                                "owner": "test@figuredevices.com",
-                                "id": 1,
-                                "text": "Professeur",
-                                "variable": 1
-                            },
-                            {
-                                "owner": "test@figuredevices.com",
-                                "id": 2,
-                                "text": "Monsieur",
-                                "variable": 1
-                            }
-                        ]
-                    }
-                ],
-                "image_variables_objects": [
-                    {
-                        "owner": "test@figuredevices.com",
-                        "id": 1,
-                        "name": "animaux",
-                        "items": [
-                            {
-                                "id": 2,
-                                "media": "http://api-integration.figuredevices.com/media/images/1427817820717.jpg",
-                                "variable": 1
-                            }
-                        ]
-                    }
-                ],
-                "images_objects": [
-                    {
-                        "id": 2,
-                        "media": "http://api-integration.figuredevices.com/media/images/1427817820718.jpg",
-                        "variable": None
-                    }
-                ]
-            }
-        }
+        with managed(Database()) as db:
+            db.dbroot.clear()
+            transaction.commit()
 
     def test_initialization(self):
         """
-        Database should not be initialized when first created
+        Database should be initialized when first created
         """
-        database = Database('development')
-        with managed(database) as db:
-            self.assertFalse(db.is_initialized())
-            db.clear()
-
-    def test_raise_not_initialized_error(self):
-        """
-        Database should raise exception when not initialized and trying to access data
-        """
-        database = Database('development')
-        with managed(database) as db:
-            with self.assertRaises(NotInitializedError):
-                db.installation()
-                db.clear()
-
-    def test_update(self):
-        """
-        Database should update
-        """
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_scenario = MagicMock(return_value=self.mock_scenario)
         api.download = MagicMock()
-        database = Database('development')
-        with managed(database) as db:
-            db.update()
-            api.get_scenario.assert_called_with(1)
-            self.assertTrue(db.is_initialized())
-            db.clear()
-
-    def test_installation(self):
-        """
-        Database should return installation
-        """
         api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_scenario = MagicMock(return_value=self.mock_scenario)
-        api.download = MagicMock()
-        database = Database('development')
+        database = Database()
         with managed(database) as db:
-            db.update()
-            self.assertIsNotNone(db.installation())
-            db.clear()
+            self.assertIn('installation', db.dbroot)
+            installation = db.dbroot['installation']
+            self.assertEqual(installation.id, "1")
+            self.assertIsNotNone(installation.start)
+            self.assertIsNotNone(installation.end)
+            self.assertEqual(installation.scenario['name'], 'Marabouts')
+            self.assertIsNotNone(installation.ticket_template)
+            self.assertIn('tickets', db.dbroot)
 
-    def test_scenario(self):
+    def test_get_installation_return_none(self):
         """
-        Database should return scenario
+        Installation should not be initialized if api return None
         """
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_scenario = MagicMock(return_value=self.mock_scenario)
-        api.download = MagicMock()
-        database = Database('development')
+        api.get_installation = MagicMock(return_value=None)
+        database = Database()
         with managed(database) as db:
-            db.update()
-            self.assertIsNotNone(db.scenario())
-            db.clear()
+            self.assertIn('installation', db.dbroot)
+            self.assertIsNone(db.dbroot['installation'].id)
 
-    def test_ticket_template(self):
+    def test_get_installation_raise_exception(self):
         """
-        Database should return ticket template
+        Installation should not be initialized if api raise Exception
         """
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_scenario = MagicMock(return_value=self.mock_scenario)
-        api.download = MagicMock()
-        database = Database('development')
+        api.get_installation = Mock(side_effect=api.ApiException)
+        database = Database()
         with managed(database) as db:
-            db.update()
-            self.assertIsNotNone(db.ticket_template())
-            db.clear()
+            self.assertIn('installation', db.dbroot)
+            self.assertIsNone(db.dbroot['installation'].id)
 
-    def test_text_variables(self):
+    def test_download_raise_exception(self):
         """
-        Database should return text variables
+        Transaction should abort
         """
+        api.download = Mock(side_effect=urllib2.HTTPError('', '', '', '', None))
         api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_scenario = MagicMock(return_value=self.mock_scenario)
-        api.download = MagicMock()
-        database = Database('development')
+        database = Database()
         with managed(database) as db:
-            db.update()
-            self.assertTrue(len(db.text_variables()), 1)
-            db.clear()
+            self.assertIn('installation', db.dbroot)
+            self.assertIsNone(db.dbroot['installation'].id)
 
-    def test_image_variables(self):
+    def test_update_installation(self):
         """
-        Database should return image variables
+        Installation should update after initialization
         """
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_scenario = MagicMock(return_value=self.mock_scenario)
         api.download = MagicMock()
-        database = Database('development')
-        with managed(database)as db:
-            db.update()
-            self.assertTrue(len(db.image_variables()), 1)
-            db.clear()
-
-    def test_images(self):
-        """
-        Database should return images
-        """
         api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_scenario = MagicMock(return_value=self.mock_scenario)
-        api.download = MagicMock()
-        database = Database('development')
+        database = Database()
         with managed(database) as db:
-            db.update()
-            self.assertTrue(len(db.images()), 1)
-            db.clear()
+            api.get_installation = MagicMock(return_value=None)
+            db.dbroot['installation'].update()
+            self.assertIsNone(db.dbroot['installation'].id)
+
+    def test_add_ticket(self):
+        """
+        TicketsGallery should add a ticket
+        """
+        api.download = MagicMock()
+        api.get_installation = MagicMock(return_value=self.mock_installation)
+        database = Database()
+        with managed(database) as db:
+            self.assertEqual(db.dbroot['tickets'].tickets_count(), 0)
+            now = datetime.now(pytz.timezone(settings.TIMEZONE))
+            ticket = {
+                'installation': '1',
+                'snapshot': '/path/to/snapshot',
+                'ticket': 'path/to/ticket',
+                'dt': now,
+                'code': 'JHUYG',
+                'random_text_selections': [],
+                'random_image_selections': [],
+            }
+            db.dbroot['tickets'].add_ticket(ticket)
+            self.assertEqual(db.dbroot['tickets'].tickets_count(), 1)
+            self.assertEqual(db.dbroot['tickets']._tickets[now], ticket)
+
+    def test_upload_ticket(self):
+        api.download = MagicMock()
+        api.get_installation = MagicMock(return_value=self.mock_installation)
+        database = Database()
+        with managed(database) as db:
+            now = datetime.now(pytz.timezone(settings.TIMEZONE))
+            ticket = {
+                'installation': '1',
+                'snapshot': '/path/to/snapshot',
+                'ticket': 'path/to/ticket',
+                'dt': now,
+                'code': 'JHUYG',
+                'random_text_selections': [],
+                'random_image_selections': [],
+            }
+            db.dbroot['tickets'].add_ticket(ticket)
+            api.create_ticket = MagicMock(return_value=ticket)
+            db.dbroot['tickets'].upload_tickets()
+            api.create_ticket.assert_called_with(ticket)
+            self.assertEqual(db.dbroot['tickets'].last_upload, now)
+            api.create_ticket = MagicMock(return_value=ticket)
+            db.dbroot['tickets'].upload_tickets()
+            self.assertFalse(api.create_ticket.called)
+            self.assertEqual(db.dbroot['tickets'].last_upload, now)
 
 
 class TestProcessus(unittest.TestCase):

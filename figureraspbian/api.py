@@ -31,34 +31,20 @@ def get_installation():
     else:
         raise ApiException("Failed retrieving installation")
 
-
-def get_scenario(scenario_id):
-    url = "%s/scenarios/%s/?fields=name,ticket_template" % (settings.API_HOST, scenario_id)
-    r = session.get(url=url, timeout=10)
-    if r.status_code == 200:
-        r.encoding = 'utf-8'
-        return json.loads(r.text)
-    else:
-        raise ApiException("Failed retrieving scenario")
-
-
 def download(url, path):
     """
     Download a file from a remote url and copy it to the local path
     """
     local_name = url2name(url)
     req = urllib2.Request(url)
-    try:
-        r = urllib2.urlopen(req, timeout=10)
-        if r.url != url:
-            # if we were redirected, the real file name we take from the final URL
-            local_name = url2name(r.url)
-        path_to_file = join(path, local_name)
-        with open(path_to_file, 'wb+') as f:
-            f.write(r.read())
-        return path_to_file
-    except urllib2.HTTPError as e:
-        raise ApiException('Failed downloading resource %s with error %s' % (url, e.msg))
+    r = urllib2.urlopen(req, timeout=10)
+    if r.url != url:
+        # if we were redirected, the real file name we take from the final URL
+        local_name = url2name(r.url)
+    path_to_file = join(path, local_name)
+    with open(path_to_file, 'wb+') as f:
+        f.write(r.read())
+    return path_to_file
 
 
 def create_ticket(ticket):
