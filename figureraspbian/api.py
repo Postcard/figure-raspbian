@@ -31,6 +31,17 @@ def get_installation():
     else:
         raise ApiException("Failed retrieving installation")
 
+
+def get_codes(installation):
+    url = "%s/installations/%s/codes/" % (settings.API_HOST, installation)
+    r = session.get(url=url, timeout=20)
+    if r.status_code == 200:
+        r.encoding = 'utf-8'
+        return json.loads(r.text)['codes']
+    else:
+        raise ApiException('Fail retrieving codes')
+
+
 def download(url, path):
     """
     Download a file from a remote url and copy it to the local path

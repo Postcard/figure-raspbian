@@ -3,6 +3,7 @@
 from os.path import basename
 import urllib
 from urlparse import urlsplit
+import random
 
 import requests
 from requests.exceptions import Timeout, ConnectionError
@@ -30,5 +31,3 @@ def url2name(url):
     http://api.figuredevices.com/static/css/ticket.css => ticket.css
     """
     return basename(urllib.unquote(urlsplit(url)[2]))
-
-

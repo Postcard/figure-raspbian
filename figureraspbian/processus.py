@@ -61,7 +61,7 @@ def run():
                                               ticket_template['image_variables_objects'],
                                               ticket_template['images_objects'])
                     html, dt, code, random_text_selections, random_image_selections = \
-                        renderer.render(installation.id, snapshot)
+                        renderer.render(snapshot, installation['codes'].pop())
 
                     with open(settings.TICKET_HTML_PATH, 'wb+') as ticket:
                         ticket.write(html)

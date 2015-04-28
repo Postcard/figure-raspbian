@@ -5,7 +5,6 @@ gphoto2==0.11.0
 pifacecommon==4.1.2
 pifacedigitalio==3.0.5
 jinja2==2.7.3
-hashids==1.0.3
 persistent==4.0.8
 ZODB==4.1.0
 ZODB3==3.11.0

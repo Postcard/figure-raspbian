@@ -59,6 +59,7 @@ class Installation(persistent.Persistent):
 
     def __init__(self):
         self.id = None
+        self.codes = None
         self.start = None
         self.end = None
         self.scenario = None
@@ -69,6 +70,7 @@ class Installation(persistent.Persistent):
         try:
             installation = api.get_installation()
             if installation is not None:
+                is_new = self.id != installation['id']
                 self.start = installation['start']
                 self.end = installation['end']
                 self.id = installation['id']
@@ -80,9 +82,12 @@ class Installation(persistent.Persistent):
                     for image in image_variable['items']:
                         api.download(image['media'], settings.IMAGE_DIR)
                 ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
+                if is_new:
+                    self.codes = api.get_codes(self.id)
                 api.download(ticket_css_url, settings.RESOURCE_DIR)
             else:
                 self.id = None
+                self.codes = None
                 self.start = None
                 self.end = None
                 self.scenario = None
@@ -144,9 +149,6 @@ class TicketsGallery(persistent.Persistent):
                     # We might have loose internet connection, stop trying to upload
                     logger.warning('Could not upload tickets')
                     break
-
-    def tickets_count(self):
-        return len(self._tickets)
 
 
 

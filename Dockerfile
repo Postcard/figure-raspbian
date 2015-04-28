@@ -55,7 +55,6 @@ RUN pip install selenium==2.44.0
 RUN pip install pifacecommon==4.1.2
 RUN pip install pifacedigitalio==3.0.5
 RUN pip install jinja2==2.7.3
-RUN pip install hashids==1.0.3
 RUN pip install persistent==4.0.8
 RUN pip install ZODB==4.1.0
 RUN pip install ZODB3==3.11.0

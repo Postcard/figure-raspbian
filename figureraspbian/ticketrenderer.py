@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import random
-import time
 import os
 from datetime import datetime
 import pytz
 
-from hashids import Hashids
 from jinja2 import Environment
 
 from . import settings
@@ -20,18 +18,23 @@ def with_base_html(rendered):
     add html boilerplate to rendered template
     """
     base = u"""<!doctype html>
-            <html class="figure figure-ticket-container">
-                <head>
-                    <meta charset="utf-8">
-                    <link rel="stylesheet" href="file://{ticket_css}">
-                    </head>
-                <body class="figure figure-ticket-container">
-                    <div class="figure figure-ticket">
-                    {content}
-                    </div>
-                </body>
-            </html>
-        """
+<html class="figure figure-ticket-container">
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="file://{ticket_css}">
+    </head>
+    <body class="figure figure-ticket-container">
+        <div class="figure figure-ticket">
+            {content}
+            <small>
+                Tapez votre code sur figuredevices.com
+                <span style='border: 1px solid #000; padding:3px 6px; margin-left: 5px;'>
+                    {{{{code}}}}
+                </span>
+            </small>
+        </div>
+    </body>
+</html>"""
     return base.format(content=rendered, ticket_css=settings.TICKET_CSS_PATH)
 
 
@@ -75,34 +78,21 @@ class TicketRenderer(object):
                                    image_variable in self.image_variables if len(image_variable['items']) > 0]
         return random_text_selections, random_image_selections
 
-    def generics(self, installation):
-        """
-        Calculate generics variables like datetime, code. These variables are not randomly calculated but
-        deterministically calculated
-        :return:
-        """
-        now = datetime.now(pytz.timezone(settings.TIMEZONE))
-        epoch = int(time.mktime(now.timetuple()) - FIGURE_TIME_ORIGIN)
-        hashids = Hashids()
-        code = hashids.encode(epoch, int(installation)).upper()
-        return now, code
-
-    def render(self, installation, snapshot):
+    def render(self, snapshot, code):
         context = {'snapshot': 'file://%s' % snapshot}
         (random_text_selections, random_image_selections) = self.random_selection()
         for (text_variable_id, item) in random_text_selections:
-            context['textvariable_%s' % text_variable_id] = item['text']
+             context['textvariable_%s' % text_variable_id] = item['text']
         for (image_variable_id, item) in random_image_selections:
             context['imagevariable_%s' % image_variable_id] = 'file://%s/%s' % (settings.IMAGE_DIR,
                                                                                 os.path.basename(item['media']))
-        now, code = self.generics(installation)
+        now = datetime.now(pytz.timezone(settings.TIMEZONE))
         context['datetime'] = now
         context['code'] = code
         for im in self.images:
             context['image_%s' % im['id']] = 'file://%s/%s' % (settings.IMAGE_DIR, os.path.basename(im['media']))
-        template = JINJA_ENV.from_string(self.html)
+        template = JINJA_ENV.from_string(with_base_html(self.html))
         rendered_html = template.render(context)
-        rendered_html = with_base_html(rendered_html)
         return rendered_html, now, code, random_text_selections, random_image_selections
 
 
