@@ -163,9 +163,10 @@ class TicketsGallery(persistent.Persistent):
                             # No ConflictError exception raised, so break
                             # out of the enclosing while loop.
                             break
-                except (api.ApiException, Timeout, ConnectionError):
+                except (api.ApiException, Timeout, ConnectionError) as e:
                     # We might have loose internet connection, stop trying to upload
-                    logger.warning('Could not upload tickets')
+                    logger.error(e.message)
+                    logger.error(traceback.format_exc())
                     break
 
 
