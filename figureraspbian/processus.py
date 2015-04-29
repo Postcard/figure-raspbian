@@ -57,9 +57,9 @@ def run():
                     # Render ticket
                     start = time.time()
                     renderer = TicketRenderer(ticket_template['html'],
-                                              ticket_template['text_variables_objects'],
-                                              ticket_template['image_variables_objects'],
-                                              ticket_template['images_objects'])
+                                              ticket_template['text_variables'],
+                                              ticket_template['image_variables'],
+                                              ticket_template['images'])
                     html, dt, code, random_text_selections, random_image_selections = \
                         renderer.render(snapshot, installation['codes'].pop())
 
