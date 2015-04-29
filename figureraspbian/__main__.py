@@ -36,16 +36,10 @@ if __name__ == '__main__':
 
     logger.info("Initializing Figure application...")
 
-    # Make sure database is correctly initialized
-    with managed(Database()) as db:
-        if utils.internet_on():
-            logging.info("Got an internet connection. Initializing database...")
-            db.update()
-        elif db.is_initialized():
-            logging.info("No internet connection but database was already initialized during a previous runtime")
-            pass
-        else:
-            logging.warning("Database could not be initialized.")
+    logger.info("Initializing database...")
+    database = Database()
+    database.open()
+    database.close()
 
     listener = get_listener()
 

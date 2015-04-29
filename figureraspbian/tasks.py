@@ -20,7 +20,6 @@ settings.configure(
 from django.core.cache import cache
 from celery import Celery
 
-from .utils import internet_on
 from .db import Database, managed
 
 app = Celery('tasks', broker='amqp://guest@localhost//')
@@ -67,6 +66,5 @@ def upload_tickets():
 
 @app.task
 def update_db():
-    if internet_on():
-        with managed(Database()) as db:
-            db.dbroot['installation'].update()
+    with managed(Database()) as db:
+        db.dbroot['installation'].update()
