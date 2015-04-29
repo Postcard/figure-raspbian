@@ -102,6 +102,7 @@ class Installation(persistent.Persistent):
         while True:
             try:
                 code = self.codes.pop()
+                self._p_changed = 1
                 transaction.commit()
             except ConflictError:
                 # Conflict occurred; this process should abort,

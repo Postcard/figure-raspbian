@@ -57,14 +57,12 @@ def run():
                     # Render ticket
                     start = time.time()
                     code = installation.get_code()
-                    logger.info("Claimed code %s" % code)
                     renderer = TicketRenderer(ticket_template['html'],
                                               ticket_template['text_variables'],
                                               ticket_template['image_variables'],
                                               ticket_template['images'])
                     html, dt, code, random_text_selections, random_image_selections = \
                         renderer.render(snapshot, code)
-                    logger.info("Rendered html is: \n %s" % html)
                     with codecs.open(settings.TICKET_HTML_PATH, 'w', 'utf-8') as ticket:
                         ticket.write(html)
                     url = "file://%s" % settings.TICKET_HTML_PATH

@@ -233,6 +233,23 @@ class TestDatabase(unittest.TestCase):
             self.assertIn('tickets', db.dbroot)
             self.assertEqual(installation.codes, self.mock_codes)
 
+    def test_second_connection(self):
+        """
+        installation should not be updated on second connection
+        """
+        api.download = MagicMock()
+        api.get_installation = MagicMock(return_value=self.mock_installation)
+        api.get_codes = MagicMock(return_value=self.mock_codes)
+        with managed(Database()):
+            pass
+        api.download = MagicMock()
+        api.get_installation = MagicMock(return_value=self.mock_installation)
+        api.get_codes = MagicMock(return_value=self.mock_codes)
+        with managed(Database()):
+            assert not api.download.called
+            assert not api.get_installation.called
+            assert not api.get_codes.called
+
     def test_get_installation_return_none(self):
         """
         Installation should not be initialized if api return None
@@ -285,11 +302,14 @@ class TestDatabase(unittest.TestCase):
         api.download = MagicMock()
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_codes = MagicMock(return_value=self.mock_codes)
-        database = Database()
-        with managed(database) as db:
+        with managed(Database()):
+            pass
+        with managed(Database()) as db:
             api.get_installation = MagicMock(return_value=None)
             api.get_codes = MagicMock(return_value=None)
             db.dbroot['installation'].update()
+            self.assertIsNone(db.dbroot['installation'].id)
+        with managed(Database()) as db:
             self.assertIsNone(db.dbroot['installation'].id)
 
     def test_installation_does_not_change(self):
@@ -321,14 +341,15 @@ class TestDatabase(unittest.TestCase):
             db.dbroot['installation'].update()
             self.assertEqual(db.dbroot['installation'].codes, new_codes)
 
-    def test_get_codes(self):
+    def test_get_code(self):
         api.download = MagicMock()
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_codes = MagicMock(return_value=['00000', '00001'])
-        database = Database()
-        with managed(database) as db:
+        with managed(Database()) as db:
             code = db.dbroot['installation'].get_code()
             self.assertEqual(code, '00001')
+            self.assertEqual(db.dbroot['installation'].codes, ['00000'])
+        with managed(Database()) as db:
             self.assertEqual(db.dbroot['installation'].codes, ['00000'])
 
     def test_add_ticket(self):
