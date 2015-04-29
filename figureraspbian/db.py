@@ -97,6 +97,23 @@ class Installation(persistent.Persistent):
             transaction.abort()
             logger.error(traceback.format_exc())
 
+    def get_code(self):
+        # claim a code
+        while True:
+            try:
+                code = self.codes.pop()
+                transaction.commit()
+            except ConflictError:
+                # Conflict occurred; this process should abort,
+                # wait for a little bit, then try again.
+                transaction.abort()
+                time.sleep(1)
+            else:
+                # No ConflictError exception raised, so break
+                # out of the enclosing while loop.
+                return code
+
+
 
 class TicketsGallery(persistent.Persistent):
 
