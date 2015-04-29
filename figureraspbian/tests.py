@@ -312,6 +312,16 @@ class TestDatabase(unittest.TestCase):
             db.dbroot['installation'].update()
             self.assertEqual(db.dbroot['installation'].codes, new_codes)
 
+    def test_get_codes(self):
+        api.download = MagicMock()
+        api.get_installation = MagicMock(return_value=self.mock_installation)
+        api.get_codes = MagicMock(return_value=['00000', '00001'])
+        database = Database()
+        with managed(database) as db:
+            code = db.dbroot['installation'].get_code()
+            self.assertEqual(code, '00001')
+            self.assertEqual(db.dbroot['installation'].codes, ['00000'])
+
     def test_add_ticket(self):
         """
         TicketsGallery should add a ticket

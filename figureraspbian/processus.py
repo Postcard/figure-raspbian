@@ -63,7 +63,7 @@ def run():
                     html, dt, code, random_text_selections, random_image_selections = \
                         renderer.render(snapshot, installation.get_code())
 
-                    with open(settings.TICKET_HTML_PATH, 'wb+') as ticket:
+                    with codecs.open(settings.TICKET_HTML_PATH, 'w', 'utf-8') as ticket:
                         ticket.write(html)
                     url = "file://%s" % settings.TICKET_HTML_PATH
                     phantom_js.get(url)
