@@ -52,7 +52,7 @@ class TestTicketRenderer(unittest.TestCase):
         """
         html = '{{datetime | datetimeformat("%Y")}}'
         self.ticket_renderer.html = html
-        rendered_html, _, _, _, _ = self.ticket_renderer.render('1', '/path/to/snapshot')
+        rendered_html, _, _, _, _ = self.ticket_renderer.render('/path/to/snapshot', '00000')
         self.assertRegexpMatches(rendered_html, re.compile("\d{4}"))
 
     def test_encode_non_unicode_character(self):
@@ -61,8 +61,17 @@ class TestTicketRenderer(unittest.TestCase):
         """
         html = u"Du texte avec un accent ici: é"
         self.ticket_renderer.html = html
-        rendered_html, _, _, _, _ = self.ticket_renderer.render('1', '/path/to/snapshot')
+        rendered_html, _, _, _, _ = self.ticket_renderer.render('/path/to/snapshot', '00000')
         self.assertTrue(u'Du texte avec un accent ici: é' in rendered_html)
+
+    def test_render_multiple_times(self):
+        """
+        Ticket renderer should render tickets multiples times with different codes
+        """
+        rendered1 = self.ticket_renderer.render('/path/to/snapshot', '00000')
+        rendered2 = self.ticket_renderer.render('/path/to/snapshot', '00001')
+        self.assertIn('00000', rendered1)
+        self.assertIn('00001', rendered2)
 
 
 class TestUtilityFunction(unittest.TestCase):
