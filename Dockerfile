@@ -72,8 +72,6 @@ RUN mkdir -p media/images media/snapshots media/tickets resources
 RUN mkdir -p /var/log /var/run /var/rabbitmq
 
 ADD ./install-piface-real-time-clock.sh /install-piface-real-time-clock.sh
-RUN chmod +x /install-piface-real-time-clock.sh
-RUN /install-piface-real-time-clock.sh
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
