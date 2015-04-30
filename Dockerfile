@@ -80,8 +80,6 @@ ENV IMAGE_DIR /var/images
 ENV PHANTOMJS_PATH /phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
 ENV RESOURCE_DIR /figure/resources
 ENV SNAPSHOT_DIR /var/snapshots
-ENV TICKET_CSS_PATH /var/ticket.css
-ENV TICKET_HTML_PATH /var/ticket.html
 ENV TICKET_DIR /var/tickets
 ENV ZEO_SOCKET /var/run/zeo.sock
 

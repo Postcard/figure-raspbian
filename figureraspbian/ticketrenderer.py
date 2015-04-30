@@ -28,7 +28,7 @@ def with_base_html(rendered):
             {content}
             <small>
                 Tapez votre code sur figuredevices.com
-                <span style='border: 1px solid #000; padding:3px 6px; margin-left: 5px;'>
+                <span style='border: 1px solid #000; padding:3px 6px; margin-left: 27px;'>
                     {{{{code}}}}
                 </span>
             </small>
