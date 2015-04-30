@@ -26,9 +26,10 @@ def with_base_html(rendered):
     <body class="figure figure-ticket-container">
         <div class="figure figure-ticket">
             {content}
-            <small>
+            <br><br>
+            <small style="display:block; width:100%;">
                 Tapez votre code sur figuredevices.com
-                <span style='border: 1px solid #000; padding:3px 6px; margin-left: 27px;'>
+                <span style='border: 1px solid #000; padding:3px 6px; margin-top:-5px; float:right;'>
                     {{{{code}}}}
                 </span>
             </small>

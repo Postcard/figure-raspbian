@@ -69,18 +69,18 @@ RUN cd python-epson-printer-1.6 && python setup.py install
 ADD figureraspbian /figure/figureraspbian
 WORKDIR /figure
 RUN mkdir -p media/images media/snapshots media/tickets resources
-RUN mkdir -p /var/log /var/run /var/db /var/images /var/snapshots /var/tickets /var/rabbitmq
+RUN mkdir -p /var/log /var/run /var/rabbitmq
 
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
-ENV DB_PATH /var/db/db.fs
+ENV DB_PATH /var/data/db.fs
 ENV FIGURE_DIR /figure/figureraspbian
-ENV IMAGE_DIR /var/images
+ENV IMAGE_DIR /data/images
 ENV PHANTOMJS_PATH /phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
-ENV RESOURCE_DIR /figure/resources
-ENV SNAPSHOT_DIR /var/snapshots
-ENV TICKET_DIR /var/tickets
+ENV RESOURCE_DIR /data/resources
+ENV SNAPSHOT_DIR /data/snapshots
+ENV TICKET_DIR /data/tickets
 ENV ZEO_SOCKET /var/run/zeo.sock
 
 RUN pip install supervisor
