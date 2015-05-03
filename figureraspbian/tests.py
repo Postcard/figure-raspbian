@@ -358,8 +358,8 @@ class TestDatabase(unittest.TestCase):
         """
         api.download = MagicMock()
         api.get_installation = MagicMock(return_value=self.mock_installation)
-        database = Database()
-        with managed(database) as db:
+        api.get_codes = MagicMock(return_value=['00000', '00001'])
+        with managed(Database()) as db:
             self.assertEqual(len(db.dbroot['tickets']._tickets), 0)
             now = datetime.now(pytz.timezone(settings.TIMEZONE))
             ticket = {
@@ -374,34 +374,51 @@ class TestDatabase(unittest.TestCase):
             db.dbroot['tickets'].add_ticket(ticket)
             self.assertEqual(len(db.dbroot['tickets']._tickets), 1)
             self.assertEqual(db.dbroot['tickets']._tickets[now], ticket)
+            self.assertIn('uploaded', db.dbroot['tickets']._tickets[now])
+        with managed(Database()) as db:
+            self.assertEqual(len(db.dbroot['tickets']._tickets), 1)
 
-    def test_upload_ticket(self):
+    def test_upload_tickets(self):
         """
-        Uploading a ticket should update last_update
+        Uploading a ticket should upload all non uploaded tickets
         """
         api.download = MagicMock()
         api.get_installation = MagicMock(return_value=self.mock_installation)
-        database = Database()
-        with managed(database) as db:
-            now = datetime.now(pytz.timezone(settings.TIMEZONE))
-            ticket = {
+        api.get_codes = MagicMock(return_value=['00000', '00001'])
+        api.create_ticket = MagicMock()
+        with managed(Database()) as db:
+            time1 = datetime.now(pytz.timezone(settings.TIMEZONE))
+            time2 = datetime.now(pytz.timezone(settings.TIMEZONE))
+            ticket_1 = {
                 'installation': '1',
                 'snapshot': '/path/to/snapshot',
                 'ticket': 'path/to/ticket',
-                'dt': now,
+                'dt': time1,
                 'code': 'JHUYG',
                 'random_text_selections': [],
                 'random_image_selections': [],
+                'uploaded': False
             }
-            db.dbroot['tickets'].add_ticket(ticket)
-            api.create_ticket = MagicMock(return_value=ticket)
+            ticket_2 = {
+                'installation': '1',
+                'snapshot': '/path/to/snapshot',
+                'ticket': 'path/to/ticket',
+                'dt': time2,
+                'code': 'JU76G',
+                'random_text_selections': [],
+                'random_image_selections': [],
+                'uploaded': True
+            }
+            db.dbroot['tickets'].add_ticket(ticket_1)
+            db.dbroot['tickets'].add_ticket(ticket_2)
             db.dbroot['tickets'].upload_tickets()
-            api.create_ticket.assert_called_with(ticket)
-            self.assertEqual(db.dbroot['tickets'].last_upload, now)
-            api.create_ticket = MagicMock(return_value=ticket)
+            api.create_ticket.assert_called_once_with(ticket_1)
+        # check the transaction is actually commited
+        with managed(Database()):
+            db.dbroot['tickets']._tickets[time1]['uploaded'] = True
+            api.create_ticket = MagicMock()
             db.dbroot['tickets'].upload_tickets()
             self.assertFalse(api.create_ticket.called)
-            self.assertEqual(db.dbroot['tickets'].last_upload, now)
 
 
 class TestProcessus(unittest.TestCase):

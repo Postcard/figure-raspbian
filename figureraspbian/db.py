@@ -4,9 +4,7 @@ from contextlib import contextmanager
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
-import traceback
 import time
-from datetime import datetime
 
 from ZEO import ClientStorage
 from ZODB import DB
@@ -16,7 +14,7 @@ import transaction
 import persistent
 from requests.exceptions import Timeout, ConnectionError
 import urllib2
-import pytz
+
 
 from . import settings, api
 
@@ -93,9 +91,9 @@ class Installation(persistent.Persistent):
                 self.scenario = None
                 self.ticket_template = None
             transaction.commit()
-        except (api.ApiException, Timeout, ConnectionError, ConflictError, urllib2.HTTPError):
+        except (api.ApiException, Timeout, ConnectionError, ConflictError, urllib2.HTTPError) as e:
+            logger.exception(e)
             transaction.abort()
-            logger.error(traceback.format_exc())
 
     def get_code(self):
         # claim a code
@@ -115,12 +113,10 @@ class Installation(persistent.Persistent):
                 return code
 
 
-
 class TicketsGallery(persistent.Persistent):
 
     def __init__(self):
         self._tickets = OOBTree()
-        self.last_upload = datetime(2014, 1, 1, 0, 0, 0, tzinfo=pytz.timezone(settings.TIMEZONE))
 
     def add_ticket(self, ticket):
         """
@@ -129,6 +125,7 @@ class TicketsGallery(persistent.Persistent):
         while 1:
             try:
                 self._tickets[ticket['dt']] = ticket
+                self._tickets[ticket['dt']]['uploaded'] = False
                 transaction.commit()
             except ConflictError:
                 # Conflict occurred; this process should abort,
@@ -145,14 +142,14 @@ class TicketsGallery(persistent.Persistent):
         Upload tickets
         """
 
-        for T, ticket in self._tickets.items():
-            if T > self.last_upload:
+        for _, ticket in self._tickets.items():
+            if not ticket['uploaded']:
                 try:
                     # upload ticket
                     api.create_ticket(ticket)
                     while True:
                         try:
-                            self.last_upload = T
+                            ticket['uploaded'] = True
                             transaction.commit()
                         except ConflictError:
                             # Conflict occurred; this process should abort,
@@ -163,10 +160,12 @@ class TicketsGallery(persistent.Persistent):
                             # No ConflictError exception raised, so break
                             # out of the enclosing while loop.
                             break
-                except (api.ApiException, Timeout, ConnectionError) as e:
-                    # We might have loose internet connection, stop trying to upload
-                    logger.error(e.message)
-                    logger.error(traceback.format_exc())
+                except api.ApiException as e:
+                    # Api error, proceed with remaining tickets
+                    logger.exception(e)
+                except (Timeout, ConnectionError) as e:
+                    # We might have loose internet connection, break for loop
+                    logger.exception(e)
                     break
 
 

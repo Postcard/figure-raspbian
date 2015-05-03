@@ -8,7 +8,6 @@ import pytz
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
-import traceback
 import codecs
 
 from selenium import webdriver
@@ -92,14 +91,13 @@ def run():
                         'dt': dt,
                         'code': code,
                         'random_text_selections': random_text_selections,
-                        'random_image_selections': random_image_selections,
+                        'random_image_selections': random_image_selections
                     }
                     db.dbroot['tickets'].add_ticket(ticket)
                 else:
                     logger.warning("Current installation has ended. Skipping processus execution")
         except Exception as e:
-            logger.error(e.message)
-            logger.error(traceback.format_exc())
+            logger.exception(e)
         finally:
             if 'blinking_task' in locals():
                 if blinking_task is not None:
