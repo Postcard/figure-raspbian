@@ -75,10 +75,10 @@ class Installation(persistent.Persistent):
                 self.scenario = installation['scenario']
                 self.ticket_template = self.scenario['ticket_template']
                 for image in self.ticket_template['images']:
-                    api.download(image['media'], settings.IMAGE_DIR)
+                    api.download(image['image'], settings.IMAGE_DIR)
                 for image_variable in self.ticket_template['image_variables']:
                     for image in image_variable['items']:
-                        api.download(image['media'], settings.IMAGE_DIR)
+                        api.download(image['image'], settings.IMAGE_DIR)
                 ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
                 if is_new:
                     self.codes = api.get_codes(self.id)
@@ -122,10 +122,11 @@ class TicketsGallery(persistent.Persistent):
         """
         Add a ticket to the gallery.
         """
+        ticket['uploaded'] = False
         while 1:
             try:
                 self._tickets[ticket['dt']] = ticket
-                self._tickets[ticket['dt']]['uploaded'] = False
+                self._p_changed = 1
                 transaction.commit()
             except ConflictError:
                 # Conflict occurred; this process should abort,

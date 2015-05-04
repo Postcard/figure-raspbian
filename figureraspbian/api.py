@@ -70,14 +70,15 @@ def create_ticket(ticket):
     data = {
         'datetime': ticket['dt'],
         'code': ticket['code'],
-        'rdm_text_selections': serialize(ticket['random_text_selections']),
-        'rdm_image_selections': serialize(ticket['random_image_selections']),
+        'random_text_selections': serialize(ticket['random_text_selections']),
+        'random_image_selections': serialize(ticket['random_image_selections']),
         'installation': ticket['installation']
     }
+
     r = session.post(url, files=files, data=data, timeout=20)
     if r.status_code == 201:
         r.encoding = 'utf-8'
-        return json.loads(r.text)['id']
+        return json.loads(r.text)
     else:
         raise ApiException("Failed creating ticket with message %s" % r.text)
 

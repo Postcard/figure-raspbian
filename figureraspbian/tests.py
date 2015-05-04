@@ -7,8 +7,8 @@ from datetime import datetime
 import pytz
 from .ticketrenderer import TicketRenderer
 from .utils import url2name
-from .db import Database, NotInitializedError, managed
-from . import api, settings, processus
+from .db import Database, managed
+from . import api, settings, processus, devices
 from mock import MagicMock, Mock
 import transaction
 import urllib2
@@ -140,15 +140,22 @@ class TestApi(unittest.TestCase):
         """
         api should create ticket
         """
-        snapshot_path = "%s/resources/2_20150331.jpg" % settings.FIGURE_DIR
-        ticket_path = snapshot_path # for testing purposes
-        code = '8HDT54D7'
+        snapshot = "%s/resources/2_20150331.jpg" % settings.FIGURE_DIR
+        ticket = snapshot  # for testing purposes
+        code = 'JIKO2'
         dt = datetime.now(pytz.timezone(settings.TIMEZONE))
-        random_text_selections = [('1', {'id': '1', 'value': 'toto'})]
+        random_text_selections = [('1', {'id': '1', 'text': 'toto'})]
         random_image_selections = []
-        installation = '1'
-        created = api.create_ticket(installation, snapshot_path, ticket_path, dt, code,
-                                    random_text_selections, random_image_selections)
+        ticket = {
+            'installation': '2',
+            'snapshot': snapshot,
+            'ticket': ticket,
+            'dt': dt,
+            'code': code,
+            'random_text_selections': random_text_selections,
+            'random_image_selections': random_image_selections
+        }
+        created = api.create_ticket(ticket)
         self.assertIsNotNone(created)
 
 
@@ -181,27 +188,8 @@ class TestDatabase(unittest.TestCase):
                             ]
                         }
                     ],
-                    "image_variables": [
-                        {
-                            "owner": "test@figuredevices.com",
-                            "id": 1,
-                            "name": "animaux",
-                            "items": [
-                                {
-                                    "id": 2,
-                                    "media": "http://api-integration.figuredevices.com/media/images/1427817820717.jpg",
-                                    "variable": 1
-                                }
-                            ]
-                        }
-                    ],
-                    "images": [
-                        {
-                            "id": 2,
-                            "media": "http://api-integration.figuredevices.com/media/images/1427817820718.jpg",
-                            "variable": None
-                        }
-                    ]
+                    "image_variables": [],
+                    "images": []
                 }
             },
             "place": None,
@@ -423,13 +411,64 @@ class TestDatabase(unittest.TestCase):
 
 class TestProcessus(unittest.TestCase):
 
+    def setUp(self):
+        self.mock_installation = {
+            "scenario": {
+                "name": "Marabouts",
+                "ticket_template": {
+                    "html": "<html></html>",
+                    "text_variables": [
+                        {
+                            "owner": "test@figuredevices.com",
+                            "id": 1,
+                            "name": "Profession",
+                            "items": [
+                                {
+                                    "owner": "test@figuredevices.com",
+                                    "id": 1,
+                                    "text": "Professeur",
+                                    "variable": 1
+                                },
+                                {
+                                    "owner": "test@figuredevices.com",
+                                    "id": 2,
+                                    "text": "Monsieur",
+                                    "variable": 1
+                                }
+                            ]
+                        }
+                    ],
+                    "image_variables": [],
+                    "images": []
+                }
+            },
+            "place": None,
+            "start": "2016-07-01T12:00:00Z",
+            "end": "2016-07-02T12:00:00Z",
+            "id": "1"
+        }
+        self.mock_codes = ['25JHU', '54KJI', 'KJ589', 'KJ78I', 'JIKO5']
+        with managed(Database()) as db:
+            db.dbroot.clear()
+            transaction.commit()
+
     def test_processus(self):
         """
         Processus should execute successfully
         """
-        with managed(Database('development')) as db:
-            db.update()
+        api.download = MagicMock()
+        api.get_installation = MagicMock(return_value=self.mock_installation)
+        api.get_codes = MagicMock(return_value=self.mock_codes)
+        devices.CAMERA.capture = MagicMock(return_value='./resources/2_20150331.jpg')
+        devices.PRINTER.print_ticket = MagicMock()
+        devices.OUTPUT.set = MagicMock()
+        devices.OUTPUT.blink = MagicMock(return_value=devices.output.BlinkingTask())
         processus.run()
+        self.assertTrue(devices.CAMERA.capture.called)
+        self.assertTrue(devices.PRINTER.print_ticket.called)
+        with managed(Database()) as db:
+            self.assertEqual(len(db.dbroot['tickets']._tickets.items()), 1)
+
 
 if __name__ == '__main__':
     unittest.main()

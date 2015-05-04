@@ -26,7 +26,7 @@ def with_base_html(rendered):
     <body class="figure figure-ticket-container">
         <div class="figure figure-ticket">
             {content}
-            <br><br>
+            <br><br><br>
             <small style="display:block; width:100%;">
                 Tapez votre code sur figuredevices.com
                 <span style='border: 1px solid #000; padding:3px 6px; margin-top:-5px; float:right;'>
@@ -86,12 +86,12 @@ class TicketRenderer(object):
              context['textvariable_%s' % text_variable_id] = item['text']
         for (image_variable_id, item) in random_image_selections:
             context['imagevariable_%s' % image_variable_id] = 'file://%s/%s' % (settings.IMAGE_DIR,
-                                                                                os.path.basename(item['media']))
+                                                                                os.path.basename(item['image']))
         now = datetime.now(pytz.timezone(settings.TIMEZONE))
         context['datetime'] = now
         context['code'] = code
         for im in self.images:
-            context['image_%s' % im['id']] = 'file://%s/%s' % (settings.IMAGE_DIR, os.path.basename(im['media']))
+            context['image_%s' % im['id']] = 'file://%s/%s' % (settings.IMAGE_DIR, os.path.basename(im['image']))
         template = JINJA_ENV.from_string(with_base_html(self.html))
         rendered_html = template.render(context)
         return rendered_html, now, code, random_text_selections, random_image_selections
