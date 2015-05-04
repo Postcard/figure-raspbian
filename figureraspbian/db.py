@@ -122,10 +122,11 @@ class TicketsGallery(persistent.Persistent):
         """
         Add a ticket to the gallery.
         """
+        ticket['uploaded'] = False
         while 1:
             try:
                 self._tickets[ticket['dt']] = ticket
-                self._tickets[ticket['dt']]['uploaded'] = False
+                self._p_changed = 1
                 transaction.commit()
             except ConflictError:
                 # Conflict occurred; this process should abort,
