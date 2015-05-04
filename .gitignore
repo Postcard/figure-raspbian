@@ -14,3 +14,4 @@ resources/ticket.html
 db.*
 zeosocket
 ghostdriver.log
+celerybeat-schedule.db

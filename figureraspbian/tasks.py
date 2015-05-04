@@ -20,15 +20,16 @@ settings.configure(
 from django.core.cache import cache
 from celery import Celery
 
-from .utils import internet_on
 from .db import Database, managed
-
-from . import api
 
 app = Celery('tasks', broker='amqp://guest@localhost//')
 
 app.conf.update(
     CELERYBEAT_SCHEDULE={
+        'upload-ticket-every-minute-and-half': {
+            'task': 'figureraspbian.tasks.upload_tickets',
+            'schedule': timedelta(seconds=90)
+        },
         'update-db-every-minute': {
             'task': 'figureraspbian.tasks.update_db',
             'schedule': timedelta(seconds=60)
@@ -55,19 +56,15 @@ def single_instance_task(timeout):
     return task_exc
 
 
-
-@app.task(rate_limit='10/m')
-def create_ticket(ticket):
-    if internet_on():
-        api.create_ticket(ticket)
-    else:
-        create_ticket.apply_async(
-            ticket,
-            countdown=settings.RETRY_DELAY)
+@single_instance_task(60 * 10)
+@app.task
+def upload_tickets():
+    """ Upload all tickets that have not been previously updated"""
+    with managed(Database()) as db:
+        db.dbroot['tickets'].upload_tickets()
 
 
 @app.task
 def update_db():
-    if internet_on():
-        with managed(Database()) as db:
-            db.update()
+    with managed(Database()) as db:
+        db.dbroot['installation'].update()

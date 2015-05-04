@@ -18,7 +18,8 @@ class Light(object):
 
 class LEDPanelLight(Light):
 
-    pifacedigital = pifacedigitalio.PiFaceDigital()
+    def __init__(self):
+        self.pifacedigital = pifacedigitalio.PiFaceDigital()
 
     def flash_on(self):
         self.pifacedigital.output_pins[0].turn_on()

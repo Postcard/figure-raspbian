@@ -32,14 +32,14 @@ def get_installation():
         raise ApiException("Failed retrieving installation")
 
 
-def get_scenario(scenario_id):
-    url = "%s/scenarios/%s/?fields=name,ticket_template" % (settings.API_HOST, scenario_id)
-    r = session.get(url=url, timeout=10)
+def get_codes(installation):
+    url = "%s/installations/%s/codes/" % (settings.API_HOST, installation)
+    r = session.get(url=url, timeout=20)
     if r.status_code == 200:
         r.encoding = 'utf-8'
-        return json.loads(r.text)
+        return json.loads(r.text)['codes']
     else:
-        raise ApiException("Failed retrieving scenario")
+        raise ApiException('Fail retrieving codes')
 
 
 def download(url, path):
@@ -48,17 +48,14 @@ def download(url, path):
     """
     local_name = url2name(url)
     req = urllib2.Request(url)
-    try:
-        r = urllib2.urlopen(req, timeout=10)
-        if r.url != url:
-            # if we were redirected, the real file name we take from the final URL
-            local_name = url2name(r.url)
-        path_to_file = join(path, local_name)
-        with open(path_to_file, 'wb+') as f:
-            f.write(r.read())
-        return path_to_file
-    except urllib2.HTTPError as e:
-        raise ApiException('Failed downloading resource %s with error %s' % (url, e.msg))
+    r = urllib2.urlopen(req, timeout=10)
+    if r.url != url:
+        # if we were redirected, the real file name we take from the final URL
+        local_name = url2name(r.url)
+    path_to_file = join(path, local_name)
+    with open(path_to_file, 'wb+') as f:
+        f.write(r.read())
+    return path_to_file
 
 
 def create_ticket(ticket):

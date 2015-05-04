@@ -81,7 +81,7 @@ class DSLRCamera(Camera):
             im = im.crop((left, top, right, bottom))
         else:
             raise Exception("Unknown camera type")
-        im = im.resize((512, 512), Image.ANTIALIAS)
+        im = im.resize((1024, 1024), Image.ANTIALIAS)
         im.save(path)
         return path
 
