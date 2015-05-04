@@ -28,7 +28,7 @@ def run():
         try:
             installation = db.dbroot['installation']
 
-            if installation is not None:
+            if installation is not None and installation.id is not None:
                 # Database is initialized !
 
                 # check if installation is not finished
