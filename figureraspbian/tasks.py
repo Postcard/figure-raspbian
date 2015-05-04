@@ -28,11 +28,11 @@ app.conf.update(
     CELERYBEAT_SCHEDULE={
         'upload-ticket-every-minute-and-half': {
             'task': 'figureraspbian.tasks.upload_tickets',
-            'schedule': timedelta(seconds=90)
+            'schedule': timedelta(seconds=30)
         },
         'update-db-every-minute': {
             'task': 'figureraspbian.tasks.update_db',
-            'schedule': timedelta(seconds=60)
+            'schedule': timedelta(seconds=90)
         }
     },
     CELERY_TIMEZONE='UTC'
