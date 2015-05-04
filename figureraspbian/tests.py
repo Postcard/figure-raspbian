@@ -140,15 +140,22 @@ class TestApi(unittest.TestCase):
         """
         api should create ticket
         """
-        snapshot_path = "%s/resources/2_20150331.jpg" % settings.FIGURE_DIR
-        ticket_path = snapshot_path # for testing purposes
-        code = '8HDT54D7'
+        snapshot = "%s/resources/2_20150331.jpg" % settings.FIGURE_DIR
+        ticket = snapshot  # for testing purposes
+        code = 'JIKO2'
         dt = datetime.now(pytz.timezone(settings.TIMEZONE))
-        random_text_selections = [('1', {'id': '1', 'value': 'toto'})]
+        random_text_selections = [('1', {'id': '1', 'text': 'toto'})]
         random_image_selections = []
-        installation = '1'
-        created = api.create_ticket(installation, snapshot_path, ticket_path, dt, code,
-                                    random_text_selections, random_image_selections)
+        ticket = {
+            'installation': '2',
+            'snapshot': snapshot,
+            'ticket': ticket,
+            'dt': dt,
+            'code': code,
+            'random_text_selections': random_text_selections,
+            'random_image_selections': random_image_selections
+        }
+        created = api.create_ticket(ticket)
         self.assertIsNotNone(created)
 
 
