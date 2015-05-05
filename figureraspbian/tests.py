@@ -384,8 +384,7 @@ class TestDatabase(unittest.TestCase):
                 'dt': time1,
                 'code': 'JHUYG',
                 'random_text_selections': [],
-                'random_image_selections': [],
-                'uploaded': False
+                'random_image_selections': []
             }
             ticket_2 = {
                 'installation': '1',
@@ -394,16 +393,14 @@ class TestDatabase(unittest.TestCase):
                 'dt': time2,
                 'code': 'JU76G',
                 'random_text_selections': [],
-                'random_image_selections': [],
-                'uploaded': True
+                'random_image_selections': []
             }
             db.dbroot['tickets'].add_ticket(ticket_1)
             db.dbroot['tickets'].add_ticket(ticket_2)
             db.dbroot['tickets'].upload_tickets()
-            api.create_ticket.assert_called_once_with(ticket_1)
+            self.assertTrue(api.create_ticket.called)
         # check the transaction is actually commited
         with managed(Database()):
-            db.dbroot['tickets']._tickets[time1]['uploaded'] = True
             api.create_ticket = MagicMock()
             db.dbroot['tickets'].upload_tickets()
             self.assertFalse(api.create_ticket.called)

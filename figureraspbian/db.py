@@ -143,7 +143,7 @@ class TicketsGallery(persistent.Persistent):
         Upload tickets
         """
 
-        for _, ticket in self._tickets.items():
+        for dt, ticket in self._tickets.items():
             if not ticket['uploaded']:
                 try:
                     # upload ticket
@@ -151,6 +151,7 @@ class TicketsGallery(persistent.Persistent):
                     while True:
                         try:
                             ticket['uploaded'] = True
+                            self._tickets[dt] = ticket
                             self._p_changed = 1
                             transaction.commit()
                         except ConflictError:
@@ -165,6 +166,10 @@ class TicketsGallery(persistent.Persistent):
                 except api.ApiException as e:
                     # Api error, proceed with remaining tickets
                     logger.exception(e)
+                    ticket['uploaded'] = True
+                    self._tickets[dt] = ticket
+                    self._p_changed = 1
+                    transaction.commit()
                 except (Timeout, ConnectionError) as e:
                     # We might have loose internet connection, break for loop
                     logger.exception(e)
