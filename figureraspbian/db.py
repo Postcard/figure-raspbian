@@ -151,6 +151,7 @@ class TicketsGallery(persistent.Persistent):
                     while True:
                         try:
                             ticket['uploaded'] = True
+                            self._p_changed = 1
                             transaction.commit()
                         except ConflictError:
                             # Conflict occurred; this process should abort,
