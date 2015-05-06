@@ -27,15 +27,17 @@ def with_base_html(rendered):
         <div class="figure figure-ticket">
             {content}
             <br>
-            <p style='text-align:center; line-height:1.3em !important;'>
-                <span style='border: 3px solid #000; padding:3px 6px; margin-top:-5px; line-height:3em;'>{{{{code}}}}</span>
-                <br>
-                Tapez votre code sur figuredevices.com
+            <p style='text-align:center;'>
+                <span style='letter-spacing: 0.2em; border: 2px solid #000; padding: 10px 9px 8px 13px; margin-bottom: 16px; margin-left: 8px; display: inline-block;'>{{{{code}}}}</span>
+                <br/>
+                <small>Tapez votre code sur<br/>figuredevices.com</small>
             </p>
         </div>
     </body>
 </html>"""
     return base.format(content=rendered, ticket_css=settings.TICKET_CSS_PATH)
+
+
 
 
 def datetimeformat(value, format='%Y-%m-%d'):
