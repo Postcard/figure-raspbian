@@ -55,9 +55,6 @@ RESOURCE_DIR = get_env_setting('RESOURCE_DIR', 'resources')
 # Path to PhantomJS executable
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 
-# Path to database file
-DB_PATH = get_env_setting('DB_FILE', os.path.join(FIGURE_DIR, 'db.fs'))
-
 # Path to ticket CSS
 TICKET_CSS_PATH = os.path.join(RESOURCE_DIR, 'ticket.css')
 
@@ -93,7 +90,6 @@ def log_config():
     logger.info('TICKET_DIR: %s' % TICKET_DIR)
     logger.info('RESOURCE_DIR: %s' % RESOURCE_DIR)
     logger.info('PHANTOMJS_PATH: %s' % PHANTOMJS_PATH)
-    logger.info('DB_PATH: %s' % DB_PATH)
     logger.info('TICKET_CSS_PATH: %s' % TICKET_CSS_PATH)
     logger.info('TICKET_HTML_PATH: %s' % TICKET_HTML_PATH)
     logger.info('TRIGGER_PIN: %s' % TRIGGER_PIN)
