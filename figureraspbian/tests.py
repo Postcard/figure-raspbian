@@ -199,44 +199,28 @@ class TestDatabase(unittest.TestCase):
         }
         self.mock_codes = ['25JHU', '54KJI', 'KJ589', 'KJ78I', 'JIKO5']
         with managed(Database()) as db:
-            db.dbroot.clear()
-            transaction.commit()
+            db.clear()
 
-    def test_initialization(self):
+    def test_update_installation(self):
         """
-        Database should be initialized when first created
+        Installation should be updated correctly
         """
         api.download = MagicMock()
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_codes = MagicMock(return_value=self.mock_codes)
         database = Database()
         with managed(database) as db:
-            self.assertIn('installation', db.dbroot)
-            installation = db.dbroot['installation']
+            self.assertIsNone(db.data.installation.id)
+            db.update_installation()
+            installation = db.data.installation
             self.assertEqual(installation.id, "1")
             self.assertIsNotNone(installation.start)
             self.assertIsNotNone(installation.end)
             self.assertEqual(installation.scenario['name'], 'Marabouts')
             self.assertIsNotNone(installation.ticket_template)
-            self.assertIn('tickets', db.dbroot)
             self.assertEqual(installation.codes, self.mock_codes)
-
-    def test_second_connection(self):
-        """
-        installation should not be updated on second connection
-        """
-        api.download = MagicMock()
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_codes = MagicMock(return_value=self.mock_codes)
-        with managed(Database()):
-            pass
-        api.download = MagicMock()
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_codes = MagicMock(return_value=self.mock_codes)
-        with managed(Database()):
-            assert not api.download.called
-            assert not api.get_installation.called
-            assert not api.get_codes.called
+        with managed(Database()) as db:
+            self.assertEqual(db.data.installation.codes, self.mock_codes)
 
     def test_get_installation_return_none(self):
         """
@@ -246,8 +230,7 @@ class TestDatabase(unittest.TestCase):
         api.get_codes = MagicMock(return_value=self.mock_codes)
         database = Database()
         with managed(database) as db:
-            self.assertIn('installation', db.dbroot)
-            self.assertIsNone(db.dbroot['installation'].id)
+            self.assertIsNone(db.data.installation.id)
 
     def test_get_installation_raise_exception(self):
         """
@@ -257,8 +240,7 @@ class TestDatabase(unittest.TestCase):
         api.get_codes = MagicMock(return_value=self.mock_codes)
         database = Database()
         with managed(database) as db:
-            self.assertIn('installation', db.dbroot)
-            self.assertIsNone(db.dbroot['installation'].id)
+            self.assertIsNone(db.data.installation.id)
 
     def test_get_codes_raise_exception(self):
         """
@@ -268,37 +250,18 @@ class TestDatabase(unittest.TestCase):
         api.get_codes = Mock(side_effect=api.ApiException)
         database = Database()
         with managed(database) as db:
-            self.assertIn('installation', db.dbroot)
-            self.assertIsNone(db.dbroot['installation'].id)
+            self.assertIsNone(db.data.installation.id)
 
     def test_download_raise_exception(self):
         """
-        Transaction should abort
+        Installation should not be initialized if download raise exception
         """
         api.download = Mock(side_effect=urllib2.HTTPError('', '', '', '', None))
         api.get_codes = MagicMock(return_value=self.mock_codes)
         api.get_installation = MagicMock(return_value=self.mock_installation)
         database = Database()
         with managed(database) as db:
-            self.assertIn('installation', db.dbroot)
-            self.assertIsNone(db.dbroot['installation'].id)
-
-    def test_update_installation(self):
-        """
-        Installation should update after initialization
-        """
-        api.download = MagicMock()
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_codes = MagicMock(return_value=self.mock_codes)
-        with managed(Database()):
-            pass
-        with managed(Database()) as db:
-            api.get_installation = MagicMock(return_value=None)
-            api.get_codes = MagicMock(return_value=None)
-            db.dbroot['installation'].update()
-            self.assertIsNone(db.dbroot['installation'].id)
-        with managed(Database()) as db:
-            self.assertIsNone(db.dbroot['installation'].id)
+            self.assertIsNone(db.data.installation.id)
 
     def test_installation_does_not_change(self):
         """
@@ -309,9 +272,10 @@ class TestDatabase(unittest.TestCase):
         api.get_codes = MagicMock(return_value=self.mock_codes)
         database = Database()
         with managed(database) as db:
+            db.data.installation.update()
             api.get_codes = Mock(side_effect=Exception('this method should not be called'))
-            db.dbroot['installation'].update()
-            self.assertEqual(db.dbroot['installation'].codes, self.mock_codes)
+            db.data.installation.update()
+            self.assertEqual(db.data.installation.codes, self.mock_codes)
 
     def test_installation_changes(self):
         """
@@ -322,33 +286,39 @@ class TestDatabase(unittest.TestCase):
         api.get_codes = MagicMock(return_value=self.mock_codes)
         database = Database()
         with managed(database) as db:
+            db.data.installation.update()
             changed = self.mock_installation
             changed['id'] = '2'
             new_codes = ['54JU5', 'JU598', 'KI598', 'KI568', 'JUI58']
             api.get_codes = MagicMock(return_value=new_codes)
-            db.dbroot['installation'].update()
-            self.assertEqual(db.dbroot['installation'].codes, new_codes)
+            db.data.installation.update()
+            self.assertEqual(db.data.installation.codes, new_codes)
 
     def test_get_code(self):
+        """
+        db.get_code should get a code
+        """
         api.download = MagicMock()
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_codes = MagicMock(return_value=['00000', '00001'])
         with managed(Database()) as db:
-            code = db.dbroot['installation'].get_code()
+            db.update_installation()
+            code = db.get_code()
             self.assertEqual(code, '00001')
-            self.assertEqual(db.dbroot['installation'].codes, ['00000'])
+            self.assertEqual(db.data.installation.codes, ['00000'])
         with managed(Database()) as db:
-            self.assertEqual(db.dbroot['installation'].codes, ['00000'])
+            self.assertEqual(db.data.installation.codes, ['00000'])
 
     def test_add_ticket(self):
         """
-        TicketsGallery should add a ticket
+        db.add_ticket should add a ticket
         """
         api.download = MagicMock()
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_codes = MagicMock(return_value=['00000', '00001'])
         with managed(Database()) as db:
-            self.assertEqual(len(db.dbroot['tickets']._tickets), 0)
+            db.update_installation()
+            self.assertEqual(len(db.data.tickets), 0)
             now = datetime.now(pytz.timezone(settings.TIMEZONE))
             ticket = {
                 'installation': '1',
@@ -359,12 +329,10 @@ class TestDatabase(unittest.TestCase):
                 'random_text_selections': [],
                 'random_image_selections': [],
             }
-            db.dbroot['tickets'].add_ticket(ticket)
-            self.assertEqual(len(db.dbroot['tickets']._tickets), 1)
-            self.assertEqual(db.dbroot['tickets']._tickets[now], ticket)
-            self.assertIn('uploaded', db.dbroot['tickets']._tickets[now])
+            db.add_ticket(ticket)
+            self.assertEqual(len(db.data.tickets), 1)
         with managed(Database()) as db:
-            self.assertEqual(len(db.dbroot['tickets']._tickets), 1)
+            self.assertEqual(len(db.data.tickets), 1)
 
     def test_upload_tickets(self):
         """
@@ -395,16 +363,15 @@ class TestDatabase(unittest.TestCase):
                 'random_text_selections': [],
                 'random_image_selections': []
             }
-            db.dbroot['tickets'].add_ticket(ticket_1)
-            db.dbroot['tickets'].add_ticket(ticket_2)
-            db.dbroot['tickets'].upload_tickets()
+            db.add_ticket(ticket_1)
+            db.add_ticket(ticket_2)
+            db.upload_tickets()
             self.assertTrue(api.create_ticket.called)
         # check the transaction is actually commited
         with managed(Database()):
             api.create_ticket = MagicMock()
-            db.dbroot['tickets'].upload_tickets()
+            db.upload_tickets()
             self.assertFalse(api.create_ticket.called)
-
 
 class TestProcessus(unittest.TestCase):
 
