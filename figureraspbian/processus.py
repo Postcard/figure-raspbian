@@ -17,8 +17,6 @@ from . import devices, settings, tasks
 from .db import Database, managed
 
 
-phantom_js = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
-
 if not exists(settings.TICKET_DIR):
     makedirs(settings.TICKET_DIR)
 
@@ -65,9 +63,11 @@ def run():
                     with codecs.open(settings.TICKET_HTML_PATH, 'w', 'utf-8') as ticket:
                         ticket.write(html)
                     url = "file://%s" % settings.TICKET_HTML_PATH
+                    phantom_js = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
                     phantom_js.get(url)
                     ticket = join(settings.TICKET_DIR, basename(snapshot))
                     phantom_js.save_screenshot(ticket)
+                    phantom_js.quit()
                     end = time.time()
                     logger.info('Ticket successfully rendered in %s seconds', end - start)
 
