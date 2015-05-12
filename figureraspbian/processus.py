@@ -13,7 +13,7 @@ import codecs
 from selenium import webdriver
 
 from .ticketrenderer import TicketRenderer
-from . import devices, settings, tasks
+from . import devices, settings
 from .db import Database, managed
 
 
@@ -62,9 +62,8 @@ def run():
                         renderer.render(snapshot, code)
                     with codecs.open(settings.TICKET_HTML_PATH, 'w', 'utf-8') as ticket:
                         ticket.write(html)
-                    url = "file://%s" % settings.TICKET_HTML_PATH
                     phantom_js = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
-                    phantom_js.get(url)
+                    phantom_js.get(settings.TICKET_HTML_URL)
                     ticket = join(settings.TICKET_DIR, basename(snapshot))
                     phantom_js.save_screenshot(ticket)
                     phantom_js.quit()

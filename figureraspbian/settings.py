@@ -56,10 +56,10 @@ RESOURCE_DIR = get_env_setting('RESOURCE_DIR', 'resources')
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 
 # Path to ticket CSS
-TICKET_CSS_PATH = os.path.join(RESOURCE_DIR, 'ticket.css')
+TICKET_CSS_URL = "file://%s" % os.path.join(RESOURCE_DIR, 'ticket.css')
 
 # Path to ticket html
-TICKET_HTML_PATH = os.path.join(RESOURCE_DIR, 'ticket.html')
+TICKET_HTML_URL = "file://%s" % os.path.join(RESOURCE_DIR, 'ticket.html')
 
 # Pin used to trigger the process
 TRIGGER_PIN = get_env_setting('TRIGGER_PIN', 0)

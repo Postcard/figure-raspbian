@@ -60,8 +60,6 @@ RUN pip install gphoto2==1.1.0 \
     Flask==0.10.1 \
     supervisor==3.1.3
 
-RUN apt-get purge -y --force-yes make unzip tar wget bzip2
-
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
 ENV FIGURE_DIR /figure/figureraspbian
@@ -71,6 +69,8 @@ ENV RESOURCE_DIR /data/resources
 ENV SNAPSHOT_DIR /data/snapshots
 ENV TICKET_DIR /data/tickets
 ENV ZEO_SOCKET /var/run/zeo.sock
+ENV TICKET_CSS_URL http://localhost/ticket.css
+ENV TICKET_CSS_HTML http://localhost/ticket.html
 
 COPY figureraspbian /figureraspbian
 COPY ./start.sh /

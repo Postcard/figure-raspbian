@@ -21,7 +21,7 @@ def with_base_html(rendered):
 <html class="figure figure-ticket-container">
     <head>
         <meta charset="utf-8">
-        <link rel="stylesheet" href="file://{ticket_css}">
+        <link rel="stylesheet" href="{ticket_css}">
     </head>
     <body class="figure figure-ticket-container">
         <div class="figure figure-ticket">
@@ -35,9 +35,7 @@ def with_base_html(rendered):
         </div>
     </body>
 </html>"""
-    return base.format(content=rendered, ticket_css=settings.TICKET_CSS_PATH)
-
-
+    return base.format(content=rendered, ticket_css=settings.TICKET_CSS_URL)
 
 
 def datetimeformat(value, format='%Y-%m-%d'):

@@ -18,12 +18,6 @@ import urllib2
 
 from . import settings, api
 
-
-class NotInitializedError(Exception):
-    """Trying to access a database that was """
-    pass
-
-
 @contextmanager
 def managed(database):
     database.open()
