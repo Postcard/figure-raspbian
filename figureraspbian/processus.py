@@ -45,7 +45,7 @@ def run():
 
                 # Render ticket
                 start = time.time()
-                code = installation.get_code()
+                code = db.get_code()
                 renderer = TicketRenderer(ticket_template['html'],
                                           ticket_template['text_variables'],
                                           ticket_template['image_variables'],

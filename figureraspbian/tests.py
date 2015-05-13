@@ -9,9 +9,14 @@ from .ticketrenderer import TicketRenderer
 from .utils import url2name
 from .db import Database, managed
 from . import api, settings, processus, devices
-from mock import MagicMock, Mock
-import transaction
+from mock import MagicMock, Mock, call
 import urllib2
+from ZEO import ClientStorage
+from ZODB import DB
+from ZODB.POSException import ConflictError
+import transaction
+
+from .db import transaction_decorate
 
 
 class TestTicketRenderer(unittest.TestCase):
@@ -200,6 +205,29 @@ class TestDatabase(unittest.TestCase):
         self.mock_codes = ['25JHU', '54KJI', 'KJ589', 'KJ78I', 'JIKO5']
         with managed(Database()) as db:
             db.clear()
+
+    def test_transaction_decorator(self):
+        """
+        Transaction decorator should try a database write until there is no ConflictError
+        """
+        storage = ClientStorage.ClientStorage(settings.ZEO_SOCKET)
+        db = DB(storage)
+        dbroot = db.open().root()
+        m = Mock()
+        m.side_effect = [ConflictError, transaction.commit]
+        transaction.commit = m
+        mock_function = MagicMock()
+        @transaction_decorate
+        def write_db(self):
+            mock_function(1)
+            dbroot['db'] = 1
+
+        write_db('self')
+
+        self.assertEqual(dbroot['db'], 1)
+        mock_function.assert_has_calls([call(1), call(1)])
+
+        db.close()
 
     def test_update_installation(self):
         """
