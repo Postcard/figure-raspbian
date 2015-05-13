@@ -8,17 +8,16 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 import codecs
 
-from selenium import webdriver
-
 from .ticketrenderer import TicketRenderer
 from . import devices, settings
 from .db import Database, managed
-from .utils import save_screenshot_with_retry
+from .phantomjs import PhantomJS
 
 
 if not exists(settings.TICKET_DIR):
     makedirs(settings.TICKET_DIR)
 
+phantomjs = PhantomJS()
 
 def run():
     with managed(Database()) as db:
@@ -55,11 +54,8 @@ def run():
                     renderer.render(snapshot, code)
                 with codecs.open(settings.TICKET_HTML_PATH, 'w', 'utf-8') as ticket:
                     ticket.write(html)
-                phantom_js = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
-                phantom_js.get(settings.TICKET_HTML_URL)
-                ticket = join(settings.TICKET_DIR, basename(snapshot))
-                save_screenshot_with_retry(phantom_js, ticket)
-                phantom_js.quit()
+                phantomjs.save_screenshot(basename(snapshot))
+
                 end = time.time()
                 logger.info('Ticket successfully rendered in %s seconds', end - start)
 

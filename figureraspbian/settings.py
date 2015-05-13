@@ -40,21 +40,26 @@ IMAGE_DIR = get_env_setting('IMAGE_DIR', os.path.join(FIGURE_DIR, 'media/images'
 if not os.path.exists(IMAGE_DIR):
     os.makedirs(IMAGE_DIR)
 
+# base URL for images
+IMAGE_DIR_URL = get_env_setting('IMAGE_DIR_URL', 'file://%s' % IMAGE_DIR)
+
 # Directory for snapshots
 SNAPSHOT_DIR = get_env_setting('SNAPSHOT_DIR', os.path.join(FIGURE_DIR, 'media/snapshots'))
 if not os.path.exists(SNAPSHOT_DIR):
     os.makedirs(SNAPSHOT_DIR)
+
+# base URL for snapshots
+SNAPSHOT_DIR_URL = get_env_setting('SNAPSHOT_DIR_URL', 'file://%s' % SNAPSHOT_DIR)
 
 # Directory for tickets
 TICKET_DIR = get_env_setting('TICKET_DIR', 'media/tickets')
 if not os.path.exists(TICKET_DIR):
     os.makedirs(TICKET_DIR)
 
-RESOURCE_DIR = get_env_setting('RESOURCE_DIR', 'resources')
+RESOURCE_DIR = get_env_setting('RESOURCE_DIR', '/Users/benoit/git/figure-raspbian/resources')
 
 # Path to PhantomJS executable
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
-
 
 # Path to ticket CSS
 TICKET_CSS_PATH = os.path.join(RESOURCE_DIR, 'ticket.css')
@@ -63,10 +68,10 @@ TICKET_CSS_PATH = os.path.join(RESOURCE_DIR, 'ticket.css')
 TICKET_HTML_PATH = os.path.join(RESOURCE_DIR, 'ticket.html')
 
 # URL of ticket.css
-TICKET_CSS_URL = "file://%s" % TICKET_CSS_PATH
+TICKET_CSS_URL = get_env_setting('TICKET_CSS_URL', "file://%s" % TICKET_CSS_PATH)
 
 # URL of ticket.html
-TICKET_HTML_URL = "file://%s" % TICKET_HTML_PATH
+TICKET_HTML_URL = get_env_setting('TICKET_HTML_URL', "file://%s" % TICKET_HTML_PATH)
 
 # Pin used to trigger the process
 TRIGGER_PIN = get_env_setting('TRIGGER_PIN', 0)
@@ -93,12 +98,16 @@ def log_config():
     logger.info('FIGURE_DIR: %s' % FIGURE_DIR)
     logger.info('API_HOST: %s' % API_HOST)
     logger.info('IMAGE_DIR: %s' % IMAGE_DIR)
+    logger.info('IMAGE_DIR_URL: %s' % IMAGE_DIR_URL)
     logger.info('SNAPSHOT_DIR: %s' % SNAPSHOT_DIR)
+    logger.info('SNAPSHOT_DIR_URL' % SNAPSHOT_DIR_URL)
     logger.info('TICKET_DIR: %s' % TICKET_DIR)
     logger.info('RESOURCE_DIR: %s' % RESOURCE_DIR)
     logger.info('PHANTOMJS_PATH: %s' % PHANTOMJS_PATH)
     logger.info('TICKET_CSS_PATH: %s' % TICKET_CSS_URL)
+    logger.info('TICKET_CSS_URL: %s' % TICKET_CSS_URL)
     logger.info('TICKET_HTML_PATH: %s' % TICKET_HTML_URL)
+    logger.info('TICKET_HTML_URL: %s' % TICKET_HTML_URL)
     logger.info('TRIGGER_PIN: %s' % TRIGGER_PIN)
     logger.info('ZEO_SOCKET: %s' % TRIGGER_PIN)
     logger.info('TIMEZONE: %s' % TIMEZONE)

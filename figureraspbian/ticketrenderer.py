@@ -38,6 +38,7 @@ def with_base_html(rendered):
     return base.format(content=rendered, ticket_css=settings.TICKET_CSS_URL)
 
 
+
 def datetimeformat(value, format='%Y-%m-%d'):
     """
     Jinja filter used to format date
@@ -79,18 +80,18 @@ class TicketRenderer(object):
         return random_text_selections, random_image_selections
 
     def render(self, snapshot, code):
-        context = {'snapshot': 'file://%s' % snapshot}
+        context = {'snapshot': '%s/%s' % (settings.SNAPSHOT_DIR_URL, snapshot)}
         (random_text_selections, random_image_selections) = self.random_selection()
         for (text_variable_id, item) in random_text_selections:
              context['textvariable_%s' % text_variable_id] = item['text']
         for (image_variable_id, item) in random_image_selections:
-            context['imagevariable_%s' % image_variable_id] = 'file://%s/%s' % (settings.IMAGE_DIR,
-                                                                                os.path.basename(item['image']))
+            context['imagevariable_%s' % image_variable_id] = '%s/%s' % (settings.IMAGE_DIR_URL,
+                                                                         os.path.basename(item['image']))
         now = datetime.now(pytz.timezone(settings.TIMEZONE))
         context['datetime'] = now
         context['code'] = code
         for im in self.images:
-            context['image_%s' % im['id']] = 'file://%s/%s' % (settings.IMAGE_DIR, os.path.basename(im['image']))
+            context['image_%s' % im['id']] = '%s/%s' % (settings.IMAGE_DIR_URL, os.path.basename(im['image']))
         template = JINJA_ENV.from_string(with_base_html(self.html))
         rendered_html = template.render(context)
         return rendered_html, now, code, random_text_selections, random_image_selections

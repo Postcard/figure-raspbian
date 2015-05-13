@@ -464,11 +464,10 @@ class TestProcessus(unittest.TestCase):
 
 
 from selenium import webdriver
-from .utils import PhantomJsException, save_screenshot_with_retry
+from .phantomjs import PhantomJsException, save_screenshot_with_retry, PhantomJS
 
 
-class TestSaveScreenshotWithRetry(unittest.TestCase):
-
+class TestPhantomJS(unittest.TestCase):
 
     def test_eventually_succeeds(self):
         """
@@ -483,7 +482,6 @@ class TestSaveScreenshotWithRetry(unittest.TestCase):
         m.assert_has_calls([call('mockfile'), call('mockfile')])
         driver.quit()
 
-
     def test_giveup_after_3_times(self):
         """
         save_screesnot_with_retry should five up after three retries
@@ -496,6 +494,14 @@ class TestSaveScreenshotWithRetry(unittest.TestCase):
             save_screenshot_with_retry(driver, 'mockfile')
         m.assert_has_calls([call('mockfile'), call('mockfile'), call('mockfile')])
         driver.quit()
+
+    def test_save_screenshot(self):
+        """
+        save_screenshot should not fails even if we generate a lot of screenshot
+        """
+        phantomjs = PhantomJS()
+        phantomjs.save_screenshot('screenshot.jpg')
+
 
 if __name__ == '__main__':
     unittest.main()
