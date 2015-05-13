@@ -80,7 +80,7 @@ class TicketRenderer(object):
         return random_text_selections, random_image_selections
 
     def render(self, snapshot, code):
-        context = {'snapshot': '%s/%s' % (settings.SNAPSHOT_DIR_URL, snapshot)}
+        context = {'snapshot': '%s/%s' % (settings.SNAPSHOT_DIR_URL, os.path.basename(snapshot))}
         (random_text_selections, random_image_selections) = self.random_selection()
         for (text_variable_id, item) in random_text_selections:
              context['textvariable_%s' % text_variable_id] = item['text']
