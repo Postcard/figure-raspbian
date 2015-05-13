@@ -24,22 +24,24 @@ def managed(database):
     database.close()
 
 
-def transaction_decorate(func):
-    def func_wrapper(self, *args, **kwargs):
-        while True:
-            try:
-                result = func(self, *args, **kwargs)
-                transaction.commit()
-            except ConflictError:
-                # Conflict occurred; this process should abort,
-                # wait for a little bit, then try again.
-                transaction.abort()
-                time.sleep(1)
-            else:
-                # No ConflictError exception raised, so break
-                # out of the enclosing while loop.
-                return result
-    return func_wrapper
+def transaction_decorate(retry_delay=1):
+    def wrap(func):
+        def wrapped_f(self, *args, **kwargs):
+            while True:
+                try:
+                    result = func(self, *args, **kwargs)
+                    transaction.commit()
+                except ConflictError:
+                    # Conflict occurred; this process should abort,
+                    # wait for a little bit, then try again.
+                    transaction.abort()
+                    time.sleep(retry_delay)
+                else:
+                    # No ConflictError exception raised, so break
+                    # out of the enclosing while loop.
+                    return result
+        return wrapped_f
+    return wrap
 
 
 class Database(object):
@@ -71,11 +73,11 @@ class Database(object):
             logger.exception(e)
             transaction.abort()
 
-    @transaction_decorate
+    @transaction_decorate(retry_delay=0.1)
     def get_code(self):
         return self.data.installation.get_code()
 
-    @transaction_decorate
+    @transaction_decorate(retry_delay=0.1)
     def add_ticket(self, ticket):
         return self.data.add_ticket(ticket)
 
@@ -88,7 +90,7 @@ class Database(object):
                 logger.exception(e)
                 break
 
-    @transaction_decorate
+    @transaction_decorate(retry_delay=5)
     def upload_oldest_ticket(self):
         self.data.upload_tickets()
 

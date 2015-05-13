@@ -217,7 +217,7 @@ class TestDatabase(unittest.TestCase):
         m.side_effect = [ConflictError, transaction.commit]
         transaction.commit = m
         mock_function = MagicMock()
-        @transaction_decorate
+        @transaction_decorate(retry_delay=0.1)
         def write_db(self):
             mock_function(1)
             dbroot['db'] = 1
