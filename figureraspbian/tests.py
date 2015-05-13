@@ -401,6 +401,7 @@ class TestDatabase(unittest.TestCase):
             db.upload_tickets()
             self.assertFalse(api.create_ticket.called)
 
+
 class TestProcessus(unittest.TestCase):
 
     def setUp(self):
@@ -461,6 +462,40 @@ class TestProcessus(unittest.TestCase):
         with managed(Database()) as db:
             self.assertEqual(len(db.dbroot['tickets']._tickets.items()), 1)
 
+
+from selenium import webdriver
+from .utils import PhantomJsException, save_screenshot_with_retry
+
+
+class TestSaveScreenshotWithRetry(unittest.TestCase):
+
+
+    def test_eventually_succeeds(self):
+        """
+        save_screenshot_with_retry should retry function if it fails
+        """
+
+        driver = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
+        m = Mock()
+        m.side_effect = [PhantomJsException(""), True]
+        driver.save_screenshot = m
+        save_screenshot_with_retry(driver, 'mockfile')
+        m.assert_has_calls([call('mockfile'), call('mockfile')])
+        driver.quit()
+
+
+    def test_giveup_after_3_times(self):
+        """
+        save_screesnot_with_retry should five up after three retries
+        """
+        driver = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
+        m = Mock()
+        m.side_effect = [PhantomJsException(""), PhantomJsException(""), PhantomJsException("")]
+        driver.save_screenshot = m
+        with self.assertRaises(PhantomJsException):
+            save_screenshot_with_retry(driver, 'mockfile')
+        m.assert_has_calls([call('mockfile'), call('mockfile'), call('mockfile')])
+        driver.quit()
 
 if __name__ == '__main__':
     unittest.main()

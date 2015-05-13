@@ -13,6 +13,7 @@ from selenium import webdriver
 from .ticketrenderer import TicketRenderer
 from . import devices, settings
 from .db import Database, managed
+from .utils import save_screenshot_with_retry
 
 
 if not exists(settings.TICKET_DIR):
@@ -57,7 +58,7 @@ def run():
                 phantom_js = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
                 phantom_js.get(settings.TICKET_HTML_URL)
                 ticket = join(settings.TICKET_DIR, basename(snapshot))
-                phantom_js.save_screenshot(ticket)
+                save_screenshot_with_retry(phantom_js, ticket)
                 phantom_js.quit()
                 end = time.time()
                 logger.info('Ticket successfully rendered in %s seconds', end - start)
