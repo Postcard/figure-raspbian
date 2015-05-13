@@ -58,7 +58,8 @@ RUN pip install gphoto2==1.1.0 \
     pytz==2015.2 \
     celery==3.1.17 \
     Flask==0.10.1 \
-    supervisor==3.1.3
+    supervisor==3.1.3 \
+    Django==1.8
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
