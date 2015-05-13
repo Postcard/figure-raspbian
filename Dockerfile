@@ -71,7 +71,7 @@ ENV SNAPSHOT_DIR /data/snapshots
 ENV TICKET_DIR /data/tickets
 ENV ZEO_SOCKET /var/run/zeo.sock
 ENV TICKET_CSS_URL http://localhost/ticket.css
-ENV TICKET_CSS_HTML http://localhost/ticket.html
+ENV TICKET_HTML_URL http://localhost/ticket.html
 
 COPY figureraspbian /figureraspbian
 COPY ./start.sh /

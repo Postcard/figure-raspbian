@@ -149,10 +149,10 @@ class Installation(persistent.Persistent):
             for image_variable in self.ticket_template['image_variables']:
                 for image in image_variable['items']:
                     api.download(image['image'], settings.IMAGE_DIR)
-            ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
             if is_new:
                 self.codes = api.get_codes(self.id)
                 self._p_changed = True
+            ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
             api.download(ticket_css_url, settings.RESOURCE_DIR)
 
     def get_code(self):
