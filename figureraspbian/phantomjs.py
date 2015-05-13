@@ -21,13 +21,9 @@ def save_screenshot_with_retry(driver, file):
     return result
 
 
-class PhantomJS(object):
-
-    def __init__(self):
-        self.driver = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
-
-    def save_screenshot(self, file_name):
-        self.driver.get(settings.TICKET_HTML_URL)
-        ticket = join(settings.TICKET_DIR, file_name)
-        save_screenshot_with_retry(self.driver, ticket)
-        self.driver.close()
+def save_screenshot(file_name):
+    driver = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
+    driver.get(settings.TICKET_HTML_URL)
+    ticket = join(settings.TICKET_DIR, file_name)
+    save_screenshot_with_retry(driver, ticket)
+    driver.quit()

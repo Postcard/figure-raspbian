@@ -6,18 +6,16 @@ import time
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
-import io
+import codecs
 
 from .ticketrenderer import TicketRenderer
 from . import devices, settings
 from .db import Database, managed
-from .phantomjs import PhantomJS
+from .phantomjs import save_screenshot
 
 
 if not exists(settings.TICKET_DIR):
     makedirs(settings.TICKET_DIR)
-
-phantomjs = PhantomJS()
 
 def run():
     with managed(Database()) as db:
@@ -52,9 +50,9 @@ def run():
                                           ticket_template['images'])
                 html, dt, code, random_text_selections, random_image_selections = \
                     renderer.render(snapshot, code)
-                with io.open(settings.TICKET_HTML_PATH, mode='w', encoding='utf-8') as ticket:
+                with codecs.open(settings.TICKET_HTML_PATH, 'w', 'utf-8') as ticket:
                     ticket.write(html)
-                phantomjs.save_screenshot(basename(snapshot))
+                save_screenshot(basename(snapshot))
 
                 end = time.time()
                 logger.info('Ticket successfully rendered in %s seconds', end - start)
