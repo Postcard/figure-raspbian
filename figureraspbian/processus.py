@@ -1,12 +1,12 @@
 # -*- coding: utf8 -*-
 
-from os.path import exists, join, basename
+from os.path import exists, basename
 from os import makedirs
 import time
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
-import codecs
+import io
 
 from .ticketrenderer import TicketRenderer
 from . import devices, settings
@@ -52,7 +52,7 @@ def run():
                                           ticket_template['images'])
                 html, dt, code, random_text_selections, random_image_selections = \
                     renderer.render(snapshot, code)
-                with codecs.open(settings.TICKET_HTML_PATH, 'w', 'utf-8') as ticket:
+                with io.open(settings.TICKET_HTML_PATH, mode='w', encoding='utf-8') as ticket:
                     ticket.write(html)
                 phantomjs.save_screenshot(basename(snapshot))
 

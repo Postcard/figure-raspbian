@@ -100,7 +100,7 @@ def log_config():
     logger.info('IMAGE_DIR: %s' % IMAGE_DIR)
     logger.info('IMAGE_DIR_URL: %s' % IMAGE_DIR_URL)
     logger.info('SNAPSHOT_DIR: %s' % SNAPSHOT_DIR)
-    logger.info('SNAPSHOT_DIR_URL' % SNAPSHOT_DIR_URL)
+    logger.info('SNAPSHOT_DIR_URL: %s' % SNAPSHOT_DIR_URL)
     logger.info('TICKET_DIR: %s' % TICKET_DIR)
     logger.info('RESOURCE_DIR: %s' % RESOURCE_DIR)
     logger.info('PHANTOMJS_PATH: %s' % PHANTOMJS_PATH)
