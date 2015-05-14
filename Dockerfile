@@ -39,16 +39,17 @@ RUN wget --no-check-certificate https://github.com/aeberhardo/phantomjs-linux-ar
     bunzip2 *.bz2 && \
     tar xf *.tar
 
-RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.6.zip && \
-    unzip v1.6.zip && \
-    rm v1.6.zip && \
-    cd python-epson-printer-1.6 && \
+RUN echo 'disable cache'
+
+RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.7.zip && \
+    unzip v1.7.zip && \
+    rm v1.7.zip && \
+    cd python-epson-printer-1.7 && \
     python setup.py install
 
 RUN pip install gphoto2==1.1.0 \
     requests==2.5.1 \
     Pillow==2.6.0 \
-    selenium==2.44.0 \
     pifacecommon==4.1.2 \
     pifacedigitalio==3.0.5 \
     jinja2==2.7.3 \
