@@ -17,6 +17,7 @@ from ZODB.POSException import ConflictError
 import transaction
 
 from .db import transaction_decorate
+from . import phantomjs
 
 
 class TestTicketRenderer(unittest.TestCase):
@@ -463,44 +464,13 @@ class TestProcessus(unittest.TestCase):
             self.assertEqual(len(db.dbroot['tickets']._tickets.items()), 1)
 
 
-from selenium import webdriver
-from .phantomjs import PhantomJsException, save_screenshot_with_retry, PhantomJS
-
-
 class TestPhantomJS(unittest.TestCase):
-
-    def test_eventually_succeeds(self):
-        """
-        save_screenshot_with_retry should retry function if it fails
-        """
-
-        driver = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
-        m = Mock()
-        m.side_effect = [PhantomJsException(""), True]
-        driver.save_screenshot = m
-        save_screenshot_with_retry(driver, 'mockfile')
-        m.assert_has_calls([call('mockfile'), call('mockfile')])
-        driver.quit()
-
-    def test_giveup_after_3_times(self):
-        """
-        save_screesnot_with_retry should five up after three retries
-        """
-        driver = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
-        m = Mock()
-        m.side_effect = [PhantomJsException(""), PhantomJsException(""), PhantomJsException("")]
-        driver.save_screenshot = m
-        with self.assertRaises(PhantomJsException):
-            save_screenshot_with_retry(driver, 'mockfile')
-        m.assert_has_calls([call('mockfile'), call('mockfile'), call('mockfile')])
-        driver.quit()
 
     def test_save_screenshot(self):
         """
-        save_screenshot should not fails even if we generate a lot of screenshot
+        save_screenshot should make a screenshot of ticket.html and save it to a file
         """
-        phantomjs = PhantomJS()
-        phantomjs.save_screenshot('screenshot.jpg')
+        phantomjs.save_screenshot('./media/tickets/test.jpg')
 
 
 if __name__ == '__main__':

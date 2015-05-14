@@ -49,7 +49,8 @@ def run():
                 ticket_html_path = join(settings.STATIC_ROOT, 'ticket.html')
                 with codecs.open(ticket_html_path, 'w', 'utf-8') as ticket_html:
                     ticket_html.write(html)
-                ticket_path = save_screenshot(basename(snapshot))
+                ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot))
+                save_screenshot(ticket_path)
 
                 end = time.time()
                 logger.info('Ticket successfully rendered in %s seconds', end - start)
