@@ -5,6 +5,7 @@ import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 import time
+import os
 
 from ZEO import ClientStorage
 from ZODB import DB
@@ -126,6 +127,9 @@ class Data(persistent.Persistent):
         self.installation.update()
 
 
+IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
+
+
 class Installation(persistent.Persistent):
 
     def __init__(self):
@@ -147,15 +151,15 @@ class Installation(persistent.Persistent):
             self.scenario = installation['scenario']
             self.ticket_template = self.scenario['ticket_template']
             for image in self.ticket_template['images']:
-                api.download(image['image'], settings.IMAGE_DIR)
+                api.download(image['image'], IMAGE_DIR)
             for image_variable in self.ticket_template['image_variables']:
                 for image in image_variable['items']:
-                    api.download(image['image'], settings.IMAGE_DIR)
+                    api.download(image['image'], IMAGE_DIR)
             if is_new:
                 self.codes = api.get_codes(self.id)
                 self._p_changed = True
             ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
-            api.download(ticket_css_url, settings.RESOURCE_DIR)
+            api.download(ticket_css_url, settings.STATIC_ROOT)
 
     def get_code(self):
         # claim a code

@@ -4,7 +4,7 @@
 modprobe i2c-dev
 
 # create data directories
-mkdir -p /data/tickets /data/images /data/snapshots /data/resources
+mkdir -p /data/static /data/media/tickets /data/media/images /data/media/snapshots
 
 # Launch supervisor in the foreground
 echo 'Starting supervisor'

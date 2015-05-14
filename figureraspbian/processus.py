@@ -1,7 +1,6 @@
 # -*- coding: utf8 -*-
 
-from os.path import exists, basename
-from os import makedirs
+from os.path import basename, join
 import time
 import logging
 logging.basicConfig(level='INFO')
@@ -14,8 +13,6 @@ from .db import Database, managed
 from .phantomjs import save_screenshot
 
 
-if not exists(settings.TICKET_DIR):
-    makedirs(settings.TICKET_DIR)
 
 def run():
     with managed(Database()) as db:
@@ -50,16 +47,17 @@ def run():
                                           ticket_template['images'])
                 html, dt, code, random_text_selections, random_image_selections = \
                     renderer.render(snapshot, code)
-                with codecs.open(settings.TICKET_HTML_PATH, 'w', 'utf-8') as ticket:
-                    ticket.write(html)
-                save_screenshot(basename(snapshot))
+                ticket_html_path = join(settings.STATIC_ROOT, 'ticket.html')
+                with codecs.open(ticket_html_path, 'w', 'utf-8') as ticket_html:
+                    ticket_html.write(html)
+                ticket_path = save_screenshot(basename(snapshot))
 
                 end = time.time()
                 logger.info('Ticket successfully rendered in %s seconds', end - start)
 
                 # Print ticket
                 start = time.time()
-                devices.PRINTER.print_ticket(ticket)
+                devices.PRINTER.print_ticket(ticket_path)
                 end = time.time()
                 logger.info('Ticket successfully printed in %s seconds', end - start)
 
@@ -73,7 +71,7 @@ def run():
                 ticket = {
                     'installation': installation.id,
                     'snapshot': snapshot,
-                    'ticket': ticket,
+                    'ticket': ticket_path,
                     'dt': dt,
                     'code': code,
                     'random_text_selections': random_text_selections,

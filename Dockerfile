@@ -67,21 +67,13 @@ ENV C_FORCE_ROOT true
 ENV FIGURE_DIR /figure/figureraspbian
 ENV IMAGE_DIR /data/images
 ENV PHANTOMJS_PATH /phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
-ENV RESOURCE_DIR /data/resources
-ENV SNAPSHOT_DIR /data/snapshots
-ENV TICKET_DIR /data/tickets
+ENV STATIC_ROOT /data/static
+ENV MEDIA_ROOT /data/media
 ENV ZEO_SOCKET /var/run/zeo.sock
-ENV TICKET_CSS_URL http://localhost/resources/ticket.css
-ENV TICKET_HTML_URL http://localhost/resources/ticket.html
-ENV IMAGE_DIR_URL http://localhost/images
-ENV SNAPSHOT_DIR_URL http://localhost/snapshots
 
 COPY figureraspbian /figureraspbian
 COPY ./start.sh /
 COPY ./supervisord.conf /etc/
-RUN rm -v /etc/nginx/nginx.conf
-COPY nginx.conf /etc/nginx/
-RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
 RUN mkdir -p /var/log /var/run && chmod 755 /start.sh
 

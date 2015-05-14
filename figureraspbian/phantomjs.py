@@ -1,4 +1,7 @@
-from os.path import join, basename
+# -*- coding: utf8 -*-
+
+
+from os.path import join
 
 from selenium import webdriver
 from retrying import retry
@@ -23,7 +26,9 @@ def save_screenshot_with_retry(driver, file):
 
 def save_screenshot(file_name):
     driver = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
-    driver.get(settings.TICKET_HTML_URL)
-    ticket = join(settings.TICKET_DIR, file_name)
-    save_screenshot_with_retry(driver, ticket)
+    ticket_url = 'http://localhost:8080/resources/ticket.html'
+    driver.get(ticket_url)
+    ticket_path = join(settings.MEDIA_ROOT, 'tickets', file_name)
+    save_screenshot_with_retry(driver, ticket_path)
     driver.quit()
+    return ticket_path
