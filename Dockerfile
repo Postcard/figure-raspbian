@@ -60,9 +60,7 @@ RUN pip install gphoto2==1.1.0 \
     Flask==0.10.1 \
     supervisor==3.1.3 \
     Django==1.8 \
-    retrying==1.3.3
-
-RUN pip install gunicorn==19.3.0
+    gunicorn==19.3.0
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
