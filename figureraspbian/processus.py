@@ -12,6 +12,7 @@ from . import devices, settings
 from .db import Database, managed
 from .phantomjs import save_screenshot
 
+
 def run():
     with managed(Database()) as db:
         try:
