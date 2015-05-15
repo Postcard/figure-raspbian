@@ -21,23 +21,15 @@ def with_base_html(rendered):
 <html class="figure figure-ticket-container">
     <head>
         <meta charset="utf-8">
-        <link rel="stylesheet" href="file://{ticket_css}">
+        <link rel="stylesheet" href="http://localhost:8080/resources/ticket.css">
     </head>
     <body class="figure figure-ticket-container">
         <div class="figure figure-ticket">
             {content}
-            <br>
-            <p style='text-align:center;'>
-                <span style='letter-spacing: 0.2em; border: 2px solid #000; padding: 10px 9px 8px 13px; margin-bottom: 16px; margin-left: 8px; display: inline-block;'>{{{{code}}}}</span>
-                <br/>
-                <small>Tapez votre code sur<br/>figuredevices.com</small>
-            </p>
         </div>
     </body>
 </html>"""
-    return base.format(content=rendered, ticket_css=settings.TICKET_CSS_PATH)
-
-
+    return base.format(content=rendered)
 
 
 def datetimeformat(value, format='%Y-%m-%d'):
@@ -81,18 +73,20 @@ class TicketRenderer(object):
         return random_text_selections, random_image_selections
 
     def render(self, snapshot, code):
-        context = {'snapshot': 'file://%s' % snapshot}
+        snapshot_url = 'http://localhost:8080/media/snapshots/%s' % os.path.basename(snapshot)
+        context = {'snapshot': snapshot_url}
         (random_text_selections, random_image_selections) = self.random_selection()
         for (text_variable_id, item) in random_text_selections:
              context['textvariable_%s' % text_variable_id] = item['text']
         for (image_variable_id, item) in random_image_selections:
-            context['imagevariable_%s' % image_variable_id] = 'file://%s/%s' % (settings.IMAGE_DIR,
-                                                                                os.path.basename(item['image']))
+            image_url = 'http://localhost:8080/media/images/%s' % os.path.basename(item['image'])
+            context['imagevariable_%s' % image_variable_id] = image_url
         now = datetime.now(pytz.timezone(settings.TIMEZONE))
         context['datetime'] = now
         context['code'] = code
         for im in self.images:
-            context['image_%s' % im['id']] = 'file://%s/%s' % (settings.IMAGE_DIR, os.path.basename(im['image']))
+            image_url = 'http://localhost:8080/media/images/%s' % os.path.basename(im['image'])
+            context['image_%s' % im['id']] = image_url
         template = JINJA_ENV.from_string(with_base_html(self.html))
         rendered_html = template.render(context)
         return rendered_html, now, code, random_text_selections, random_image_selections

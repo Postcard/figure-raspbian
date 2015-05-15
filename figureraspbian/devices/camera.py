@@ -44,7 +44,7 @@ class DSLRCamera(Camera):
             if settings.FLASH_ON:
                 self.light.flash_on()
                 # Let the time for the camera to adjust
-                time.sleep(2)
+                time.sleep(1)
 
             # Capture image
             error, filepath = gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, self.context)
@@ -58,7 +58,7 @@ class DSLRCamera(Camera):
             now = datetime.now().strftime('%Y%m%d%H%M%S')
             datetime.now(pytz.timezone(settings.TIMEZONE))
             basename = "{installation}_{now}.jpg".format(installation=installation, now=now)
-            path = os.path.join(settings.SNAPSHOT_DIR, basename)
+            path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
             # Save the file to the Raspberry Pi
             camerafile.save(path)
         finally:

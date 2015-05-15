@@ -37,9 +37,8 @@ if __name__ == '__main__':
     logger.info("Initializing Figure application...")
 
     logger.info("Initializing database...")
-    database = Database()
-    database.open()
-    database.close()
+    with managed(Database()) as db:
+        db.update_installation()
 
     listener = get_listener()
 

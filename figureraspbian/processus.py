@@ -1,101 +1,85 @@
 # -*- coding: utf8 -*-
 
-from os.path import exists, join, basename
-from os import makedirs
-from datetime import datetime
+from os.path import basename, join
 import time
-import pytz
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 import codecs
 
-from selenium import webdriver
-
 from .ticketrenderer import TicketRenderer
-from . import devices, settings, tasks
+from . import devices, settings
 from .db import Database, managed
-
-
-phantom_js = webdriver.PhantomJS(executable_path=settings.PHANTOMJS_PATH)
-
-if not exists(settings.TICKET_DIR):
-    makedirs(settings.TICKET_DIR)
+from .phantomjs import save_screenshot
 
 
 def run():
     with managed(Database()) as db:
         try:
-            installation = db.dbroot['installation']
+            installation = db.data.installation
 
-            if installation is not None and installation.id is not None:
+            if installation.id is not None:
                 # Database is initialized !
 
-                # check if installation is not finished
-                end = datetime.strptime(installation.end, '%Y-%m-%dT%H:%M:%SZ')
-                end = end.replace(tzinfo=pytz.UTC)
+                # Retrieve necessary information from database
+                ticket_template = installation.ticket_template
 
-                if end > datetime.now(pytz.timezone(settings.TIMEZONE)):
+                # Initialize blinking task
+                blinking_task = None
+                # Set Output to False
+                devices.OUTPUT.set(True)
 
-                    # Retrieve necessary information from database
-                    ticket_template = installation.ticket_template
+                # Take a snapshot
+                start = time.time()
+                snapshot = devices.CAMERA.capture(installation.id)
+                end = time.time()
+                logger.info('Snapshot capture successfully executed in %s seconds', end - start)
+                # Start blinking
+                blinking_task = devices.OUTPUT.blink()
 
-                    # Initialize blinking task
-                    blinking_task = None
-                    # Set Output to False
-                    devices.OUTPUT.set(True)
+                # Render ticket
+                start = time.time()
+                code = db.get_code()
+                renderer = TicketRenderer(ticket_template['html'],
+                                          ticket_template['text_variables'],
+                                          ticket_template['image_variables'],
+                                          ticket_template['images'])
+                html, dt, code, random_text_selections, random_image_selections = \
+                    renderer.render(snapshot, code)
+                ticket_html_path = join(settings.STATIC_ROOT, 'ticket.html')
+                with codecs.open(ticket_html_path, 'w', 'utf-8') as ticket_html:
+                    ticket_html.write(html)
+                ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot))
+                save_screenshot(ticket_path)
 
-                    # Take a snapshot
-                    start = time.time()
-                    snapshot = devices.CAMERA.capture(installation.id)
-                    end = time.time()
-                    logger.info('Snapshot capture successfully executed in %s seconds', end - start)
-                    # Start blinking
-                    blinking_task = devices.OUTPUT.blink()
+                end = time.time()
+                logger.info('Ticket successfully rendered in %s seconds', end - start)
 
-                    # Render ticket
-                    start = time.time()
-                    code = installation.get_code()
-                    renderer = TicketRenderer(ticket_template['html'],
-                                              ticket_template['text_variables'],
-                                              ticket_template['image_variables'],
-                                              ticket_template['images'])
-                    html, dt, code, random_text_selections, random_image_selections = \
-                        renderer.render(snapshot, code)
-                    with codecs.open(settings.TICKET_HTML_PATH, 'w', 'utf-8') as ticket:
-                        ticket.write(html)
-                    url = "file://%s" % settings.TICKET_HTML_PATH
-                    phantom_js.get(url)
-                    ticket = join(settings.TICKET_DIR, basename(snapshot))
-                    phantom_js.save_screenshot(ticket)
-                    end = time.time()
-                    logger.info('Ticket successfully rendered in %s seconds', end - start)
+                # Print ticket
+                start = time.time()
+                devices.PRINTER.print_ticket(ticket_path)
+                end = time.time()
+                logger.info('Ticket successfully printed in %s seconds', end - start)
 
-                    # Print ticket
-                    start = time.time()
-                    devices.PRINTER.print_ticket(ticket)
-                    end = time.time()
-                    logger.info('Ticket successfully printed in %s seconds', end - start)
+                # Stop blinking
+                blinking_task.terminate()
 
-                    # Stop blinking
-                    blinking_task.terminate()
+                # Set Output to True
+                devices.OUTPUT.set(False)
 
-                    # Set Output to True
-                    devices.OUTPUT.set(False)
-
-                    # add task upload ticket task to the queue
-                    ticket = {
-                        'installation': installation.id,
-                        'snapshot': snapshot,
-                        'ticket': ticket,
-                        'dt': dt,
-                        'code': code,
-                        'random_text_selections': random_text_selections,
-                        'random_image_selections': random_image_selections
-                    }
-                    db.dbroot['tickets'].add_ticket(ticket)
-                else:
-                    logger.warning("Current installation has ended. Skipping processus execution")
+                # add task upload ticket task to the queue
+                ticket = {
+                    'installation': installation.id,
+                    'snapshot': snapshot,
+                    'ticket': ticket_path,
+                    'dt': dt,
+                    'code': code,
+                    'random_text_selections': random_text_selections,
+                    'random_image_selections': random_image_selections
+                }
+                db.add_ticket(ticket)
+            else:
+                logger.warning("Current installation has ended. Skipping processus execution")
         except Exception as e:
             logger.exception(e)
         finally:

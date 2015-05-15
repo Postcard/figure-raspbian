@@ -61,10 +61,10 @@ def single_instance_task(timeout):
 def upload_tickets():
     """ Upload all tickets that have not been previously updated"""
     with managed(Database()) as db:
-        db.dbroot['tickets'].upload_tickets()
+        db.upload_tickets()
 
 
 @app.task
 def update_db():
     with managed(Database()) as db:
-        db.dbroot['installation'].update()
+        db.update_installation()

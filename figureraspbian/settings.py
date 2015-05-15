@@ -35,34 +35,14 @@ API_HOST = get_env_setting('API_HOST', 'http://localhost:8000')
 # Access Token to authenticate user to the API
 TOKEN = get_env_setting('TOKEN')
 
-# Directory for images
-IMAGE_DIR = get_env_setting('IMAGE_DIR', os.path.join(FIGURE_DIR, 'media/images'))
-if not os.path.exists(IMAGE_DIR):
-    os.makedirs(IMAGE_DIR)
+# Root directory for static files
+STATIC_ROOT = get_env_setting('STATIC_ROOT', '/Users/benoit/git/figure-raspbian/static')
 
-# Directory for snapshots
-SNAPSHOT_DIR = get_env_setting('SNAPSHOT_DIR', os.path.join(FIGURE_DIR, 'media/snapshots'))
-if not os.path.exists(SNAPSHOT_DIR):
-    os.makedirs(SNAPSHOT_DIR)
-
-# Directory for tickets
-TICKET_DIR = get_env_setting('TICKET_DIR', 'media/tickets')
-if not os.path.exists(TICKET_DIR):
-    os.makedirs(TICKET_DIR)
-
-RESOURCE_DIR = get_env_setting('RESOURCE_DIR', 'resources')
+# Root for media files
+MEDIA_ROOT = get_env_setting('MEDIA_ROOT', '/Users/benoit/git/figure-raspbian/media')
 
 # Path to PhantomJS executable
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
-
-# Path to database file
-DB_PATH = get_env_setting('DB_FILE', os.path.join(FIGURE_DIR, 'db.fs'))
-
-# Path to ticket CSS
-TICKET_CSS_PATH = os.path.join(RESOURCE_DIR, 'ticket.css')
-
-# Path to ticket html
-TICKET_HTML_PATH = os.path.join(RESOURCE_DIR, 'ticket.html')
 
 # Pin used to trigger the process
 TRIGGER_PIN = get_env_setting('TRIGGER_PIN', 0)
@@ -83,19 +63,15 @@ CAMERA_TYPE = get_env_setting('CAMERA_TYPE', 'CANON')
 flash_on = get_env_setting('FLASH_ON', '0')
 FLASH_ON = True if flash_on == '1' else False
 
+
 def log_config():
     logger.info('RESIN_DEVICE_UUID: %s' % RESIN_DEVICE_UUID)
     logger.info('ENVIRONMENT: %s' % ENVIRONMENT)
     logger.info('FIGURE_DIR: %s' % FIGURE_DIR)
     logger.info('API_HOST: %s' % API_HOST)
-    logger.info('IMAGE_DIR: %s' % IMAGE_DIR)
-    logger.info('SNAPSHOT_DIR: %s' % SNAPSHOT_DIR)
-    logger.info('TICKET_DIR: %s' % TICKET_DIR)
-    logger.info('RESOURCE_DIR: %s' % RESOURCE_DIR)
+    logger.info('STATIC_ROOT: %s' % STATIC_ROOT)
+    logger.info('MEDIA_ROOT: %s' % MEDIA_ROOT)
     logger.info('PHANTOMJS_PATH: %s' % PHANTOMJS_PATH)
-    logger.info('DB_PATH: %s' % DB_PATH)
-    logger.info('TICKET_CSS_PATH: %s' % TICKET_CSS_PATH)
-    logger.info('TICKET_HTML_PATH: %s' % TICKET_HTML_PATH)
     logger.info('TRIGGER_PIN: %s' % TRIGGER_PIN)
     logger.info('ZEO_SOCKET: %s' % TRIGGER_PIN)
     logger.info('TIMEZONE: %s' % TIMEZONE)

@@ -10,7 +10,6 @@ except ImportError:
     print("Could not import epsonprinter")
 
 
-
 class Printer(object):
     """ Printer interface """
 
