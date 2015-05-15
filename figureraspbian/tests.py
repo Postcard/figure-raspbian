@@ -27,9 +27,9 @@ class TestTicketRenderer(unittest.TestCase):
         self.chiefs = ['Titi', 'Vicky', 'Benni']
         self.chiefs = [{'id': '1', 'text': 'Titi'}, {'id': '2', 'text': 'Vicky'}, {'id': '3', 'text': 'Benni'}]
         text_variables = [{'id': '1', 'items': self.chiefs}]
-        self.paths = [{'id': '1', 'media': '/path/to/variable/image1'}, {'id': '2', 'media': '/path/to/variable/image2'}]
+        self.paths = [{'id': '1', 'image': '/path/to/variable/image1'}, {'id': '2', 'image': '/path/to/variable/image2'}]
         image_variables = [{'id': '2', 'items': self.paths}, {'id': '3', 'items': []}]
-        images = [{'id': '1', 'media': 'path/to/image'}]
+        images = [{'id': '1', 'image': 'path/to/image'}]
         self.ticket_renderer = TicketRenderer(html, text_variables, image_variables, images)
 
     def test_random_selection(self):

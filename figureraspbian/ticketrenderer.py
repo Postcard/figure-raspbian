@@ -85,7 +85,7 @@ class TicketRenderer(object):
         context['datetime'] = now
         context['code'] = code
         for im in self.images:
-            image_url = 'http://localhost:8080/media/images/%s' % os.path.basename(item['image'])
+            image_url = 'http://localhost:8080/media/images/%s' % os.path.basename(im['image'])
             context['image_%s' % im['id']] = image_url
         template = JINJA_ENV.from_string(with_base_html(self.html))
         rendered_html = template.render(context)
