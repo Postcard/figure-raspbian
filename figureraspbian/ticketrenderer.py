@@ -26,12 +26,6 @@ def with_base_html(rendered):
     <body class="figure figure-ticket-container">
         <div class="figure figure-ticket">
             {content}
-            <br>
-            <p style='text-align:center;'>
-                <span style='letter-spacing: 0.2em; border: 2px solid #000; padding: 10px 9px 8px 13px; margin-bottom: 16px; margin-left: 8px; display: inline-block;'>{{{{code}}}}</span>
-                <br/>
-                <small>Tapez votre code sur<br/>figuredevices.com</small>
-            </p>
         </div>
     </body>
 </html>"""
