@@ -13,10 +13,11 @@ class PhantomJsException(Exception):
     pass
 
 
-def save_screenshot(ticket_path):
+def get_screenshot():
 
-    args = [settings.PHANTOMJS_PATH, './figureraspbian/ticket.js', ticket_path]
-    subprocess.check_output(args)
+    args = [settings.PHANTOMJS_PATH, './figureraspbian/ticket.js']
+    data = subprocess.check_output(args)
+    return data
 
 
 
