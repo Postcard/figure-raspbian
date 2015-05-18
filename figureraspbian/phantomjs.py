@@ -14,7 +14,6 @@ class PhantomJsException(Exception):
 
 
 def get_screenshot():
-
     args = [settings.PHANTOMJS_PATH, './figureraspbian/ticket.js']
     data = subprocess.check_output(args)
     return data

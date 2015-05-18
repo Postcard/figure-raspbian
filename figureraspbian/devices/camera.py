@@ -82,7 +82,7 @@ class DSLRCamera(Camera):
                 raise Exception("Unknown camera type")
 
             # resize in place using the fastest algorithm, ie NEAREST
-            snapshot.thumbnail((1024, 1024))
+            small = snapshot.resize((512, 512))
 
             # Create file path on the RaspberryPi
             now = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -90,9 +90,9 @@ class DSLRCamera(Camera):
             basename = "{installation}_{now}.jpg".format(installation=installation, now=now)
             path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
 
-            snapshot.save(path)
+            small.save(path)
 
-            return path
+            return path, snapshot
 
         finally:
             del camera_file, file_data
