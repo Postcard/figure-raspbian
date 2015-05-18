@@ -20,13 +20,13 @@ RUN apt-get update && apt-get install -y \
     wget \
     bzip2 \
     rabbitmq-server \
-    nginx \
     libjpeg-dev \
     zlib1g-dev \
     libpng12-dev \
     usbutils \
     libfreetype6 \
-    libfontconfig
+    libfontconfig \
+    python-numpy
 
 RUN wget --no-check-certificate https://github.com/Postcard/gphoto2-updater/releases/download/2.5.8/gphoto2-updater.sh && \
     chmod +x gphoto2-updater.sh && \
@@ -38,8 +38,6 @@ RUN wget --no-check-certificate https://github.com/aeberhardo/phantomjs-linux-ar
     cd phantomjs-linux-armv6l-master && \
     bunzip2 *.bz2 && \
     tar xf *.tar
-
-RUN echo 'disable cache'
 
 RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.7.zip && \
     unzip v1.7.zip && \

@@ -6,11 +6,12 @@ import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 import codecs
+from PIL import Image
 
 from .ticketrenderer import TicketRenderer
 from . import devices, settings
 from .db import Database, managed
-from .phantomjs import save_screenshot
+import phantomjs
 
 
 def run():
@@ -31,7 +32,7 @@ def run():
 
                 # Take a snapshot
                 start = time.time()
-                snapshot = devices.CAMERA.capture(installation.id)
+                snapshot_path, snapshot = devices.CAMERA.capture(installation.id)
                 end = time.time()
                 logger.info('Snapshot capture successfully executed in %s seconds', end - start)
                 # Start blinking
@@ -45,19 +46,21 @@ def run():
                                           ticket_template['image_variables'],
                                           ticket_template['images'])
                 html, dt, code, random_text_selections, random_image_selections = \
-                    renderer.render(snapshot, code)
+                    renderer.render(snapshot_path, code)
                 ticket_html_path = join(settings.STATIC_ROOT, 'ticket.html')
+
                 with codecs.open(ticket_html_path, 'w', 'utf-8') as ticket_html:
                     ticket_html.write(html)
-                ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot))
-                save_screenshot(ticket_path)
+
+                # get ticket as base64 stream
+                ticket_data = phantomjs.get_screenshot()
 
                 end = time.time()
                 logger.info('Ticket successfully rendered in %s seconds', end - start)
 
                 # Print ticket
                 start = time.time()
-                devices.PRINTER.print_ticket(ticket_path)
+                devices.PRINTER.print_ticket(ticket_data)
                 end = time.time()
                 logger.info('Ticket successfully printed in %s seconds', end - start)
 
@@ -67,10 +70,19 @@ def run():
                 # Set Output to True
                 devices.OUTPUT.set(False)
 
+                # Save ticket to disk
+                ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot_path))
+                with open(ticket_path, "wb") as f:
+                    f.write(ticket_data.decode('base64'))
+
+                # Get good quality image in order to upload it
+                snapshot.thumbnail((1024, 1024), Image.ANTIALIAS)
+                snapshot.save(snapshot_path)
+
                 # add task upload ticket task to the queue
                 ticket = {
                     'installation': installation.id,
-                    'snapshot': snapshot,
+                    'snapshot': snapshot_path,
                     'ticket': ticket_path,
                     'dt': dt,
                     'code': code,

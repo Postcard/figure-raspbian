@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 import pytz
 import time
+import io
 
 from PIL import Image
 
@@ -52,38 +53,50 @@ class DSLRCamera(Camera):
             if settings.FLASH_ON:
                 self.light.flash_off()
 
-            # Create a CameraFile from the FilePath
-            error, camerafile = gp.gp_camera_file_get(self.camera, filepath.folder, filepath.name, gp.GP_FILE_TYPE_NORMAL, self.context)
+            error, camera_file = gp.gp_camera_file_get(
+                self.camera,
+                filepath.folder,
+                filepath.name,
+                gp.GP_FILE_TYPE_NORMAL,
+                self.context)
+
+            error, file_data = gp.gp_file_get_data_and_size(camera_file)
+
+            snapshot = Image.open(io.BytesIO(file_data))
+            if settings.CAMERA_TYPE == 'NIKON':
+                w, h = snapshot.size
+                left = (w - h) / 2
+                top = 0
+                right = w - left
+                bottom = h
+                snapshot = snapshot.crop((left, top, right, bottom))
+            elif settings.CAMERA_TYPE == 'CANON':
+                snapshot = snapshot.rotate(90)
+                w, h = snapshot.size
+                left = 0
+                top = (h - w) / 2
+                right = w
+                bottom = h - top
+                snapshot = snapshot.crop((left, top, right, bottom))
+            else:
+                raise Exception("Unknown camera type")
+
+            # resize in place using the fastest algorithm, ie NEAREST
+            small = snapshot.resize((512, 512))
+
             # Create file path on the RaspberryPi
             now = datetime.now().strftime('%Y%m%d%H%M%S')
             datetime.now(pytz.timezone(settings.TIMEZONE))
             basename = "{installation}_{now}.jpg".format(installation=installation, now=now)
             path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
-            # Save the file to the Raspberry Pi
-            camerafile.save(path)
+
+            small.save(path)
+
+            return path, snapshot
+
         finally:
+            del camera_file, file_data
             self.camera.exit(self.context)
-        im = Image.open(path)
-        if settings.CAMERA_TYPE == 'NIKON':
-            w, h = im.size
-            left = (w - h) / 2
-            top = 0
-            right = w - left
-            bottom = h
-            im = im.crop((left, top, right, bottom))
-        elif settings.CAMERA_TYPE == 'CANON':
-            im = im.rotate(90)
-            w, h = im.size
-            left = 0
-            top = (h - w) / 2
-            right = w
-            bottom = h - top
-            im = im.crop((left, top, right, bottom))
-        else:
-            raise Exception("Unknown camera type")
-        im = im.resize((1024, 1024), Image.ANTIALIAS)
-        im.save(path)
-        return path
 
 
 class DummyCamera(Camera):

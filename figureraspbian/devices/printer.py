@@ -3,7 +3,6 @@
 import re
 import subprocess
 
-
 try:
     from epson_printer import epsonprinter
 except ImportError:
@@ -49,8 +48,8 @@ class EpsonPrinter(Printer):
         self.printer = epsonprinter.EpsonPrinter(int(vendor_id, 16), int(product_id, 16))
         self.printer.set_print_speed(2)
 
-    def print_ticket(self, ticket):
-        self.printer.print_image_from_file(ticket)
+    def print_ticket(self, ticket_data):
+        self.printer.print_image_from_buffer(ticket_data)
         self.printer.linefeed(4)
         self.printer.cut()
 
