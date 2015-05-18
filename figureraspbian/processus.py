@@ -48,6 +48,7 @@ def run():
                 html, dt, code, random_text_selections, random_image_selections = \
                     renderer.render(snapshot_path, code)
                 ticket_html_path = join(settings.STATIC_ROOT, 'ticket.html')
+
                 with codecs.open(ticket_html_path, 'w', 'utf-8') as ticket_html:
                     ticket_html.write(html)
 
