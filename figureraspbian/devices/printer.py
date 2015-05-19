@@ -49,7 +49,7 @@ class EpsonPrinter(Printer):
         self.printer.set_print_speed(2)
 
     def print_ticket(self, ticket_data):
-        self.printer.print_image_from_buffer(ticket_data)
+        self.printer.print_image_from_buffer(ticket_data, rotate=True)
         self.printer.linefeed(4)
         self.printer.cut()
 
