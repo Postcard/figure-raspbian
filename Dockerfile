@@ -39,7 +39,6 @@ RUN wget --no-check-certificate https://github.com/aeberhardo/phantomjs-linux-ar
     bunzip2 *.bz2 && \
     tar xf *.tar
 
-RUN echo 'disable cache'
 RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.7.1.zip && \
     unzip v1.7.1.zip && \
     rm v1.7.1.zip && \
