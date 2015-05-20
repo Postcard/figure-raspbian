@@ -2,6 +2,7 @@
 
 from os.path import basename, join
 import time
+import shutil
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -85,6 +86,8 @@ def run():
                 # Get good quality image in order to upload it
                 snapshot.thumbnail((1024, 1024), Image.ANTIALIAS)
                 snapshot.save(snapshot_path)
+                if settings.BACKUP_ON:
+                    shutil.copy2(snapshot_path, "/mnt/%s" % basename(snapshot_path))
 
                 # add task upload ticket task to the queue
                 ticket = {

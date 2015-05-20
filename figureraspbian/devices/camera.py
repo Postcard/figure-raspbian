@@ -49,7 +49,8 @@ class DSLRCamera(Camera):
 
             # Capture image
             error, filepath = gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, self.context)
-            folder, name = os.path.split(filepath)
+            folder = filepath.folder
+            name = filepath.name
 
             if settings.FLASH_ON:
                 self.light.flash_off()
@@ -97,7 +98,10 @@ class DSLRCamera(Camera):
             return path, snapshot, date
 
         finally:
-            del camera_file, file_data
+            if 'camera_file' in locals():
+                del camera_file
+            if 'file_data' in locals():
+                del file_data
             self.camera.exit(self.context)
 
 

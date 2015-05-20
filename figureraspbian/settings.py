@@ -63,6 +63,10 @@ CAMERA_TYPE = get_env_setting('CAMERA_TYPE', 'CANON')
 flash_on = get_env_setting('FLASH_ON', '0')
 FLASH_ON = True if flash_on == '1' else False
 
+# Backup
+backup_on = get_env_setting('BACKUP_ON', '0')
+BACKUP_ON = True if backup_on == '1' else False
+
 
 def log_config():
     logger.info('RESIN_DEVICE_UUID: %s' % RESIN_DEVICE_UUID)

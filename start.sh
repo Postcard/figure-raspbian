@@ -6,6 +6,11 @@ modprobe i2c-dev
 # create data directories
 mkdir -p /data/static /data/media/tickets /data/media/images /data/media/snapshots
 
+# Mount USB stick if BACKUP is activated
+if [ "$BACKUP_ON" = 1 ] ; then
+    mount /dev/sda1 /mnt && chmod 775 /mnt
+fi
+
 # Launch supervisor in the foreground
 echo 'Starting supervisor'
 supervisord --nodaemon --configuration /etc/supervisord.conf
