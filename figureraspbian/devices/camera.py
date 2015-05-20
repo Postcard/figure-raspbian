@@ -74,6 +74,7 @@ class DSLRCamera(Camera):
 
             error, file_data = gp.gp_file_get_data_and_size(camera_file)
 
+            # Crop and rotate snapshot
             snapshot = Image.open(io.BytesIO(file_data))
             w, h = snapshot.size
             left = (w - h) / 2
