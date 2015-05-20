@@ -49,14 +49,26 @@ class DSLRCamera(Camera):
 
             # Capture image
             error, filepath = gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, self.context)
+            folder, name = os.path.split(filepath)
 
             if settings.FLASH_ON:
                 self.light.flash_off()
 
+            # Get date
+            error, info = gp.gp_camera_file_get_info(
+                self.camera,
+                folder,
+                name,
+                self.context)
+            date = datetime.fromtimestamp(info.file.mtime)
+            timezone = pytz.timezone(settings.TIMEZONE)
+            timezone.localize(date)
+
+            # Get snapshot file
             error, camera_file = gp.gp_camera_file_get(
                 self.camera,
-                filepath.folder,
-                filepath.name,
+                folder,
+                name,
                 gp.GP_FILE_TYPE_NORMAL,
                 self.context)
 
@@ -85,14 +97,14 @@ class DSLRCamera(Camera):
             small = snapshot.resize((512, 512))
 
             # Create file path on the RaspberryPi
-            now = datetime.now().strftime('%Y%m%d%H%M%S')
-            datetime.now(pytz.timezone(settings.TIMEZONE))
-            basename = "{installation}_{now}.jpg".format(installation=installation, now=now)
+
+
+            basename = "{installation}_{date}.jpg".format(installation=installation, date=date.strftime('%Y%m%d%H%M%S'))
             path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
 
             small.save(path)
 
-            return path, snapshot
+            return path, snapshot, date
 
         finally:
             del camera_file, file_data

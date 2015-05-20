@@ -72,7 +72,7 @@ class TicketRenderer(object):
                                    image_variable in self.image_variables if len(image_variable['items']) > 0]
         return random_text_selections, random_image_selections
 
-    def render(self, snapshot, code):
+    def render(self, snapshot, code, date):
         snapshot_url = 'http://localhost:8080/media/snapshots/%s' % os.path.basename(snapshot)
         context = {'snapshot': snapshot_url}
         (random_text_selections, random_image_selections) = self.random_selection()
@@ -81,15 +81,14 @@ class TicketRenderer(object):
         for (image_variable_id, item) in random_image_selections:
             image_url = 'http://localhost:8080/media/images/%s' % os.path.basename(item['image'])
             context['imagevariable_%s' % image_variable_id] = image_url
-        now = datetime.now(pytz.timezone(settings.TIMEZONE))
-        context['datetime'] = now
+        context['datetime'] = date
         context['code'] = code
         for im in self.images:
             image_url = 'http://localhost:8080/media/images/%s' % os.path.basename(im['image'])
             context['image_%s' % im['id']] = image_url
         template = JINJA_ENV.from_string(with_base_html(self.html))
         rendered_html = template.render(context)
-        return rendered_html, now, code, random_text_selections, random_image_selections
+        return rendered_html, random_text_selections, random_image_selections
 
 
 

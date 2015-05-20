@@ -32,7 +32,7 @@ def run():
 
                 # Take a snapshot
                 start = time.time()
-                snapshot_path, snapshot = devices.CAMERA.capture(installation.id)
+                snapshot_path, snapshot, date = devices.CAMERA.capture(installation.id)
                 end = time.time()
                 logger.info('Snapshot capture successfully executed in %s seconds', end - start)
                 # Start blinking
@@ -45,8 +45,8 @@ def run():
                                           ticket_template['text_variables'],
                                           ticket_template['image_variables'],
                                           ticket_template['images'])
-                html, dt, code, random_text_selections, random_image_selections = \
-                    renderer.render(snapshot_path, code)
+                html, random_text_selections, random_image_selections = \
+                    renderer.render(snapshot_path, code, date)
                 ticket_html_path = join(settings.STATIC_ROOT, 'ticket.html')
 
                 with codecs.open(ticket_html_path, 'w', 'utf-8') as ticket_html:
@@ -84,7 +84,7 @@ def run():
                     'installation': installation.id,
                     'snapshot': snapshot_path,
                     'ticket': ticket_path,
-                    'dt': dt,
+                    'dt': date,
                     'code': code,
                     'random_text_selections': random_text_selections,
                     'random_image_selections': random_image_selections
