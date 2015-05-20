@@ -1,15 +1,14 @@
 # -*- coding: utf8 -*-
 
 import unittest
-import re
 import os
 from datetime import datetime
+from dateutil import parser
 import pytz
-from .ticketrenderer import TicketRenderer
 from .utils import url2name
 from .db import Database, managed
-from . import api, settings, processus, devices
-from mock import MagicMock, Mock, call
+from . import api, settings, processus, devices, ticketrenderer
+from mock import MagicMock, Mock, call, patch
 import urllib2
 from ZEO import ClientStorage
 from ZODB import DB
@@ -22,62 +21,63 @@ from . import phantomjs
 
 class TestTicketRenderer(unittest.TestCase):
 
-    def setUp(self):
-        html = '{{snapshot}} {{code}} {{datetime | datetimeformat}} {{textvariable_1}} {{imagevariable_2}} {{image_1}}'
-        self.chiefs = ['Titi', 'Vicky', 'Benni']
-        self.chiefs = [{'id': '1', 'text': 'Titi'}, {'id': '2', 'text': 'Vicky'}, {'id': '3', 'text': 'Benni'}]
-        text_variables = [{'id': '1', 'items': self.chiefs}]
-        self.paths = [{'id': '1', 'image': '/path/to/variable/image1'}, {'id': '2', 'image': '/path/to/variable/image2'}]
-        image_variables = [{'id': '2', 'items': self.paths}, {'id': '3', 'items': []}]
-        images = [{'id': '1', 'image': 'path/to/image'}]
-        self.ticket_renderer = TicketRenderer(html, text_variables, image_variables, images)
-
     def test_random_selection(self):
         """
         random selection should randomly select variable items
         """
-        random_text_selections, random_image_selections = self.ticket_renderer.random_selection()
-        self.assertTrue(len(random_text_selections), 1)
-        self.assertEqual(random_text_selections[0][0], '1')
-        self.assertTrue(random_text_selections[0][1] in self.chiefs)
-        self.assertTrue(len(random_image_selections), 1)
-        self.assertEqual(random_image_selections[0][0], '2')
-        self.assertTrue(random_image_selections[0][1] in self.paths)
+        items = ['item1', 'item2', 'item3']
+        variable = {'id': '1', 'items': ['item1', 'item2', 'item3']}
+        id, item = ticketrenderer.random_selection(variable)
+        self.assertEqual(id, '1')
+        self.assertIn(item, items)
+
+    def test_random_selection_empty_variable(self):
+        """
+        random selection should not throw if no items in variable
+        """
+        variable = {'id': '1', 'items': []}
+        _, item = ticketrenderer.random_selection(variable)
+        self.assertIsNone(item)
 
     def test_render(self):
         """
         TicketRenderer should render a ticket
         """
+        html = '{{snapshot}} {{code}} {{datetime | datetimeformat}} {{textvariable_1}} {{imagevariable_2}} {{image_1}}'
         code = '5KIJ7'
-        rendered_html, _, _, _, _ = self.ticket_renderer.render('/path/to/snapshot', code)
-        print rendered_html
+        date = parser.parse("Tue Jun 22 07:46:22 EST 2010")
+        images = [{'id': '1', 'image': 'path/to/image'}]
+        random_text_selections = [('1', {'id': '2', 'text': 'Titi'}), ('2', None)]
+        random_image_slections = [('2', {'id': 1, 'image': '/path/to/image'})]
+        rendered_html = ticketrenderer.render(
+            html,
+            '/path/to/snapshot',
+            code,
+            date,
+            images,
+            random_text_selections,
+            random_image_slections)
+        expected = 'http://localhost:8080/media/snapshots/snapshot 5KIJ7 2010-06-22 Titi ' \
+                   'http://localhost:8080/media/images/image http://localhost:8080/media/images/image'
+        self.assertIn(expected, rendered_html)
 
     def test_set_date_format(self):
         """
         Ticket renderer should handle datetimeformat filter
         """
         html = '{{datetime | datetimeformat("%Y")}}'
-        self.ticket_renderer.html = html
-        rendered_html, _, _, _, _ = self.ticket_renderer.render('/path/to/snapshot', '00000')
-        self.assertRegexpMatches(rendered_html, re.compile("\d{4}"))
+        date = parser.parse("Tue Jun 22 07:46:22 EST 2010")
+        rendered_html = ticketrenderer.render(html, '/path/to/snapshot', '00000', date, [], [], [])
+        self.assertIn("2010", rendered_html)
 
     def test_encode_non_unicode_character(self):
         """
         Ticket renderer should encode non unicode character
         """
         html = u"Du texte avec un accent ici: é"
-        self.ticket_renderer.html = html
-        rendered_html, _, _, _, _ = self.ticket_renderer.render('/path/to/snapshot', '00000')
+        date = parser.parse("Tue Jun 22 07:46:22 EST 2010")
+        rendered_html = ticketrenderer.render(html, '/path/to/snapshot', '00000', date, [], [], [])
         self.assertTrue(u'Du texte avec un accent ici: é' in rendered_html)
-
-    def test_render_multiple_times(self):
-        """
-        Ticket renderer should render tickets multiples times with different codes
-        """
-        rendered1 = self.ticket_renderer.render('/path/to/snapshot', '00000')
-        rendered2 = self.ticket_renderer.render('/path/to/snapshot', '00001')
-        self.assertIn('00000', rendered1)
-        self.assertIn('00001', rendered2)
 
 
 class TestUtilityFunction(unittest.TestCase):

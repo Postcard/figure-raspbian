@@ -49,53 +49,59 @@ class DSLRCamera(Camera):
 
             # Capture image
             error, filepath = gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, self.context)
+            folder = filepath.folder
+            name = filepath.name
 
             if settings.FLASH_ON:
                 self.light.flash_off()
 
+            # Get date
+            error, info = gp.gp_camera_file_get_info(
+                self.camera,
+                folder,
+                name,
+                self.context)
+            date = datetime.fromtimestamp(info.file.mtime)
+            timezone = pytz.timezone(settings.TIMEZONE)
+            timezone.localize(date)
+
+            # Get snapshot file
             error, camera_file = gp.gp_camera_file_get(
                 self.camera,
-                filepath.folder,
-                filepath.name,
+                folder,
+                name,
                 gp.GP_FILE_TYPE_NORMAL,
                 self.context)
 
             error, file_data = gp.gp_file_get_data_and_size(camera_file)
 
+            # Crop and rotate snapshot
             snapshot = Image.open(io.BytesIO(file_data))
-            if settings.CAMERA_TYPE == 'NIKON':
-                w, h = snapshot.size
-                left = (w - h) / 2
-                top = 0
-                right = w - left
-                bottom = h
-                snapshot = snapshot.crop((left, top, right, bottom))
-            elif settings.CAMERA_TYPE == 'CANON':
+            w, h = snapshot.size
+            left = (w - h) / 2
+            top = 0
+            right = w - left
+            bottom = h
+            snapshot = snapshot.crop((left, top, right, bottom))
+            if settings.CAMERA_TYPE == 'CANON':
                 snapshot = snapshot.rotate(90)
-                w, h = snapshot.size
-                left = 0
-                top = (h - w) / 2
-                right = w
-                bottom = h - top
-                snapshot = snapshot.crop((left, top, right, bottom))
-            else:
-                raise Exception("Unknown camera type")
 
             # resize in place using the fastest algorithm, ie NEAREST
             small = snapshot.resize((512, 512))
 
             # Create file path on the RaspberryPi
-            now = datetime.now().strftime('%Y%m%d%H%M%S')
-            datetime.now(pytz.timezone(settings.TIMEZONE))
-            basename = "{installation}_{now}.jpg".format(installation=installation, now=now)
+            basename = "{installation}_{date}.jpg".format(installation=installation, date=date.strftime('%Y%m%d%H%M%S'))
             path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
 
             small.save(path)
 
-            return path, snapshot
+            return path, snapshot, date
 
         finally:
-            del camera_file, file_data
+            if 'camera_file' in locals():
+                del camera_file
+            if 'file_data' in locals():
+                del file_data
             self.camera.exit(self.context)
 
 
