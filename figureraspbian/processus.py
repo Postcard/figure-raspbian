@@ -8,8 +8,7 @@ logger = logging.getLogger(__name__)
 import codecs
 from PIL import Image
 
-from .ticketrenderer import TicketRenderer
-from . import devices, settings
+from . import devices, settings, ticketrenderer
 from .db import Database, managed
 import phantomjs
 
@@ -41,16 +40,24 @@ def run():
                 # Render ticket
                 start = time.time()
                 code = db.get_code()
-                renderer = TicketRenderer(ticket_template['html'],
-                                          ticket_template['text_variables'],
-                                          ticket_template['image_variables'],
-                                          ticket_template['images'])
-                html, random_text_selections, random_image_selections = \
-                    renderer.render(snapshot_path, code, date)
+                random_text_selections = [ticketrenderer.random_selection(variable) for
+                                          variable in
+                                          ticket_template['text_variables']]
+                random_image_selections = [ticketrenderer.random_selection(variable) for
+                                           variable in
+                                           ticket_template['image_variables']]
+                rendered_html = ticketrenderer.render(
+                    ticket_template['html'],
+                    snapshot_path,
+                    code,
+                    date,
+                    ticket_template['images'],
+                    random_text_selections,
+                    random_image_selections)
                 ticket_html_path = join(settings.STATIC_ROOT, 'ticket.html')
 
                 with codecs.open(ticket_html_path, 'w', 'utf-8') as ticket_html:
-                    ticket_html.write(html)
+                    ticket_html.write(rendered_html)
 
                 # get ticket as base64 stream
                 ticket_data = phantomjs.get_screenshot()

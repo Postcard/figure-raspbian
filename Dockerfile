@@ -59,7 +59,8 @@ RUN pip install gphoto2==1.1.0 \
     Flask==0.10.1 \
     supervisor==3.1.3 \
     Django==1.8 \
-    gunicorn==19.3.0
+    gunicorn==19.3.0 \
+    python-dateutil==2.4.2
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
