@@ -122,6 +122,10 @@ class Data(persistent.Persistent):
                 # Api error, proceed with remaining tickets
                 logger.exception(e)
                 self.last_upload_index += 1
+            except IOError as e:
+                # snapshot or ticket may not exist, proceed with remaining tickets
+                logger.exception(e)
+                self.last_upload_index += 1
 
     def update_installation(self):
         self.installation.update()
