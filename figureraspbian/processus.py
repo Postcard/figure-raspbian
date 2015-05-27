@@ -6,7 +6,7 @@ import shutil
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
-import codecs
+import io
 from PIL import Image
 
 from . import devices, settings, ticketrenderer
@@ -41,6 +41,10 @@ def run():
                 # Render ticket
                 start = time.time()
                 code = db.get_code()
+                end = time.time()
+                logger.info('Successfully claimed code in %s seconds', end - start)
+
+                start = time.time()
                 random_text_selections = [ticketrenderer.random_selection(variable) for
                                           variable in
                                           ticket_template['text_variables']]
@@ -57,7 +61,7 @@ def run():
                     random_image_selections)
                 ticket_html_path = join(settings.STATIC_ROOT, 'ticket.html')
 
-                with codecs.open(ticket_html_path, 'w', 'utf-8') as ticket_html:
+                with io.open(ticket_html_path, mode='w', encoding='utf-8') as ticket_html:
                     ticket_html.write(rendered_html)
 
                 # get ticket as base64 stream
