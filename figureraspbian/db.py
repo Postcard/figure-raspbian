@@ -147,24 +147,27 @@ class Installation(persistent.Persistent):
     def update(self):
         """ Update the installation from Figure API """
         installation = api.get_installation()
+
         if installation is not None:
-            for image in self.ticket_template['images']:
-                api.download(image['image'], IMAGE_DIR)
-            for image_variable in self.ticket_template['image_variables']:
-                for image in image_variable['items']:
+            scenario = installation['scenario']
+            ticket_template = scenario['ticket_template']
+            if ticket_template['images'] != self.ticket_template['images']:
+                for image in ticket_template['images']:
                     api.download(image['image'], IMAGE_DIR)
+            if ticket_template['image_variables'] != self.ticket_template['image_variables']:
+                for image_variable in self.ticket_template['image_variables']:
+                    for image in image_variable['items']:
+                        api.download(image['image'], IMAGE_DIR)
             is_new = self.id != installation['id']
             new_codes = api.get_codes(self.id) if is_new else None
-            ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
-            api.download(ticket_css_url, settings.STATIC_ROOT)
 
             if new_codes:
                 self.codes = new_codes
             self.start = installation['start']
             self.end = installation['end']
             self.id = installation['id']
-            self.scenario = installation['scenario']
-            self.ticket_template = self.scenario['ticket_template']
+            self.scenario = scenario
+            self.ticket_template = ticket_template
             self._p_changed = True
 
     def get_code(self):
