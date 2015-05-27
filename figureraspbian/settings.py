@@ -32,8 +32,11 @@ FIGURE_DIR = get_env_setting('FIGURE_DIR', '/Users/benoit/git/figure-raspbian')
 # Http host of the API
 API_HOST = get_env_setting('API_HOST', 'http://localhost:8000')
 
-# Access Token to authenticate user to the API
+# Token to authenticate to the API
 TOKEN = get_env_setting('TOKEN')
+
+# User to whom the device is belonging
+USER = get_env_setting('USER')
 
 # Root directory for static files
 STATIC_ROOT = get_env_setting('STATIC_ROOT', '/Users/benoit/git/figure-raspbian/static')
