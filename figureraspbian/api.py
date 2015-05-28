@@ -29,6 +29,8 @@ def get_installation():
     if r.status_code == 200:
         r.encoding = 'utf-8'
         return json.loads(r.text)
+    elif r.status_code == 404:
+        return None
     else:
         raise ApiException("Failed retrieving installation")
 

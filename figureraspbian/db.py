@@ -169,6 +169,9 @@ class Installation(persistent.Persistent):
             self.scenario = scenario
             self.ticket_template = ticket_template
             self._p_changed = True
+        else:
+            self.__init__()
+            self._p_changed = True
 
     def get_code(self):
         # claim a code
