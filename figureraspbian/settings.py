@@ -36,7 +36,7 @@ API_HOST = get_env_setting('API_HOST', 'http://localhost:8000')
 TOKEN = get_env_setting('TOKEN')
 
 # User to whom the device is belonging
-USER = get_env_setting('USER')
+USER = get_env_setting('FIGURE_USER')
 
 # Root directory for static files
 STATIC_ROOT = get_env_setting('STATIC_ROOT', '/Users/benoit/git/figure-raspbian/static')
