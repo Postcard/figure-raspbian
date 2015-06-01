@@ -17,7 +17,7 @@ class ApiException(Exception):
 
 session = requests.Session()
 session.headers.update({
-        'As-User': settings.USER,
+        'As-User': int(settings.USER),
         'Authorization': 'Bearer %s' % settings.TOKEN,
         'Accept': 'application/json',
 })
