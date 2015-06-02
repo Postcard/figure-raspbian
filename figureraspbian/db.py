@@ -166,7 +166,7 @@ class Installation(persistent.Persistent):
             for image in images_to_download:
                 api.download(image, IMAGE_DIR)
             is_new = self.id != installation['id']
-            new_codes = api.get_codes(self.id) if is_new else None
+            new_codes = api.get_codes(installation['id']) if is_new else None
 
             if new_codes:
                 self.codes = new_codes
