@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 import pifacedigitalio
 
-from . import processus, settings, utils
+from . import processus, settings, api
 from .db import Database, managed
 
 # Log configuration
@@ -39,6 +39,13 @@ if __name__ == '__main__':
     logger.info("Initializing database...")
     with managed(Database()) as db:
         db.update_installation()
+
+    logger.info("Downloading ticket css...")
+    ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
+    try:
+        api.download(ticket_css_url, settings.STATIC_ROOT)
+    except Exception:
+        pass
 
     listener = get_listener()
 

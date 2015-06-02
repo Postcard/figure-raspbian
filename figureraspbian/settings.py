@@ -20,8 +20,6 @@ def get_env_setting(setting, default=None):
         error_msg = "Set the %s env variable" % setting
         raise ImproperlyConfigured(error_msg)
 
-# Resin IO unique identifier
-RESIN_DEVICE_UUID = get_env_setting('RESIN_DEVICE_UUID')
 
 # Environment. Dev if local machine. Prod if Raspberry Pi
 ENVIRONMENT = get_env_setting('ENVIRONMENT', 'development')
@@ -32,8 +30,11 @@ FIGURE_DIR = get_env_setting('FIGURE_DIR', '/Users/benoit/git/figure-raspbian')
 # Http host of the API
 API_HOST = get_env_setting('API_HOST', 'http://localhost:8000')
 
-# Access Token to authenticate user to the API
+# Token to authenticate to the API
 TOKEN = get_env_setting('TOKEN')
+
+# User to whom the device is belonging
+USER = get_env_setting('FIGURE_USER')
 
 # Root directory for static files
 STATIC_ROOT = get_env_setting('STATIC_ROOT', '/Users/benoit/git/figure-raspbian/static')
@@ -69,7 +70,6 @@ BACKUP_ON = True if backup_on == '1' else False
 
 
 def log_config():
-    logger.info('RESIN_DEVICE_UUID: %s' % RESIN_DEVICE_UUID)
     logger.info('ENVIRONMENT: %s' % ENVIRONMENT)
     logger.info('FIGURE_DIR: %s' % FIGURE_DIR)
     logger.info('API_HOST: %s' % API_HOST)

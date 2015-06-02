@@ -17,17 +17,20 @@ class ApiException(Exception):
 
 session = requests.Session()
 session.headers.update({
+        'As-User': int(settings.USER),
         'Authorization': 'Bearer %s' % settings.TOKEN,
-        'Accept': 'application/json'
+        'Accept': 'application/json',
 })
 
 
 def get_installation():
-    url = "%s/resiniodevices/%s/" % (settings.API_HOST, settings.RESIN_DEVICE_UUID)
+    url = "%s/installations/active/" % settings.API_HOST
     r = session.get(url=url, timeout=10)
     if r.status_code == 200:
         r.encoding = 'utf-8'
-        return json.loads(r.text)['active_installation']
+        return json.loads(r.text)
+    elif r.status_code == 404:
+        return None
     else:
         raise ApiException("Failed retrieving installation")
 
