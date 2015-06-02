@@ -20,8 +20,6 @@ def get_env_setting(setting, default=None):
         error_msg = "Set the %s env variable" % setting
         raise ImproperlyConfigured(error_msg)
 
-# Resin IO unique identifier
-RESIN_DEVICE_UUID = get_env_setting('RESIN_DEVICE_UUID')
 
 # Environment. Dev if local machine. Prod if Raspberry Pi
 ENVIRONMENT = get_env_setting('ENVIRONMENT', 'development')
@@ -72,7 +70,6 @@ BACKUP_ON = True if backup_on == '1' else False
 
 
 def log_config():
-    logger.info('RESIN_DEVICE_UUID: %s' % RESIN_DEVICE_UUID)
     logger.info('ENVIRONMENT: %s' % ENVIRONMENT)
     logger.info('FIGURE_DIR: %s' % FIGURE_DIR)
     logger.info('API_HOST: %s' % API_HOST)

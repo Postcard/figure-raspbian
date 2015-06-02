@@ -147,17 +147,24 @@ class Installation(persistent.Persistent):
     def update(self):
         """ Update the installation from Figure API """
         installation = api.get_installation()
-
         if installation is not None:
             scenario = installation['scenario']
             ticket_template = scenario['ticket_template']
-            if ticket_template['images'] != self.ticket_template['images']:
-                for image in ticket_template['images']:
-                    api.download(image['image'], IMAGE_DIR)
-            if ticket_template['image_variables'] != self.ticket_template['image_variables']:
-                for image_variable in self.ticket_template['image_variables']:
-                    for image in image_variable['items']:
-                        api.download(image['image'], IMAGE_DIR)
+            # Download all images that have not been previously downloaded
+            items = [image_variable['items'] for image_variable in ticket_template['image_variables']]
+            items.append(ticket_template['images'])
+            items = [item for sub_items in items for item in sub_items]
+            items = map(lambda x: x['image'], items)
+            if not self.ticket_template:
+                local_items = []
+            else:
+                local_items = [image_variable['items'] for image_variable in self.ticket_template['image_variables']]
+                local_items.append(self.ticket_template['images'])
+            local_items = [item for sub_items in local_items for item in sub_items]
+            local_items = map(lambda x: x['image'], local_items)
+            images_to_download = list(set(items) - set(local_items))
+            for image in images_to_download:
+                api.download(image, IMAGE_DIR)
             is_new = self.id != installation['id']
             new_codes = api.get_codes(self.id) if is_new else None
 
@@ -168,9 +175,6 @@ class Installation(persistent.Persistent):
             self.id = installation['id']
             self.scenario = scenario
             self.ticket_template = ticket_template
-            self._p_changed = True
-        else:
-            self.__init__()
             self._p_changed = True
 
     def get_code(self):

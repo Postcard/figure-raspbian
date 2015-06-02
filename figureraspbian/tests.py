@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-
+from copy import deepcopy
 import unittest
 import os
 from datetime import datetime
@@ -97,63 +97,32 @@ class TestApi(unittest.TestCase):
         api should get installation
         """
         installation = api.get_installation()
-        self.assertTrue('scenario_obj' in installation)
+        self.assertTrue('scenario' in installation)
         self.assertTrue('start' in installation)
         self.assertTrue('end' in installation)
         self.assertTrue('place' in installation)
-
-    def test_get_scenario(self):
-        """
-        api should get scenario
-        """
-        scenario = api.get_scenario('1')
-        self.assertTrue('name' in scenario)
-        self.assertTrue('ticket_template' in scenario)
-        ticket_template = scenario['ticket_template']
-        self.assertTrue('images_objects' in ticket_template)
-        self.assertTrue('text_variables_objects' in ticket_template)
-        self.assertTrue('image_variables_objects' in ticket_template)
 
     def test_download(self):
         """
         api should correctly download a file
         """
-        downloaded = api.download('static/snapshots/example.jpg', settings.SNAPSHOT_DIR)
+        path = os.path.join(settings.MEDIA_ROOT, 'snapshots')
+        url = os.path.join(settings.API_HOST, 'static/snapshots/example.jpg')
+        downloaded = api.download(url, path)
         self.assertEqual(os.path.basename(downloaded), 'example.jpg')
-
-    def test_download_when_redirect(self):
-        """
-        api should correctly download a file when redirect
-        """
-        downloaded = api.download('snapshots/example/', settings.SNAPSHOT_DIR)
-        self.assertEqual(os.path.basename(downloaded), 'example.jpg')
-
-    def test_create_random_text_selection(self):
-        """
-        api should create a random text selection
-        """
-        created = api.create_random_text_selection('1', '1')
-        self.assertIsNotNone(created)
-
-    def test_create_random_image_selection(self):
-        """
-        api should create a random text selection
-        """
-        created = api.create_random_image_selection('1', '1')
-        self.assertIsNotNone(created)
 
     def test_create_ticket(self):
         """
         api should create ticket
         """
-        snapshot = "%s/resources/2_20150331.jpg" % settings.FIGURE_DIR
+        snapshot = "%s/media/snapshots/example.jpg" % settings.FIGURE_DIR
         ticket = snapshot  # for testing purposes
         code = 'JIKO2'
         dt = datetime.now(pytz.timezone(settings.TIMEZONE))
         random_text_selections = [('1', {'id': '1', 'text': 'toto'})]
         random_image_selections = []
         ticket = {
-            'installation': '2',
+            'installation': '18',
             'snapshot': snapshot,
             'ticket': ticket,
             'dt': dt,
@@ -194,8 +163,22 @@ class TestDatabase(unittest.TestCase):
                             ]
                         }
                     ],
-                    "image_variables": [],
-                    "images": []
+                    "image_variables": [{
+                        "owner": "test@figuredevices.com",
+                        "id": 1,
+                        "name": "Profession",
+                        "items": [
+                            {
+                                "image": "http://image1"
+                            },
+                            {
+                                "image": "http://image2"
+                            }
+                        ]
+                    }],
+                    "images": [
+                        {"image": "http://image3"},
+                        {"image": "http://image4"}]
                 }
             },
             "place": None,
@@ -237,8 +220,7 @@ class TestDatabase(unittest.TestCase):
         api.download = MagicMock()
         api.get_installation = MagicMock(return_value=self.mock_installation)
         api.get_codes = MagicMock(return_value=self.mock_codes)
-        database = Database()
-        with managed(database) as db:
+        with managed(Database()) as db:
             self.assertIsNone(db.data.installation.id)
             db.update_installation()
             installation = db.data.installation
@@ -248,8 +230,32 @@ class TestDatabase(unittest.TestCase):
             self.assertEqual(installation.scenario['name'], 'Marabouts')
             self.assertIsNotNone(installation.ticket_template)
             self.assertEqual(installation.codes, self.mock_codes)
+            calls = [call("http://image4", os.path.join(settings.MEDIA_ROOT, 'images')),
+                     call("http://image1", os.path.join(settings.MEDIA_ROOT, 'images')),
+                     call("http://image2", os.path.join(settings.MEDIA_ROOT, 'images')),
+                     call("http://image3", os.path.join(settings.MEDIA_ROOT, 'images'))]
+            api.download.assert_has_calls(calls)
+
         with managed(Database()) as db:
             self.assertEqual(db.data.installation.codes, self.mock_codes)
+            api.download = MagicMock()
+            db.update_installation()
+            self.assertFalse(api.download.called)
+            mock_installation = deepcopy(self.mock_installation)
+            mock_installation['scenario']['ticket_template']['image_variables'] = [{
+                "owner": "test@figuredevices.com",
+                "id": 1,
+                "name": "Profession",
+                "items": [
+                    {
+                        "image": "http://image5"
+                    }]}]
+            mock_installation['scenario']['ticket_template']['images'] = [{"image": "http://image6"}]
+            api.get_installation = MagicMock(return_value=mock_installation)
+            db.update_installation()
+            calls = [call("http://image5", os.path.join(settings.MEDIA_ROOT, 'images')),
+                     call("http://image6", os.path.join(settings.MEDIA_ROOT, 'images'))]
+            api.download.assert_has_calls(calls)
 
     def test_get_installation_return_none(self):
         """
@@ -462,15 +468,6 @@ class TestProcessus(unittest.TestCase):
         self.assertTrue(devices.PRINTER.print_ticket.called)
         with managed(Database()) as db:
             self.assertEqual(len(db.dbroot['tickets']._tickets.items()), 1)
-
-
-class TestPhantomJS(unittest.TestCase):
-
-    def test_save_screenshot(self):
-        """
-        save_screenshot should make a screenshot of ticket.html and save it to a file
-        """
-        phantomjs.save_screenshot('./media/tickets/test.jpg')
 
 
 if __name__ == '__main__':
