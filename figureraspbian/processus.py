@@ -15,6 +15,7 @@ import phantomjs
 
 # Pre-calculated random_ticket to be used
 random_snapshot_path = None
+code = None
 
 def run():
     with managed(Database()) as db:
@@ -41,10 +42,6 @@ def run():
                 blinking_task = devices.OUTPUT.blink()
 
                 # Render ticket
-                start = time.time()
-                code = db.get_code()
-                end = time.time()
-                logger.info('Successfully claimed code in %s seconds', end - start)
 
                 start = time.time()
                 random_text_selections = [ticketrenderer.random_selection(variable) for
@@ -54,11 +51,20 @@ def run():
                                            variable in
                                            ticket_template['image_variables']]
 
+                if code:
+                    current_code = code
+                else:
+                    # we need to claim a code
+                    start = time.time()
+                    current_code = db.get_code()
+                    end = time.time()
+                    logger.info('Successfully claimed code in %s seconds', end - start)
+
                 rendered_html = ticketrenderer.render(
                     ticket_template['html'],
                     snapshot_path,
                     random_snapshot_path,
-                    code,
+                    current_code,
                     date,
                     ticket_template['images'],
                     random_text_selections,
@@ -100,6 +106,13 @@ def run():
                 global random_snapshot_path
                 random_ticket = db.get_random_ticket()
                 random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
+
+                # Calculate new code
+                start = time.time()
+                global code
+                code = db.get_code()
+                end = time.time()
+                logger.info('Successfully claimed code in %s seconds', end - start)
 
                 # add task upload ticket task to the queue
                 ticket = {
