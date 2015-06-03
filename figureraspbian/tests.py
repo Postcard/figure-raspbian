@@ -16,7 +16,6 @@ from ZODB.POSException import ConflictError
 import transaction
 
 from .db import transaction_decorate
-from . import phantomjs
 
 
 class TestTicketRenderer(unittest.TestCase):
@@ -41,9 +40,10 @@ class TestTicketRenderer(unittest.TestCase):
 
     def test_render(self):
         """
-        TicketRenderer should render a ticket
+        TicketRenderer should render a ticket when no random_snapshot
         """
-        html = '{{snapshot}} {{code}} {{datetime | datetimeformat}} {{textvariable_1}} {{imagevariable_2}} {{image_1}}'
+        html = '{{snapshot}} {{code}} {{datetime | datetimeformat}} ' \
+               '{{textvariable_1}} {{imagevariable_2}} {{image_1}}'
         code = '5KIJ7'
         date = parser.parse("Tue Jun 22 07:46:22 EST 2010")
         images = [{'id': '1', 'image': 'path/to/image'}]
@@ -52,6 +52,7 @@ class TestTicketRenderer(unittest.TestCase):
         rendered_html = ticketrenderer.render(
             html,
             '/path/to/snapshot',
+            None,
             code,
             date,
             images,
@@ -60,6 +61,51 @@ class TestTicketRenderer(unittest.TestCase):
         expected = 'http://localhost:8080/media/snapshots/snapshot 5KIJ7 2010-06-22 Titi ' \
                    'http://localhost:8080/media/images/image http://localhost:8080/media/images/image'
         self.assertIn(expected, rendered_html)
+
+    def test_render_random_snapshot_None(self):
+        """
+        TicketRender should render a ticket when random snapshot but None is provided
+        """
+        html = '<img src={{random_snapshot}}>'
+        code = '5KIJ7'
+        date = parser.parse("Tue Jun 22 07:46:22 EST 2010")
+        images = [{'id': '1', 'image': 'path/to/image'}]
+        random_text_selections = [('1', {'id': '2', 'text': 'Titi'}), ('2', None)]
+        random_image_slections = [('2', {'id': 1, 'image': '/path/to/image'})]
+        rendered_html = ticketrenderer.render(
+            html,
+            '/path/to/snapshot',
+            None,
+            code,
+            date,
+            images,
+            random_text_selections,
+            random_image_slections)
+        expected = '<img src=>'
+        self.assertIn(expected, rendered_html)
+
+    def test_render_random_snapshot(self):
+        """
+        TicketRenderer should render a ticket with a random snapshot
+        """
+        html = '<img src={{random_snapshot}}>'
+        code = '5KIJ7'
+        date = parser.parse("Tue Jun 22 07:46:22 EST 2010")
+        images = [{'id': '1', 'image': 'path/to/image'}]
+        random_text_selections = [('1', {'id': '2', 'text': 'Titi'}), ('2', None)]
+        random_image_slections = [('2', {'id': 1, 'image': '/path/to/image'})]
+        rendered_html = ticketrenderer.render(
+            html,
+            '/path/to/snapshot',
+            '/path/to/random/snapshot',
+            code,
+            date,
+            images,
+            random_text_selections,
+            random_image_slections)
+        expected = '<img src=http://localhost:8080/media/snapshots/snapshot>'
+        self.assertIn(expected, rendered_html)
+
 
     def test_set_date_format(self):
         """
@@ -407,6 +453,38 @@ class TestDatabase(unittest.TestCase):
             api.create_ticket = MagicMock()
             db.upload_tickets()
             self.assertFalse(api.create_ticket.called)
+
+    def test_get_random_ticket(self):
+        """
+        Get a random ticket should pick a random ticket in the ticket list
+        """
+        with managed(Database()) as db:
+            time1 = datetime.now(pytz.timezone(settings.TIMEZONE))
+            time2 = datetime.now(pytz.timezone(settings.TIMEZONE))
+            ticket = db.get_random_ticket()
+            self.assertIsNone(ticket)
+            ticket_1 = {
+                'installation': '1',
+                'snapshot': '/path/to/snapshot',
+                'ticket': 'path/to/ticket',
+                'dt': time1,
+                'code': 'JHUYG',
+                'random_text_selections': [],
+                'random_image_selections': []
+            }
+            ticket_2 = {
+                'installation': '1',
+                'snapshot': '/path/to/snapshot',
+                'ticket': 'path/to/ticket',
+                'dt': time2,
+                'code': 'JU76G',
+                'random_text_selections': [],
+                'random_image_selections': []
+            }
+            db.add_ticket(ticket_1)
+            db.add_ticket(ticket_2)
+            ticket = db.get_random_ticket()
+            self.assertIn(ticket, [ticket_1, ticket_2])
 
 
 class TestProcessus(unittest.TestCase):

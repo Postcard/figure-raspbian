@@ -13,6 +13,8 @@ from . import devices, settings, ticketrenderer
 from .db import Database, managed
 import phantomjs
 
+# Pre-calculated random_ticket to be used
+random_snapshot_path = None
 
 def run():
     with managed(Database()) as db:
@@ -51,9 +53,11 @@ def run():
                 random_image_selections = [ticketrenderer.random_selection(variable) for
                                            variable in
                                            ticket_template['image_variables']]
+
                 rendered_html = ticketrenderer.render(
                     ticket_template['html'],
                     snapshot_path,
+                    random_snapshot_path,
                     code,
                     date,
                     ticket_template['images'],
@@ -81,7 +85,6 @@ def run():
 
                 # Set Output to True
                 devices.OUTPUT.set(False)
-
                 # Save ticket to disk
                 ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot_path))
                 with open(ticket_path, "wb") as f:
@@ -92,6 +95,11 @@ def run():
                 snapshot.save(snapshot_path)
                 if settings.BACKUP_ON:
                     shutil.copy2(snapshot_path, "/mnt/%s" % basename(snapshot_path))
+
+                # Calculate random snapshot path
+                global random_snapshot_path
+                random_ticket = db.get_random_ticket()
+                random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
 
                 # add task upload ticket task to the queue
                 ticket = {

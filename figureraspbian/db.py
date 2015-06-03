@@ -6,6 +6,7 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 import time
 import os
+import random
 
 from ZEO import ClientStorage
 from ZODB import DB
@@ -82,6 +83,9 @@ class Database(object):
     def add_ticket(self, ticket):
         return self.data.add_ticket(ticket)
 
+    def get_random_ticket(self):
+        return self.data.get_random_ticket()
+
     def upload_tickets(self):
         while self.data.last_upload_index != (len(self.data.tickets) - 1):
             try:
@@ -109,6 +113,9 @@ class Data(persistent.Persistent):
     def add_ticket(self, ticket):
         self.tickets.append(ticket)
         self._p_changed = True
+
+    def get_random_ticket(self):
+        return random.choice(self.tickets) if self.tickets else None
 
     def upload_tickets(self):
         """ Upload the older ticket """
