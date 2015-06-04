@@ -17,11 +17,11 @@ import phantomjs
 random_snapshot_path = None
 code = None
 
+
 def run():
     with managed(Database()) as db:
         try:
             installation = db.data.installation
-
             if installation.id is not None:
                 # Database is initialized !
 
@@ -51,6 +51,7 @@ def run():
                                            variable in
                                            ticket_template['image_variables']]
 
+                global code
                 if code:
                     current_code = code
                 else:
@@ -60,10 +61,17 @@ def run():
                     end = time.time()
                     logger.info('Successfully claimed code in %s seconds', end - start)
 
+                global random_snapshot_path
+                if random_snapshot_path:
+                    current_random_snapshot_path = random_snapshot_path
+                else:
+                    random_ticket = db.get_random_ticket()
+                    current_random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
+
                 rendered_html = ticketrenderer.render(
                     ticket_template['html'],
                     snapshot_path,
-                    random_snapshot_path,
+                    current_random_snapshot_path,
                     current_code,
                     date,
                     ticket_template['images'],
@@ -103,13 +111,11 @@ def run():
                     shutil.copy2(snapshot_path, "/mnt/%s" % basename(snapshot_path))
 
                 # Calculate random snapshot path
-                global random_snapshot_path
                 random_ticket = db.get_random_ticket()
                 random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
 
                 # Calculate new code
                 start = time.time()
-                global code
                 code = db.get_code()
                 end = time.time()
                 logger.info('Successfully claimed code in %s seconds', end - start)
