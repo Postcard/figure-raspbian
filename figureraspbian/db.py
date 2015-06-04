@@ -115,7 +115,8 @@ class Data(persistent.Persistent):
         self._p_changed = True
 
     def get_random_ticket(self):
-        return random.choice(self.tickets) if self.tickets else None
+        active_tickets = [ticket for ticket in self.tickets if ticket['installation'] == self.installation.id]
+        return random.choice(active_tickets) if active_tickets else None
 
     def upload_tickets(self):
         """ Upload the older ticket """
