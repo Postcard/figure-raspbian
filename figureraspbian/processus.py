@@ -13,12 +13,15 @@ from . import devices, settings, ticketrenderer
 from .db import Database, managed
 import phantomjs
 
+# Pre-calculated random_ticket to be used
+random_snapshot_path = None
+code = None
+
 
 def run():
     with managed(Database()) as db:
         try:
             installation = db.data.installation
-
             if installation.id is not None:
                 # Database is initialized !
 
@@ -39,10 +42,6 @@ def run():
                 blinking_task = devices.OUTPUT.blink()
 
                 # Render ticket
-                start = time.time()
-                code = db.get_code()
-                end = time.time()
-                logger.info('Successfully claimed code in %s seconds', end - start)
 
                 start = time.time()
                 random_text_selections = [ticketrenderer.random_selection(variable) for
@@ -51,10 +50,29 @@ def run():
                 random_image_selections = [ticketrenderer.random_selection(variable) for
                                            variable in
                                            ticket_template['image_variables']]
+
+                global code
+                if code:
+                    current_code = code
+                else:
+                    # we need to claim a code
+                    start = time.time()
+                    current_code = db.get_code()
+                    end = time.time()
+                    logger.info('Successfully claimed code in %s seconds', end - start)
+
+                global random_snapshot_path
+                if random_snapshot_path:
+                    current_random_snapshot_path = random_snapshot_path
+                else:
+                    random_ticket = db.get_random_ticket()
+                    current_random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
+
                 rendered_html = ticketrenderer.render(
                     ticket_template['html'],
                     snapshot_path,
-                    code,
+                    current_random_snapshot_path,
+                    current_code,
                     date,
                     ticket_template['images'],
                     random_text_selections,
@@ -81,7 +99,6 @@ def run():
 
                 # Set Output to True
                 devices.OUTPUT.set(False)
-
                 # Save ticket to disk
                 ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot_path))
                 with open(ticket_path, "wb") as f:
@@ -104,6 +121,17 @@ def run():
                     'random_image_selections': random_image_selections
                 }
                 db.add_ticket(ticket)
+
+                # Calculate random snapshot path
+                random_ticket = db.get_random_ticket()
+                random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
+
+                # Calculate new code
+                start = time.time()
+                code = db.get_code()
+                end = time.time()
+                logger.info('Successfully claimed code in %s seconds', end - start)
+
             else:
                 logger.warning("Current installation has ended. Skipping processus execution")
         except Exception as e:

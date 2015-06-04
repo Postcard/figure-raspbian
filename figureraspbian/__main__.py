@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-
+import os
 import time
 import logging
 logging.basicConfig(level='INFO')
@@ -44,6 +44,12 @@ if __name__ == '__main__':
     ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
     try:
         api.download(ticket_css_url, settings.STATIC_ROOT)
+    except Exception:
+        pass
+    logger.info("Downloading example snapshot...")
+    snapshot_example_url = "%s/%s" % (settings.API_HOST, 'static/snapshots/example.jpg')
+    try:
+        api.download(snapshot_example_url, os.path.join(settings.MEDIA_ROOT, 'snapshots'))
     except Exception:
         pass
 

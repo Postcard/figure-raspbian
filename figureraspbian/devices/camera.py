@@ -55,18 +55,7 @@ class DSLRCamera(Camera):
             if settings.FLASH_ON:
                 self.light.flash_off()
 
-            # Get date
-            if settings.CAMERA_TYPE == 'CANON':
-                date = datetime.now(pytz.timezone(settings.TIMEZONE))
-            else:
-                error, info = gp.gp_camera_file_get_info(
-                    self.camera,
-                    folder,
-                    name,
-                    self.context)
-                date = datetime.fromtimestamp(info.file.mtime)
-                timezone = pytz.timezone(settings.TIMEZONE)
-                timezone.localize(date)
+            date = datetime.now(pytz.timezone(settings.TIMEZONE))
 
             # Get snapshot file
             error, camera_file = gp.gp_camera_file_get(
