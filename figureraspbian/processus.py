@@ -110,16 +110,6 @@ def run():
                 if settings.BACKUP_ON:
                     shutil.copy2(snapshot_path, "/mnt/%s" % basename(snapshot_path))
 
-                # Calculate random snapshot path
-                random_ticket = db.get_random_ticket()
-                random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
-
-                # Calculate new code
-                start = time.time()
-                code = db.get_code()
-                end = time.time()
-                logger.info('Successfully claimed code in %s seconds', end - start)
-
                 # add task upload ticket task to the queue
                 ticket = {
                     'installation': installation.id,
@@ -131,6 +121,17 @@ def run():
                     'random_image_selections': random_image_selections
                 }
                 db.add_ticket(ticket)
+
+                # Calculate random snapshot path
+                random_ticket = db.get_random_ticket()
+                random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
+
+                # Calculate new code
+                start = time.time()
+                code = db.get_code()
+                end = time.time()
+                logger.info('Successfully claimed code in %s seconds', end - start)
+
             else:
                 logger.warning("Current installation has ended. Skipping processus execution")
         except Exception as e:
