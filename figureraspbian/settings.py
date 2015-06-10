@@ -61,7 +61,7 @@ RETRY_DELAY = get_env_setting('RETRY_DELAY', 3600)
 CAMERA_MODEL = get_env_setting('CAMERA_MODEL', 'UNKNOWN')
 
 # Set rotation of the picture. If ROTATE=1, picture will be rotated 90°
-rotate = get_env_setting('CAMERA_TYPE', '0')
+rotate = get_env_setting('ROTATE', '0')
 ROTATE = True if rotate == '1' else False
 
 # Flash
