@@ -39,6 +39,17 @@ class DSLRCamera(Camera):
         self.camera = gp.Camera()
         self.light = light.LEDPanelLight()
 
+        # Camera specific configuration
+        if settings.CAMERA_MODEL == 'CANON_1200D':
+            try:
+                self.camera.init(self.context)
+                error, config = gp.gp_camera_get_config(self.camera, self.context)
+                error, capture_target = gp.gp_widget_get_child_by_name(config, 'capturetarget')
+                gp.gp_widget_set_value(capture_target, 1)
+                gp.gp_camera_set_config(self.camera, config, self.context)
+            finally:
+                self.camera.exit(self.context)
+
     def capture(self, installation):
         self.camera.init(self.context)
         try:
@@ -75,7 +86,7 @@ class DSLRCamera(Camera):
             right = w - left
             bottom = h
             snapshot = snapshot.crop((left, top, right, bottom))
-            if settings.CAMERA_TYPE == 'CANON':
+            if settings.ROTATE:
                 snapshot = snapshot.rotate(90)
 
             # resize in place using the fastest algorithm, ie NEAREST
