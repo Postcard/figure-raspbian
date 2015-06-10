@@ -57,8 +57,12 @@ TIMEZONE = get_env_setting('TIMEZONE', 'Europe/Paris')
 # Countdown for retrying uploading a ticket
 RETRY_DELAY = get_env_setting('RETRY_DELAY', 3600)
 
-# Camera type
-CAMERA_TYPE = get_env_setting('CAMERA_TYPE', 'CANON')
+# Camera model
+CAMERA_MODEL = get_env_setting('CAMERA_MODEL', 'UNKNOWN')
+
+# Set rotation of the picture. If ROTATE=1, picture will be rotated 90°
+rotate = get_env_setting('CAMERA_TYPE', '0')
+ROTATE = True if rotate == '1' else False
 
 # Flash
 flash_on = get_env_setting('FLASH_ON', '0')
@@ -80,8 +84,10 @@ def log_config():
     logger.info('ZEO_SOCKET: %s' % TRIGGER_PIN)
     logger.info('TIMEZONE: %s' % TIMEZONE)
     logger.info('RETRY_DELAY: %s' % RETRY_DELAY)
-    logger.info('CAMERA_TYPE: %s' % CAMERA_TYPE)
+    logger.info('CAMERA_MODEL: %s' % CAMERA_MODEL)
+    logger.info('ROTATE: %s' % ROTATE)
     logger.info('FLASH_ON: %s' % FLASH_ON)
+    logger.info('BACKUP_ON: %s' % BACKUP_ON)
 
 
 
