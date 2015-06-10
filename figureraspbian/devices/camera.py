@@ -45,7 +45,8 @@ class DSLRCamera(Camera):
                 self.camera.init(self.context)
                 error, config = gp.gp_camera_get_config(self.camera, self.context)
                 error, capture_target = gp.gp_widget_get_child_by_name(config, 'capturetarget')
-                gp.gp_widget_set_value(capture_target, 1)
+                error, value = gp.gp_widget_get_choice(capture_target, 1)
+                gp.gp_widget_set_value(capture_target, value)
                 gp.gp_camera_set_config(self.camera, config, self.context)
             finally:
                 self.camera.exit(self.context)
