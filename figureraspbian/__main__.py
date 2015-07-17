@@ -41,17 +41,12 @@ if __name__ == '__main__':
         db.update_installation()
 
     logger.info("Downloading ticket css...")
-    ticket_css_url = "%s/%s" % (settings.API_HOST, 'static/css/ticket.css')
+    ticket_css_url = "%s/%s" % (settings.STATIC_HOST, 'static/css/ticket.css')
     try:
         api.download(ticket_css_url, settings.STATIC_ROOT)
+        logger.info("Success")
     except Exception:
-        pass
-    logger.info("Downloading example snapshot...")
-    snapshot_example_url = "%s/%s" % (settings.API_HOST, 'static/snapshots/example.jpg')
-    try:
-        api.download(snapshot_example_url, os.path.join(settings.MEDIA_ROOT, 'snapshots'))
-    except Exception:
-        pass
+        logger.info("An error occurred when downloading ticket css")
 
     listener = get_listener()
 

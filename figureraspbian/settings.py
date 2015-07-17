@@ -30,6 +30,9 @@ FIGURE_DIR = get_env_setting('FIGURE_DIR', '/Users/benoit/git/figure-raspbian')
 # Http host of the API
 API_HOST = get_env_setting('API_HOST', 'http://localhost:8000')
 
+# Http host for static files
+STATIC_HOST = get_env_setting('STATIC_HOST', API_HOST)
+
 # Token to authenticate to the API
 TOKEN = get_env_setting('TOKEN')
 
