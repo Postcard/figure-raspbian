@@ -116,7 +116,7 @@ def run():
                     'snapshot': snapshot_path,
                     'ticket': ticket_path,
                     'dt': date,
-                    'code': code,
+                    'code': current_code,
                     'random_text_selections': random_text_selections,
                     'random_image_selections': random_image_selections
                 }
