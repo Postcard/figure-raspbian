@@ -96,7 +96,7 @@ def set_paper_status(status):
         'paper_status': status
     }
 
-    session.put(url, data=data, timeout=1)
+    session.put(url, data=data, timeout=20)
 
 
 
