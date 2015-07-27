@@ -24,11 +24,11 @@ session.headers.update({
 
 
 def get_installation():
-    url = "%s/installations/active/" % settings.API_HOST
+    url = "%s/photobooths/%s/" % (settings.API_HOST, settings.RESIN_UUID)
     r = session.get(url=url, timeout=10)
     if r.status_code == 200:
         r.encoding = 'utf-8'
-        return json.loads(r.text)
+        return json.loads(r.text)['active_installation']
     elif r.status_code == 404:
         return None
     else:
@@ -85,6 +85,18 @@ def create_ticket(ticket):
     else:
         raise ApiException("Failed creating ticket with message %s" % r.text)
 
+
+def set_paper_status(status):
+
+    url = "%s/photobooths/%s/" % (settings.API_HOST, settings.RESIN_UUID)
+
+    data = {
+        'owner': int(settings.USER),
+        'resin_uuid': settings.RESIN_UUID,
+        'paper_status': status
+    }
+
+    session.put(url, data=data, timeout=1)
 
 
 

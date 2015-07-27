@@ -39,6 +39,8 @@ TOKEN = get_env_setting('TOKEN')
 # User to whom the device is belonging
 USER = get_env_setting('FIGURE_USER')
 
+RESIN_UUID = get_env_setting('RESIN_DEVICE_UUID')
+
 # Root directory for static files
 STATIC_ROOT = get_env_setting('STATIC_ROOT', '/Users/benoit/git/figure-raspbian/static')
 
