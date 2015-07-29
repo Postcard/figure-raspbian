@@ -8,8 +8,10 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 import io
 from PIL import Image
+from usb.core import USBError
 
 from . import devices, settings, ticketrenderer
+from .tasks import set_paper_status
 from .db import Database, managed
 import phantomjs
 
@@ -131,9 +133,13 @@ def run():
                 code = db.get_code()
                 end = time.time()
                 logger.info('Successfully claimed code in %s seconds', end - start)
+                set_paper_status.delay('1')
 
             else:
                 logger.warning("Current installation has ended. Skipping processus execution")
+        except USBError:
+            # There is no paper
+            set_paper_status.delay('0')
         except Exception as e:
             logger.exception(e)
         finally:

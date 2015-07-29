@@ -7,6 +7,7 @@ from datetime import timedelta
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
+from . import api
 
 
 from django.conf import settings
@@ -68,3 +69,7 @@ def upload_tickets():
 def update_db():
     with managed(Database()) as db:
         db.update_installation()
+
+@app.task
+def set_paper_status(status):
+    api.set_paper_status(status)
