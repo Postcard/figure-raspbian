@@ -37,7 +37,7 @@ def run():
 
                 # Take a snapshot
                 start = time.time()
-                snapshot_path, snapshot, date = devices.CAMERA.capture(installation.id)
+                snapshot_raspberry_path, snapshot, date, snapshot_camera_path = devices.CAMERA.capture(installation.id)
                 end = time.time()
                 logger.info('Snapshot capture successfully executed in %s seconds', end - start)
                 # Start blinking
@@ -72,7 +72,7 @@ def run():
 
                 rendered_html = ticketrenderer.render(
                     ticket_template['html'],
-                    snapshot_path,
+                    snapshot_raspberry_path,
                     current_random_snapshot_path,
                     current_code,
                     date,
@@ -102,20 +102,20 @@ def run():
                 # Set Output to True
                 devices.OUTPUT.set(False)
                 # Save ticket to disk
-                ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot_path))
+                ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot_raspberry_path))
                 with open(ticket_path, "wb") as f:
                     f.write(ticket_data.decode('base64'))
 
                 # Get good quality image in order to upload it
                 snapshot.thumbnail((1024, 1024), Image.ANTIALIAS)
-                snapshot.save(snapshot_path)
+                snapshot.save(snapshot_raspberry_path)
                 if settings.BACKUP_ON:
-                    shutil.copy2(snapshot_path, "/mnt/%s" % basename(snapshot_path))
+                    shutil.copy2(snapshot_raspberry_path, "/mnt/%s" % basename(snapshot_raspberry_path))
 
                 # add task upload ticket task to the queue
                 ticket = {
                     'installation': installation.id,
-                    'snapshot': snapshot_path,
+                    'snapshot': snapshot_raspberry_path,
                     'ticket': ticket_path,
                     'dt': date,
                     'code': current_code,
@@ -135,8 +135,11 @@ def run():
                 logger.info('Successfully claimed code in %s seconds', end - start)
                 set_paper_status.delay('1')
 
+                # Clear camera file
+                devices.CAMERA.delete(snapshot_camera_path)
+
             else:
-                logger.warning("Current installation has ended. Skipping processus execution")
+                logger.warning("No active installation. Skipping processus execution")
         except USBError:
             # There is no paper
             set_paper_status.delay('0')

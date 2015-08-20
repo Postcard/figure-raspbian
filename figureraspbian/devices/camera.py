@@ -60,9 +60,9 @@ class DSLRCamera(Camera):
                 time.sleep(1)
 
             # Capture image
-            error, filepath = gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, self.context)
-            folder = filepath.folder
-            name = filepath.name
+            error, camera_path = gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, self.context)
+            folder = camera_path.folder
+            name = camera_path.name
 
             if settings.FLASH_ON:
                 self.light.flash_off()
@@ -95,11 +95,11 @@ class DSLRCamera(Camera):
 
             # Create file path on the RaspberryPi
             basename = "{installation}_{date}.jpg".format(installation=installation, date=date.strftime('%Y%m%d%H%M%S'))
-            path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
+            raspberry_path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
 
-            small.save(path)
+            small.save(raspberry_path)
 
-            return path, snapshot, date
+            return raspberry_path, snapshot, date, camera_path
 
         finally:
             if 'camera_file' in locals():
@@ -107,6 +107,16 @@ class DSLRCamera(Camera):
             if 'file_data' in locals():
                 del file_data
             self.camera.exit(self.context)
+
+    def delete(self, path):
+        self.camera.init(self.context)
+        try:
+            folder = path.folder
+            name = path.name
+            gp.gp_camera_file_delete(self.camera, folder, name, self.context)
+        finally:
+            self.camera.exit(self.context)
+
 
 
 class DummyCamera(Camera):
