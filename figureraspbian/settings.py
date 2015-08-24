@@ -77,6 +77,11 @@ FLASH_ON = True if flash_on == '1' else False
 backup_on = get_env_setting('BACKUP_ON', '0')
 BACKUP_ON = True if backup_on == '1' else False
 
+# Camera config
+APERTURE = int(get_env_setting('APERTURE', 11))
+SHUTTER_SPEED = int(get_env_setting('SHUTTER_SPEED', 39))
+ISO = int(get_env_setting('ISO', 3))
+
 
 def log_config():
     logger.info('ENVIRONMENT: %s' % ENVIRONMENT)

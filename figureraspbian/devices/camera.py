@@ -25,6 +25,16 @@ class Camera(object):
         raise NotImplementedError
 
 
+EOS_1200D_CONFIG = {
+    'capturetarget': 1,
+    'focusmode': 3,
+    'autopoweroff': 0,
+    'imageformat': 6,
+    'aperture': settings.APERTURE,
+    'shutterspeed': settings.SHUTTER_SPEED,
+    'iso': settings.ISO}
+
+
 class DSLRCamera(Camera):
     """
     Digital Single Lens Reflex camera
@@ -44,9 +54,10 @@ class DSLRCamera(Camera):
             try:
                 self.camera.init(self.context)
                 error, config = gp.gp_camera_get_config(self.camera, self.context)
-                error, capture_target = gp.gp_widget_get_child_by_name(config, 'capturetarget')
-                error, value = gp.gp_widget_get_choice(capture_target, 1)
-                gp.gp_widget_set_value(capture_target, value)
+                for param, choice in EOS_1200D_CONFIG.iteritems():
+                    error, widget = gp.gp_widget_get_child_by_name(config, param)
+                    error, value = gp.gp_widget_get_choice(widget, choice)
+                    gp.gp_widget_set_value(widget, value)
                 gp.gp_camera_set_config(self.camera, config, self.context)
             finally:
                 self.camera.exit(self.context)
