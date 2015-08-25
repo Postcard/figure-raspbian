@@ -55,6 +55,10 @@ class Database(object):
         if 'data' not in self.dbroot:
             self.dbroot['data'] = Data()
             transaction.commit()
+        # for retro-compatibility
+        if not hasattr(self.dbroot['data'], 'codes'):
+            self.dbroot['data'] = Data()
+            transaction.commit()
         self.data = self.dbroot['data']
 
     def open(self):
@@ -76,8 +80,12 @@ class Database(object):
             transaction.abort()
 
     @transaction_decorate(retry_delay=0.1)
+    def claim_codes(self):
+        return self.data.claim_codes()
+
+    @transaction_decorate(retry_delay=0.1)
     def get_code(self):
-        return self.data.installation.get_code()
+        return self.data.get_code()
 
     @transaction_decorate(retry_delay=0.1)
     def add_ticket(self, ticket):
@@ -107,6 +115,7 @@ class Data(persistent.Persistent):
 
     def __init__(self):
         self.installation = Installation()
+        self.codes = []
         self.tickets = []
         self.last_upload_index = -1
 
@@ -138,6 +147,17 @@ class Data(persistent.Persistent):
     def update_installation(self):
         self.installation.update()
 
+    def claim_codes(self):
+        if not self.codes:
+            self.codes = api.claim_codes()
+            self._p_changed = True
+
+    def get_code(self):
+        # claim a code
+        code = self.codes.pop()
+        self._p_changed = True
+        return code
+
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
 
@@ -146,7 +166,6 @@ class Installation(persistent.Persistent):
 
     def __init__(self):
         self.id = None
-        self.codes = []
         self.start = None
         self.end = None
         self.scenario = None
@@ -173,23 +192,11 @@ class Installation(persistent.Persistent):
             images_to_download = list(set(items) - set(local_items))
             for image in images_to_download:
                 api.download(image, IMAGE_DIR)
-            is_new = self.id != installation['id']
-            new_codes = api.get_codes(installation['id']) if is_new else None
-
-            if new_codes:
-                self.codes = new_codes
             self.start = installation['start']
             self.end = installation['end']
             self.id = installation['id']
             self.scenario = scenario
             self.ticket_template = ticket_template
             self._p_changed = True
-
-    def get_code(self):
-        # claim a code
-        code = self.codes.pop()
-        self._p_changed = True
-        return code
-
 
 

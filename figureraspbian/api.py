@@ -35,9 +35,9 @@ def get_installation():
         raise ApiException("Failed retrieving installation")
 
 
-def get_codes(installation):
-    url = "%s/installations/%s/codes/" % (settings.API_HOST, installation)
-    r = session.get(url=url, timeout=20)
+def claim_codes():
+    url = "%s/codelist/claim/" % (settings.API_HOST)
+    r = session.post(url=url, timeout=20)
     if r.status_code == 200:
         r.encoding = 'utf-8'
         return json.loads(r.text)['codes']
