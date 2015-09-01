@@ -20,6 +20,7 @@ settings.configure(
 )
 from django.core.cache import cache
 from celery import Celery
+from requests.exceptions import RequestException
 
 from .db import Database, managed
 
@@ -45,7 +46,6 @@ def single_instance_task(timeout):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             lock_id = "celery-single-instance-" + func.__name__
-            print lock_id
             acquire_lock = lambda: cache.add(lock_id, "true", timeout)
             release_lock = lambda: cache.delete(lock_id)
             if acquire_lock():
@@ -72,4 +72,7 @@ def update_db():
 
 @app.task
 def set_paper_status(status):
-    api.set_paper_status(status)
+    try:
+        api.set_paper_status(status)
+    except RequestException as e:
+        logger.exception(e)

@@ -131,6 +131,7 @@ def run():
                 # Calculate new code
                 start = time.time()
                 code = db.get_code()
+                db.claim_new_codes_if_necessary()
                 end = time.time()
                 logger.info('Successfully claimed code in %s seconds', end - start)
                 set_paper_status.delay('1')
