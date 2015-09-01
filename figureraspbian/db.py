@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 import time
 import os
 import random
+import errno
 
 from ZEO import ClientStorage
 from ZODB import DB
@@ -160,9 +161,12 @@ class Database(object):
                 logger.exception(e)
                 self.increment_last_upload_index()
             except IOError as e:
+                if e.errno != errno.ENOENT:
+                    raise e
                 # snapshot or ticket may not exist, proceed with remaining tickets
                 logger.exception(e)
                 self.increment_last_upload_index()
+
 
     @transaction_decorate(0.5)
     def add_ticket(self, ticket):

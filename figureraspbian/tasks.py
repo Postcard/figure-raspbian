@@ -20,6 +20,7 @@ settings.configure(
 )
 from django.core.cache import cache
 from celery import Celery
+from requests.exceptions import RequestException
 
 from .db import Database, managed
 
@@ -71,4 +72,7 @@ def update_db():
 
 @app.task
 def set_paper_status(status):
-    api.set_paper_status(status)
+    try:
+        api.set_paper_status(status)
+    except RequestException as e:
+        logger.exception(e)
