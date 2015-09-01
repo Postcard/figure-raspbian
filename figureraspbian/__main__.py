@@ -39,7 +39,7 @@ if __name__ == '__main__':
     logger.info("Initializing database...")
     with managed(Database()) as db:
         db.update_installation()
-        db.claim_codes()
+        db.claim_new_codes_if_necessary()
 
     logger.info("Downloading ticket css...")
     ticket_css_url = "%s/%s" % (settings.STATIC_HOST, 'static/css/ticket.css')

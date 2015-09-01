@@ -45,7 +45,6 @@ def single_instance_task(timeout):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             lock_id = "celery-single-instance-" + func.__name__
-            print lock_id
             acquire_lock = lambda: cache.add(lock_id, "true", timeout)
             release_lock = lambda: cache.delete(lock_id)
             if acquire_lock():
