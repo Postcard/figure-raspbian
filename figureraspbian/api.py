@@ -65,16 +65,9 @@ def create_ticket(ticket):
     url = "%s/tickets/" % settings.API_HOST
     files = {'snapshot': open(ticket['snapshot'], 'rb'), 'ticket': open(ticket['ticket'], 'rb')}
 
-    # serialize random selections to be posted as a multipart/form-data
-    def serialize(selections):
-        serialized = ','.join(['%s:%s' % (selection[0], selection[1]['id']) for selection in selections])
-        return serialized
-
     data = {
         'datetime': ticket['dt'],
         'code': ticket['code'],
-        'random_text_selections': serialize(ticket['random_text_selections']),
-        'random_image_selections': serialize(ticket['random_image_selections']),
         'installation': ticket['installation']
     }
 
