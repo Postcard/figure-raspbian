@@ -48,7 +48,7 @@ def transaction_decorate(retry_delay=1):
 
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
-DATABASE_VERSION = 2
+DATABASE_VERSION = 3
 
 
 class Database(object):
@@ -63,8 +63,7 @@ class Database(object):
             transaction.commit()
         # If local database is outdated, create a brand new one
         if not hasattr(self.dbroot['data'], 'version') or self.dbroot['data'].version < DATABASE_VERSION:
-            self.dbroot['data'] = Data()
-            transaction.commit()
+            self.clear()
         self.data = self.dbroot['data']
 
     def open(self):
@@ -82,32 +81,39 @@ class Database(object):
 
     def set_installation(self, installation):
         try:
-            ticket_template = installation['scenario']['ticket_template']
-            # Download all images that have not been previously downloaded
-            items = [image_variable['items'] for image_variable in ticket_template['image_variables']]
-            items.append(ticket_template['images'])
+            ticket_templates = installation['scenario']['ticket_templates']
+            local_items = self.get_images()
+            items = []
+            for ticket_template in ticket_templates:
+                for image_variable in ticket_template['image_variables']:
+                    items.append(image_variable['items'])
+                items.append(ticket_template['images'])
             items = [item for sub_items in items for item in sub_items]
             items = map(lambda x: x['image'], items)
-            if not self.data.installation.ticket_template:
-                local_items = []
-            else:
-                local_items = [image_variable['items'] for
-                               image_variable in
-                               self.data.installation.ticket_template['image_variables']]
-                local_items.append(self.data.installation.ticket_template['images'])
-            local_items = [item for sub_items in local_items for item in sub_items]
-            local_items = map(lambda x: x['image'], local_items)
+            # Download all images that have not been previously downloaded
             images_to_download = list(set(items) - set(local_items))
             for image in images_to_download:
                 api.download(image, IMAGE_DIR)
             self.data.installation.id = installation['id']
-            self.data.installation.ticket_template = ticket_template
+            self.data.installation.ticket_templates = ticket_templates
             self.data.installation._p_changed = True
             transaction.commit()
         except (ConflictError, urllib2.HTTPError) as e:
             # Log and do nothing, we can wait for next update
             logger.exception(e)
             transaction.abort()
+
+    def get_images(self):
+        items = []
+        if self.data.installation.ticket_templates:
+            for ticket_template in self.data.installation.ticket_templates:
+                for image_variable in ticket_template['image_variables']:
+                    items.append(image_variable['items'])
+                items.append(ticket_template['images'])
+            items = [item for sub_items in items for item in sub_items]
+            items = map(lambda x: x['image'], items)
+        return items
+
 
     def update_installation(self):
         try:
@@ -199,7 +205,7 @@ class Installation(persistent.Persistent):
 
     def __init__(self):
         self.id = None
-        self.ticket_template = None
+        self.ticket_templates = None
 
 
 
