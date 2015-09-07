@@ -2,6 +2,7 @@
 
 from os.path import basename, join
 import time
+import random
 import shutil
 import logging
 logging.basicConfig(level='INFO')
@@ -27,9 +28,6 @@ def run():
             if installation.id is not None:
                 # Database is initialized !
 
-                # Retrieve necessary information from database
-                ticket_template = installation.ticket_template
-
                 # Initialize blinking task
                 blinking_task = None
                 # Set Output to False
@@ -46,6 +44,7 @@ def run():
                 # Render ticket
 
                 start = time.time()
+                ticket_template = random.choice(installation.ticket_templates)
                 random_text_selections = [ticketrenderer.random_selection(variable) for
                                           variable in
                                           ticket_template['text_variables']]
