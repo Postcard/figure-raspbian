@@ -26,7 +26,9 @@ RUN apt-get update && apt-get install -y \
     usbutils \
     libfreetype6 \
     libfontconfig \
-    python-numpy
+    python-numpy \
+    ntp \
+    ntpdate
 
 RUN wget --no-check-certificate https://github.com/Postcard/gphoto2-updater/releases/download/2.5.8/gphoto2-updater.sh && \
     chmod +x gphoto2-updater.sh && \
