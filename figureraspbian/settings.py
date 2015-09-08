@@ -82,6 +82,10 @@ APERTURE = int(get_env_setting('APERTURE', 11))
 SHUTTER_SPEED = int(get_env_setting('SHUTTER_SPEED', 39))
 ISO = int(get_env_setting('ISO', 3))
 
+# Blink
+blink_on = get_env_setting('BLINK_ON', '0')
+BLINK_ON = True if blink_on == '1' else False
+
 
 def log_config():
     logger.info('ENVIRONMENT: %s' % ENVIRONMENT)

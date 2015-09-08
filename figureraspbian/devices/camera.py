@@ -9,7 +9,6 @@ import io
 from PIL import Image
 
 from .. import settings
-from . import light
 
 
 try:
@@ -47,7 +46,6 @@ class DSLRCamera(Camera):
     def __init__(self):
         self.context = gp.Context()
         self.camera = gp.Camera()
-        self.light = light.LEDPanelLight()
 
         # Camera specific configuration
         if settings.CAMERA_MODEL == 'CANON_1200D':
