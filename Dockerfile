@@ -26,7 +26,9 @@ RUN apt-get update && apt-get install -y \
     usbutils \
     libfreetype6 \
     libfontconfig \
-    python-numpy
+    python-numpy \
+    ntp \
+    ntpdate
 
 RUN wget --no-check-certificate https://github.com/Postcard/gphoto2-updater/releases/download/2.5.8/gphoto2-updater.sh && \
     chmod +x gphoto2-updater.sh && \
@@ -52,6 +54,7 @@ RUN pip install gphoto2==1.1.0 \
     pifacedigitalio==3.0.5 \
     jinja2==2.7.3 \
     persistent==4.0.8 \
+    ZEO==4.1.0 \
     ZODB==4.1.0 \
     ZODB3==3.11.0 \
     pytz==2015.2 \
