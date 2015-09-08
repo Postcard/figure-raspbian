@@ -28,18 +28,19 @@ def run():
             if installation.id is not None:
                 # Database is initialized !
 
-                # Initialize blinking task
-                blinking_task = None
-                # Set Output to False
-                devices.OUTPUT.set(True)
-
                 # Take a snapshot
                 start = time.time()
                 snapshot_raspberry_path, snapshot, date, snapshot_camera_path = devices.CAMERA.capture(installation.id)
                 end = time.time()
                 logger.info('Snapshot capture successfully executed in %s seconds', end - start)
-                # Start blinking
-                blinking_task = devices.OUTPUT.blink()
+
+                # Initialize blinking task
+                blinking_task = None
+                if settings.BLINK_ON:
+                    # Set Output to False
+                    devices.OUTPUT.set(True)
+                    # Start blinking
+                    blinking_task = devices.OUTPUT.blink()
 
                 # Render ticket
 
@@ -96,10 +97,11 @@ def run():
                 logger.info('Ticket successfully printed in %s seconds', end - start)
 
                 # Stop blinking
-                blinking_task.terminate()
+                if blinking_task:
+                    blinking_task.terminate()
+                    # Set Output to True
+                    devices.OUTPUT.set(False)
 
-                # Set Output to True
-                devices.OUTPUT.set(False)
                 # Save ticket to disk
                 ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot_raspberry_path))
                 with open(ticket_path, "wb") as f:
