@@ -54,6 +54,7 @@ RUN pip install gphoto2==1.1.0 \
     pifacedigitalio==3.0.5 \
     jinja2==2.7.3 \
     persistent==4.0.8 \
+    ZEO==4.1.0 \
     ZODB==4.1.0 \
     ZODB3==3.11.0 \
     pytz==2015.2 \
