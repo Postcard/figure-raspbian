@@ -1,5 +1,5 @@
 # Base image 
-FROM resin/rpi-raspbian:wheezy-2015-05-06
+FROM resin/rpi-raspbian:wheezy-2015-09-02
 
 MAINTAINER Benoit Guigal <benoit@postcardgroup.com>
 
@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y \
     ntp \
     ntpdate
 
-RUN wget --no-check-certificate https://github.com/Postcard/gphoto2-updater/releases/download/2.5.8/gphoto2-updater.sh && \
+RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/releases/download/2.5.8/gphoto2-updater.sh && \
     chmod +x gphoto2-updater.sh && \
     ./gphoto2-updater.sh
 
@@ -47,7 +47,7 @@ RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-pri
     cd python-epson-printer-1.7.1 && \
     python setup.py install
 
-RUN pip install gphoto2==1.1.0 \
+RUN pip install gphoto2==1.2.1 \
     requests==2.5.1 \
     Pillow==2.6.0 \
     pifacecommon==4.1.2 \
