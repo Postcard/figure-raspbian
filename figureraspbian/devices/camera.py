@@ -44,37 +44,31 @@ class DSLRCamera(Camera):
     """
 
     def __init__(self):
-        self.context = gp.Context()
         self.camera = gp.Camera()
 
         # Camera specific configuration
         if settings.CAMERA_MODEL == 'CANON_1200D':
             try:
-                self.camera.init(self.context)
-                error, config = gp.gp_camera_get_config(self.camera, self.context)
+                context = gp.Context()
+                self.camera.init(context)
+                error, config = gp.gp_camera_get_config(self.camera, context)
                 for param, choice in EOS_1200D_CONFIG.iteritems():
                     error, widget = gp.gp_widget_get_child_by_name(config, param)
                     error, value = gp.gp_widget_get_choice(widget, choice)
                     gp.gp_widget_set_value(widget, value)
-                gp.gp_camera_set_config(self.camera, config, self.context)
+                gp.gp_camera_set_config(self.camera, config, context)
             finally:
-                self.camera.exit(self.context)
+                self.camera.exit(context)
 
     def capture(self, installation):
-        self.camera.init(self.context)
-        try:
-            if settings.FLASH_ON:
-                self.light.flash_on()
-                # Let the time for the camera to adjust
-                time.sleep(1)
 
+        try:
+            context = gp.Context()
+            self.camera.init(context)
             # Capture image
-            error, camera_path = gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, self.context)
+            error, camera_path = gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, context)
             folder = camera_path.folder
             name = camera_path.name
-
-            if settings.FLASH_ON:
-                self.light.flash_off()
 
             date = datetime.now(pytz.timezone(settings.TIMEZONE))
 
@@ -84,7 +78,7 @@ class DSLRCamera(Camera):
                 folder,
                 name,
                 gp.GP_FILE_TYPE_NORMAL,
-                self.context)
+                context)
 
             error, file_data = gp.gp_file_get_data_and_size(camera_file)
 
@@ -115,17 +109,17 @@ class DSLRCamera(Camera):
                 del camera_file
             if 'file_data' in locals():
                 del file_data
-            self.camera.exit(self.context)
+            self.camera.exit(context)
 
     def delete(self, path):
-        self.camera.init(self.context)
         try:
+            context = gp.Context()
+            self.camera.init(context)
             folder = path.folder
             name = path.name
-            gp.gp_camera_file_delete(self.camera, folder, name, self.context)
+            gp.gp_camera_file_delete(self.camera, folder, name, context)
         finally:
-            self.camera.exit(self.context)
-
+            self.camera.exit(context)
 
 
 class DummyCamera(Camera):
