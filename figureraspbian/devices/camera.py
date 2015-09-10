@@ -46,8 +46,6 @@ class DSLRCamera(Camera):
                 gp.check_result(gp.gp_camera_init(self.camera, context))
                 config = gp.check_result(gp.gp_camera_get_config(self.camera, context))
                 for param, choice in EOS_1200D_CONFIG.iteritems():
-                    print param
-                    print choice
                     widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
                     value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
                     gp.gp_widget_set_value(widget, value)
