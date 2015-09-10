@@ -21,7 +21,6 @@ class Camera(object):
 EOS_1200D_CONFIG = {
     'capturetarget': 1,
     'focusmode': 3,
-    'autopoweroff': 0,
     'imageformat': 6,
     'aperture': settings.APERTURE,
     'shutterspeed': settings.SHUTTER_SPEED,
