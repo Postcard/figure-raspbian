@@ -3,18 +3,12 @@
 import os
 from datetime import datetime
 import pytz
-import time
 import io
 
 from PIL import Image
+import gphoto2 as gp
 
 from .. import settings
-
-
-try:
-    import gphoto2 as gp
-except ImportError:
-    print("Could not import gphoto2")
 
 
 class Camera(object):
@@ -44,29 +38,29 @@ class DSLRCamera(Camera):
     """
 
     def __init__(self):
-        self.camera = gp.Camera()
+        self.camera = gp.check_result(gp.gp_camera_new())
 
         # Camera specific configuration
         if settings.CAMERA_MODEL == 'CANON_1200D':
             try:
-                context = gp.Context()
-                self.camera.init(context)
-                error, config = gp.gp_camera_get_config(self.camera, context)
+                context = gp.gp_context_new()
+                gp.check_result(gp.gp_camera_init(self.camera, context))
+                config = gp.check_result(gp.gp_camera_get_config(self.camera, context))
                 for param, choice in EOS_1200D_CONFIG.iteritems():
-                    error, widget = gp.gp_widget_get_child_by_name(config, param)
-                    error, value = gp.gp_widget_get_choice(widget, choice)
+                    widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
+                    value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
                     gp.gp_widget_set_value(widget, value)
                 gp.gp_camera_set_config(self.camera, config, context)
             finally:
-                self.camera.exit(context)
+                gp.check_result(gp.gp_camera_exit(self.camera, context))
 
     def capture(self, installation):
 
         try:
-            context = gp.Context()
-            self.camera.init(context)
+            context = gp.gp_context_new()
+            gp.check_result(gp.gp_camera_init(self.camera, context))
             # Capture image
-            error, camera_path = gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, context)
+            camera_path = gp.check_result(gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, context))
             folder = camera_path.folder
             name = camera_path.name
 
@@ -80,7 +74,7 @@ class DSLRCamera(Camera):
                 gp.GP_FILE_TYPE_NORMAL,
                 context)
 
-            error, file_data = gp.gp_file_get_data_and_size(camera_file)
+            file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
 
             # Crop and rotate snapshot
             snapshot = Image.open(io.BytesIO(file_data))
@@ -113,11 +107,11 @@ class DSLRCamera(Camera):
 
     def delete(self, path):
         try:
-            context = gp.Context()
-            self.camera.init(context)
+            context = gp.gp_context_new()
+            gp.check_result(gp.gp_camera_init(self.camera, context))
             folder = path.folder
             name = path.name
-            gp.gp_camera_file_delete(self.camera, folder, name, context)
+            gp.check_result(gp.gp_camera_file_delete(self.camera, folder, name, context))
         finally:
             self.camera.exit(context)
 
