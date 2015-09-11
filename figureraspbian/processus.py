@@ -137,9 +137,6 @@ def run():
                 logger.info('Successfully claimed code in %s seconds', end - start)
                 set_paper_status.delay('1')
 
-                # Clear camera file
-                devices.CAMERA.delete(snapshot_camera_path)
-
             else:
                 logger.warning("No active installation. Skipping processus execution")
         except USBError:
