@@ -53,6 +53,9 @@ class DSLRCamera(Camera):
             finally:
                 gp.check_result(gp.gp_camera_exit(self.camera, context))
 
+        # Clear camera space
+        self.clear_space()
+
     def capture(self, installation):
 
         try:
@@ -102,17 +105,40 @@ class DSLRCamera(Camera):
                 del camera_file
             if 'file_data' in locals():
                 del file_data
-            self.camera.exit(context)
+            gp.check_result(gp.gp_camera_exit(self.camera, context))
 
-    def delete(self, path):
+    def clear_space(self):
+        """ Clear space on camera SD card """
         try:
             context = gp.gp_context_new()
             gp.check_result(gp.gp_camera_init(self.camera, context))
-            folder = path.folder
-            name = path.name
-            gp.check_result(gp.gp_camera_file_delete(self.camera, folder, name, context))
+            files = self.list_files(self.camera, context)
+            for f in files:
+                self.delete_file(self.camera, context, f)
         finally:
-            self.camera.exit(context)
+            gp.check_result(gp.gp_camera_exit(self.camera, context))
+
+    def delete_file(self, camera, context, path):
+        """ Delete a file on the camera at a specific path """
+        folder, name = os.path.split(path)
+        gp.check_result(gp.gp_camera_file_delete(camera, folder, name, context))
+
+    def list_files(self, camera, context, path='/'):
+        """ List all files on camera """
+        result = []
+        # get files
+        for name, value in gp.check_result(
+                gp.gp_camera_folder_list_files(camera, path, context)):
+            result.append(os.path.join(path, name))
+        # read folders
+        folders = []
+        for name, value in gp.check_result(
+                gp.gp_camera_folder_list_folders(camera, path, context)):
+            folders.append(name)
+        # recurse over subfolders
+        for name in folders:
+            result.extend(self.list_files(camera, context, os.path.join(path, name)))
+        return result
 
 
 class DummyCamera(Camera):
