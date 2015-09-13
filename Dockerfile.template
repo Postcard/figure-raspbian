@@ -1,5 +1,5 @@
 # Base image 
-FROM resin/rpi-raspbian:wheezy-2015-09-02
+FROM resin/%%RESIN_ARCH%%-node:0.10.38
 
 MAINTAINER Benoit Guigal <benoit@postcardgroup.com>
 
@@ -28,7 +28,16 @@ RUN apt-get update && apt-get install -y \
     libfontconfig \
     python-numpy \
     ntp \
-    ntpdate
+    ntpdate \
+    bind9 \
+    bridge-utils \
+    connman \
+    iptables \
+    libdbus-1-dev \
+    libexpat-dev \
+    net-tools \
+    wireless-tools \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/releases/download/2.5.8/gphoto2-updater.sh && \
     chmod +x gphoto2-updater.sh && \
