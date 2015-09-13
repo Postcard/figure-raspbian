@@ -99,7 +99,7 @@ class DSLRCamera(Camera):
             # Create file path on the RaspberryPi
 
             unique_id = "{installation}{date}".format(installation=installation, date=date.strftime('%Y%m%d%H%M%S'))
-            basename = "figure_%s.jpg" % hashids.encode(int(unique_id))
+            basename = "Figure_%s.jpg" % hashids.encode(int(unique_id))
             raspberry_path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
 
             small.save(raspberry_path)
