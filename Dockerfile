@@ -63,7 +63,8 @@ RUN pip install gphoto2==1.2.1 \
     supervisor==3.1.3 \
     Django==1.8 \
     gunicorn==19.3.0 \
-    python-dateutil==2.4.2
+    python-dateutil==2.4.2 \
+    hashids==1.1.0
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true

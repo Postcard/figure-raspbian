@@ -7,8 +7,12 @@ import io
 
 from PIL import Image
 import gphoto2 as gp
+from hashids import Hashids
 
 from .. import settings
+
+
+hashids = Hashids(salt='Titi Vicky Benni')
 
 
 class Camera(object):
@@ -93,7 +97,9 @@ class DSLRCamera(Camera):
             small = snapshot.resize((512, 512))
 
             # Create file path on the RaspberryPi
-            basename = "{installation}_{date}.jpg".format(installation=installation, date=date.strftime('%Y%m%d%H%M%S'))
+
+            unique_id = "{installation}{date}".format(installation=installation, date=date.strftime('%Y%m%d%H%M%S'))
+            basename = "Figure_%s.jpg" % hashids.encode(int(unique_id))
             raspberry_path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
 
             small.save(raspberry_path)
