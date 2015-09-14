@@ -104,6 +104,8 @@ RUN ./node_modules/.bin/coffee -c ./src
 
 VOLUME /var/lib/connman
 
+WORKDIR /
+
 CMD ["/bin/bash", "/start.sh"]
 
 
