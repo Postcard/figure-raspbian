@@ -100,6 +100,7 @@ COPY ./wifi-connect/bower.json ./wifi-connect/.bowerrc ./
 RUN ./node_modules/.bin/bower --allow-root install \
 	&& ./node_modules/.bin/bower --allow-root cache clean
 
+COPY ./wifi-connect/. ./
 RUN ./node_modules/.bin/coffee -c ./src
 
 VOLUME /var/lib/connman
