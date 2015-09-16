@@ -103,6 +103,9 @@ RUN ./node_modules/.bin/bower --allow-root install \
 COPY ./wifi-connect/. ./
 RUN ./node_modules/.bin/coffee -c ./src
 
+RUN touch /var/log/named.log
+RUN chown bind /var/log/named.log
+
 VOLUME /var/lib/connman
 
 WORKDIR /
