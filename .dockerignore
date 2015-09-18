@@ -6,6 +6,13 @@ eggs
 *.pyo
 .DS_Store
 virtualenv
-db.*
+db.fs
+db.fs.index
+db.fs.lock
+db.fs.tmp
+db.index
+db.json
+db.lock
+db.tmp
 zeosocket
 ghostdriver.log

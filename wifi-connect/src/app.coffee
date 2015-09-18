@@ -48,9 +48,6 @@ getIptablesRules = (callback) ->
 				rule: "TETHER -p udp --dport 53 -j DNAT --to-destination #{myIP}:53"
 		]
 
-printNamedOutput = (data) ->
-	console.log('named: ' + data)
-
 startServer = (wifi) ->
 	console.log('Getting networks list')
 	wifi.getNetworksAsync()
@@ -62,9 +59,7 @@ startServer = (wifi) ->
 		wifi.openHotspotAsync(ssid, passphrase)
 	.then ->
 		console.log('Hotspot enabled')
-		dnsServer = spawn('named', ['-g', '-d', '1'])
-		dnsServer.stdout.on('data', printNamedOutput)
-		dnsServer.stderr.on('data', printNamedOutput)
+		dnsServer = spawn('named', ['-f'])
 		getIptablesRules (err, iptablesRules) ->
 			throw err if err?
 			iptables.appendManyAsync(iptablesRules)
