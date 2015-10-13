@@ -5,7 +5,9 @@ import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
-import pifacedigitalio
+from time import time
+
+from pifacedigitalio import PiFaceDigital
 
 from . import processus, settings, api
 from .db import Database, managed
@@ -13,23 +15,11 @@ from .db import Database, managed
 # Log configuration
 settings.log_config()
 
-refresh_listener = False
+pifacedigital = PiFaceDigital()
 
-
-def trigger(event):
-    logger.info("A trigger occurred ! Running processus...")
-    processus.run()
-    global refresh_listener
-    refresh_listener = True
-
-pifacedigital = pifacedigitalio.PiFaceDigital()
-
-
-def get_listener():
-    l = pifacedigitalio.InputEventListener(chip=pifacedigital)
-    l.register(settings.TRIGGER_PIN, pifacedigitalio.IODIR_RISING_EDGE, trigger, 100)
-    l.activate()
-    return l
+initial_input = pifacedigital.input_pins[settings.TRIGGER_PIN]
+LOW = 1 if initial_input else 0
+HIGH = 0 if initial_input else 1
 
 
 if __name__ == '__main__':
@@ -45,22 +35,31 @@ if __name__ == '__main__':
     ticket_css_url = "%s/%s" % (settings.STATIC_HOST, 'static/css/ticket.css')
     try:
         api.download(ticket_css_url, settings.STATIC_ROOT)
-        logger.info("Success")
+        logger.info("Ready")
     except Exception:
         logger.info("An error occurred when downloading ticket css")
 
-    listener = get_listener()
-
     try:
+        prev_input = LOW
+        start = None
         while True:
-            if refresh_listener:
-                listener.deactivate()
-                listener = get_listener()
-                refresh_listener = False
-            time.sleep(1)
+            curr_input = pifacedigital.input_pins[settings.TRIGGER_PIN]
+            if prev_input == LOW and curr_input == HIGH:
+                # Button pressed
+                start = time()
+            if prev_input == HIGH and curr_input == LOW:
+                # Button unpressed
+                delta = time() - start
+                if delta > 15:
+                    # TODO Unlock door
+                    logger.info("Someone unlock the door...")
+                    time.sleep(5)
+                    # TODO Lock the door
+                else:
+                    logger.info("A trigger occurred ! Running processus...")
+                    processus.run()
+            prev_input = curr_input
+            # slight pause to debounce
+            time.sleep(0.05)
     except Exception as e:
         print e
-    finally:
-        listener.deactivate()
-
-
