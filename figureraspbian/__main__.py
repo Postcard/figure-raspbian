@@ -5,7 +5,7 @@ import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
-from time import time
+import time
 
 from pifacedigitalio import PiFaceDigital
 
@@ -46,10 +46,10 @@ if __name__ == '__main__':
             curr_input = pifacedigital.input_pins[settings.TRIGGER_PIN]
             if prev_input == LOW and curr_input == HIGH:
                 # Button pressed
-                start = time()
+                start = time.time()
             if prev_input == HIGH and curr_input == LOW:
                 # Button unpressed
-                delta = time() - start
+                delta = time.time() - start
                 if delta > 15:
                     logger.info("Someone unlock the door...")
                     pifacedigital.relays[0].turn_on()
