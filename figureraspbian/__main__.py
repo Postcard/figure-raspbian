@@ -17,10 +17,6 @@ settings.log_config()
 
 pifacedigital = PiFaceDigital()
 
-initial_input = pifacedigital.input_pins[settings.TRIGGER_PIN]
-LOW = 1 if initial_input else 0
-HIGH = 0 if initial_input else 1
-
 
 if __name__ == '__main__':
 
@@ -40,26 +36,32 @@ if __name__ == '__main__':
         logger.info("An error occurred when downloading ticket css")
 
     try:
+        initial_input = pifacedigital.input_pins[settings.TRIGGER_PIN].value
+        LOW = 1 if initial_input else 0
+        HIGH = 0 if initial_input else 1
+
         prev_input = LOW
         start = None
         while True:
-            curr_input = pifacedigital.input_pins[settings.TRIGGER_PIN]
-            if prev_input == LOW and curr_input == HIGH:
+            curr_input = pifacedigital.input_pins[settings.TRIGGER_PIN].value
+            if curr_input == HIGH:
                 # Button pressed
-                start = time.time()
-            if prev_input == HIGH and curr_input == LOW:
-                # Button unpressed
-                delta = time.time() - start
-                if delta > 15:
-                    logger.info("Someone unlock the door...")
-                    pifacedigital.relays[0].turn_on()
-                    time.sleep(5)
-                    pifacedigital.relays[0].turn_off()
+                if prev_input == LOW:
+                    start = time.time()
                 else:
-                    logger.info("A trigger occurred ! Running processus...")
-                    processus.run()
+                    delta = time.time() - start
+                    if delta > 15:
+                        logger.info("Someone unlock the door...")
+                        pifacedigital.relays[0].turn_on()
+                        time.sleep(5)
+                        pifacedigital.relays[0].turn_off()
+
+            if curr_input == LOW and prev_input == HIGH:
+                # Button unpressed
+                logger.info("A trigger occurred ! Running processus...")
+                processus.run()
             prev_input = curr_input
             # slight pause to debounce
             time.sleep(0.05)
     except Exception as e:
-        print e
+        logger.error(e.message)
