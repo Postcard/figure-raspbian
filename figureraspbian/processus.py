@@ -34,14 +34,6 @@ def run():
                 end = time.time()
                 logger.info('Snapshot capture successfully executed in %s seconds', end - start)
 
-                # Initialize blinking task
-                blinking_task = None
-                if settings.BLINK_ON:
-                    # Set Output to False
-                    devices.OUTPUT.set(True)
-                    # Start blinking
-                    blinking_task = devices.OUTPUT.blink()
-
                 # Render ticket
 
                 start = time.time()
@@ -96,12 +88,6 @@ def run():
                 end = time.time()
                 logger.info('Ticket successfully printed in %s seconds', end - start)
 
-                # Stop blinking
-                if blinking_task:
-                    blinking_task.terminate()
-                    # Set Output to True
-                    devices.OUTPUT.set(False)
-
                 # Save ticket to disk
                 ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot_raspberry_path))
                 with open(ticket_path, "wb") as f:
@@ -144,12 +130,3 @@ def run():
             set_paper_status.delay('0')
         except Exception as e:
             logger.exception(e)
-        finally:
-            if 'blinking_task' in locals():
-                if blinking_task is not None:
-                    blinking_task.terminate()
-
-
-
-
-
