@@ -51,10 +51,10 @@ if __name__ == '__main__':
                 # Button unpressed
                 delta = time() - start
                 if delta > 15:
-                    # TODO Unlock door
                     logger.info("Someone unlock the door...")
+                    pifacedigital.relays[0].turn_on()
                     time.sleep(5)
-                    # TODO Lock the door
+                    pifacedigital.relays[0].turn_off()
                 else:
                     logger.info("A trigger occurred ! Running processus...")
                     processus.run()
