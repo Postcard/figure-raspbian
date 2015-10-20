@@ -97,9 +97,10 @@ class DSLRCamera(Camera):
             small = snapshot.resize((512, 512))
 
             # Create file path on the RaspberryPi
-
-            unique_id = "{installation}{date}".format(installation=installation, date=date.strftime('%Y%m%d%H%M%S'))
-            basename = "Figure_%s.jpg" % hashids.encode(int(unique_id))
+            unique_id = "{hash}{resin_uuid}".format(
+                hash=hashids.encode(installation, int(date.strftime('%Y%m%d%H%M%S'))),
+                resin_uuid=settings.RESIN_UUID[:4]).lower()
+            basename = "Figure_%s.jpg" % unique_id
             raspberry_path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
 
             small.save(raspberry_path)
