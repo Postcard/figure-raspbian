@@ -8,6 +8,7 @@ import time
 import os
 import random
 import errno
+from datetime import datetime
 
 from ZEO import ClientStorage
 from ZODB import DB
@@ -17,8 +18,9 @@ import persistent
 from requests.exceptions import RequestException
 import urllib2
 
-
 from . import settings, api
+
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 @contextmanager
 def managed(database):
@@ -48,7 +50,7 @@ def transaction_decorate(retry_delay=1):
 
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
-DATABASE_VERSION = 3
+DATABASE_VERSION = 4
 
 
 class Database(object):
@@ -105,21 +107,30 @@ class Database(object):
 
     def get_images(self):
         items = []
-        if self.data.installation.ticket_templates:
-            for ticket_template in self.data.installation.ticket_templates:
-                for image_variable in ticket_template['image_variables']:
-                    items.append(image_variable['items'])
-                items.append(ticket_template['images'])
-            items = [item for sub_items in items for item in sub_items]
-            items = map(lambda x: x['image'], items)
+        for ticket_template in self.data.installation.ticket_templates:
+            for image_variable in ticket_template['image_variables']:
+                items.append(image_variable['items'])
+            items.append(ticket_template['images'])
+        items = [item for sub_items in items for item in sub_items]
+        items = map(lambda x: x['image'], items)
         return items
-
 
     def update_installation(self):
         try:
             installation = api.get_installation()
             if installation:
-                self.set_installation(installation)
+                modified = datetime.strptime(installation['scenario']['modified'], DATE_FORMAT)
+                for ticket_template in installation['scenario']['ticket_templates']:
+                    modified = max(modified, datetime.strptime(ticket_template['modified'], DATE_FORMAT))
+                added_or_deleted = (len(installation['scenario']['ticket_templates']) !=
+                                    len(self.data.installation.ticket_templates))
+                if (not self.data.installation.modified or
+                        modified > self.data.installation.modified or added_or_deleted):
+                    logger.info("Installation was modified, setting new installation in local db")
+                    self.set_installation(installation)
+                    self.data.installation.modified = modified
+                    self.data.installation._p_changed = True
+                    transaction.commit()
         except (api.ApiException, RequestException) as e:
             # Log and do nothing, we can wait for next update
             logger.exception(e)
@@ -205,7 +216,8 @@ class Installation(persistent.Persistent):
 
     def __init__(self):
         self.id = None
-        self.ticket_templates = None
+        self.modified = None
+        self.ticket_templates = []
 
 
 
