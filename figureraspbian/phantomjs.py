@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 from . import settings
 
 
-def get_screenshot():
-    args = [settings.PHANTOMJS_PATH, './figureraspbian/ticket.js']
+def get_screenshot(html):
+    args = [settings.PHANTOMJS_PATH, './figureraspbian/ticket.js', html]
     data = subprocess.check_output(args)
     return data
 

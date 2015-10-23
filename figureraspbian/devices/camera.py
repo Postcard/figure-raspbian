@@ -1,9 +1,8 @@
 # -*- coding: utf8 -*-
 
 import os
-from datetime import datetime
-import pytz
 import io
+import StringIO
 
 from PIL import Image
 import gphoto2 as gp
@@ -70,8 +69,6 @@ class DSLRCamera(Camera):
             folder = camera_path.folder
             name = camera_path.name
 
-            date = datetime.now(pytz.timezone(settings.TIMEZONE))
-
             # Get snapshot file
             error, camera_file = gp.gp_camera_file_get(
                 self.camera,
@@ -93,19 +90,23 @@ class DSLRCamera(Camera):
             if settings.ROTATE:
                 snapshot = snapshot.rotate(90)
 
-            # resize in place using the fastest algorithm, ie NEAREST
-            small = snapshot.resize((512, 512))
+            buf = StringIO.StringIO()
+            snapshot.save(buf, "JPEG")
+            content = buf.getvalue()
+            buf.close()
+            return content
+
 
             # Create file path on the RaspberryPi
-            unique_id = "{hash}{resin_uuid}".format(
-                hash=hashids.encode(installation, int(date.strftime('%Y%m%d%H%M%S'))),
-                resin_uuid=settings.RESIN_UUID[:4]).lower()
-            basename = "Figure_%s.jpg" % unique_id
-            raspberry_path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
-
-            small.save(raspberry_path)
-
-            return raspberry_path, snapshot, date, camera_path
+            # unique_id = "{hash}{resin_uuid}".format(
+            #     hash=hashids.encode(installation, int(date.strftime('%Y%m%d%H%M%S'))),
+            #     resin_uuid=settings.RESIN_UUID[:4]).lower()
+            # basename = "Figure_%s.jpg" % unique_id
+            # raspberry_path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
+            #
+            # small.save(raspberry_path)
+            #
+            # return raspberry_path, snapshot, date, camera_path
 
         finally:
             if 'camera_file' in locals():

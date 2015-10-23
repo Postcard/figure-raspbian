@@ -49,12 +49,7 @@ def random_selection(variable):
 
 
 def render(html, snapshot, random_snapshot, code, date, images, random_text_selections, random_image_selections):
-    snapshot_url = 'http://localhost:8080/media/snapshots/%s' % os.path.basename(snapshot)
-    context = {'snapshot': snapshot_url}
-    random_snapshot_url = ('http://localhost:8080/media/snapshots/%s' % os.path.basename(random_snapshot) if
-                           random_snapshot else
-                           'http://localhost:8080/media/snapshots/example.jpg')
-    context['random_snapshot'] = random_snapshot_url
+    context = {'snapshot': snapshot}
     for (text_variable_id, item) in random_text_selections:
         text = item['text'] if item else ''
         context['textvariable_%s' % text_variable_id] = text
