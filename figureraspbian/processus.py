@@ -13,9 +13,12 @@ from datetime import datetime
 import pytz
 
 from . import devices, settings, ticketrenderer
-from .tasks import set_paper_status
+from .tasks import set_paper_status, upload_ticket
 from .db import Database, managed
 import phantomjs
+from hashids import Hashids
+
+hashids = Hashids(salt='Titi Vicky Benni')
 
 # Pre-calculated random_ticket to be used
 code = None
@@ -67,46 +70,32 @@ def run():
                     random_image_selections)
 
                 # get ticket as base64 stream
-                ticket_data = phantomjs.get_screenshot(rendered_html)
+                ticket = phantomjs.get_screenshot(rendered_html)
 
                 end = time.time()
                 logger.info('Ticket successfully rendered in %s seconds', end - start)
 
                 # Print ticket
                 start = time.time()
-                devices.PRINTER.print_ticket(ticket_data)
+                devices.PRINTER.print_ticket(ticket)
                 end = time.time()
                 logger.info('Ticket successfully printed in %s seconds', end - start)
 
-                # TODO asynchronous task to upload snapshot and ticket
-                # TODO if this fails, write image to disk and add it to the queue
+                unique_id = "{hash}{resin_uuid}".format(
+                    hash=hashids.encode(installation.id, int(date.strftime('%Y%m%d%H%M%S'))),
+                    resin_uuid=settings.RESIN_UUID[:4]).lower()
+                filename = "Figure_%s.jpg" % unique_id
 
-                # Save ticket to disk
-                # ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot_raspberry_path))
-                # with open(ticket_path, "wb") as f:
-                #     f.write(ticket_data.decode('base64'))
+                ticket = {
+                    'installation': installation.id,
+                    'snapshot': snapshot,
+                    'ticket': ticket,
+                    'dt': date,
+                    'code': current_code,
+                    'filename': filename
+                }
 
-                # Get good quality image in order to upload it
-                # snapshot.thumbnail((1024, 1024), Image.ANTIALIAS)
-                # snapshot.save(snapshot_raspberry_path)
-                # if settings.BACKUP_ON:
-                #     shutil.copy2(snapshot_raspberry_path, "/mnt/%s" % basename(snapshot_raspberry_path))
-
-                # add task upload ticket task to the queue
-                # ticket = {
-                #     'installation': installation.id,
-                #     'snapshot': snapshot_raspberry_path,
-                #     'ticket': ticket_path,
-                #     'dt': date,
-                #     'code': current_code,
-                #     'random_text_selections': random_text_selections,
-                #     'random_image_selections': random_image_selections
-                # }
-                # db.add_ticket(ticket)
-
-                # Calculate random snapshot path
-                # random_ticket = db.get_random_ticket()
-                # random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
+                upload_ticket.delay(ticket)
 
                 # Calculate new code
                 start = time.time()

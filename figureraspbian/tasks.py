@@ -28,11 +28,11 @@ app = Celery('tasks', broker='amqp://guest@localhost//')
 
 app.conf.update(
     CELERYBEAT_SCHEDULE={
-        'upload-ticket-every-minute-and-half': {
+        'upload-ticket-every-ten-minutes': {
             'task': 'figureraspbian.tasks.upload_tickets',
-            'schedule': timedelta(seconds=30)
+            'schedule': timedelta(seconds=60 * 10)
         },
-        'update-db-every-minute': {
+        'update-db-every-minute-and-half': {
             'task': 'figureraspbian.tasks.update_db',
             'schedule': timedelta(seconds=90)
         }
@@ -76,3 +76,13 @@ def set_paper_status(status):
         api.set_paper_status(status)
     except RequestException as e:
         logger.exception(e)
+
+@app.task
+def upload_ticket(ticket):
+    """ Upload a ticket or add to tickets list"""
+    try:
+        # try uploading the ticket
+        api.create_ticket(ticket)
+    except api.ApiException:
+        with managed(Database()) as db:
+            db.add_ticket(ticket)

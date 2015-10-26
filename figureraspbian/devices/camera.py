@@ -3,6 +3,7 @@
 import os
 import io
 import StringIO
+import base64
 
 from PIL import Image
 import gphoto2 as gp
@@ -92,21 +93,9 @@ class DSLRCamera(Camera):
 
             buf = StringIO.StringIO()
             snapshot.save(buf, "JPEG")
-            content = buf.getvalue()
+            content = base64.b64encode(buf.getvalue())
             buf.close()
             return content
-
-
-            # Create file path on the RaspberryPi
-            # unique_id = "{hash}{resin_uuid}".format(
-            #     hash=hashids.encode(installation, int(date.strftime('%Y%m%d%H%M%S'))),
-            #     resin_uuid=settings.RESIN_UUID[:4]).lower()
-            # basename = "Figure_%s.jpg" % unique_id
-            # raspberry_path = os.path.join(settings.MEDIA_ROOT, 'snapshots', basename)
-            #
-            # small.save(raspberry_path)
-            #
-            # return raspberry_path, snapshot, date, camera_path
 
         finally:
             if 'camera_file' in locals():

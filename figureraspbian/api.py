@@ -62,8 +62,10 @@ def download(url, path):
 
 
 def create_ticket(ticket):
+
     url = "%s/tickets/" % settings.API_HOST
-    files = {'snapshot': open(ticket['snapshot'], 'rb'), 'ticket': open(ticket['ticket'], 'rb')}
+
+    files = {'snapshot': (ticket['filename'], ticket['snapshot']), 'ticket': (ticket['filename'], ticket['ticket'])}
 
     data = {
         'datetime': ticket['dt'],

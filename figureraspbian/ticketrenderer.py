@@ -48,7 +48,7 @@ def random_selection(variable):
     return variable['id'], random.choice(variable['items'])
 
 
-def render(html, snapshot, random_snapshot, code, date, images, random_text_selections, random_image_selections):
+def render(html, snapshot, code, date, images, random_text_selections, random_image_selections):
     context = {'snapshot': snapshot}
     for (text_variable_id, item) in random_text_selections:
         text = item['text'] if item else ''

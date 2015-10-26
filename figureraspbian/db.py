@@ -6,7 +6,6 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 import time
 import os
-import random
 import errno
 from datetime import datetime
 
@@ -189,11 +188,6 @@ class Database(object):
     def add_ticket(self, ticket):
         self.data.tickets.append(ticket)
         self.data._p_changed = True
-
-    def get_random_ticket(self):
-        """ Returns a randomly selected ticket """
-        active_tickets = [ticket for ticket in self.data.tickets if ticket['installation'] == self.data.installation.id]
-        return random.choice(active_tickets) if active_tickets else None
 
     @transaction_decorate(1)
     def increment_last_upload_index(self):
