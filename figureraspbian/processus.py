@@ -62,7 +62,7 @@ def run():
 
                 rendered_html = ticketrenderer.render(
                     ticket_template['html'],
-                    "data:image/jpeg;base64;%s" % snapshot,
+                    "data:image/png;base64,%s" % snapshot,
                     current_code,
                     date,
                     ticket_template['images'],
