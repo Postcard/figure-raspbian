@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 from usb.core import USBError
 from datetime import datetime
 import pytz
+import StringIO
+import base64
 
 from . import devices, settings, ticketrenderer
 from .tasks import set_paper_status, upload_ticket
@@ -60,9 +62,14 @@ def run():
 
                 date = datetime.now(pytz.timezone(settings.TIMEZONE))
 
+                buf = StringIO.StringIO()
+                snapshot.resize((512, 512)).save(buf, "JPEG")
+                content = base64.b64encode(buf.getvalue())
+                buf.close()
+
                 rendered_html = ticketrenderer.render(
                     ticket_template['html'],
-                    "data:image/png;base64,%s" % snapshot,
+                    "data:image/png;base64,%s" % content,
                     current_code,
                     date,
                     ticket_template['images'],
@@ -86,9 +93,14 @@ def run():
                     resin_uuid=settings.RESIN_UUID[:4]).lower()
                 filename = "Figure_%s.jpg" % unique_id
 
+                buf = StringIO.StringIO()
+                snapshot.save(buf, "JPEG")
+                content = base64.b64encode(buf.getvalue())
+                buf.close()
+
                 ticket = {
                     'installation': installation.id,
-                    'snapshot': snapshot,
+                    'snapshot': content,
                     'ticket': ticket,
                     'dt': date,
                     'code': current_code,

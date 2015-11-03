@@ -2,8 +2,6 @@
 
 import os
 import io
-import StringIO
-import base64
 
 from PIL import Image
 import gphoto2 as gp
@@ -91,11 +89,7 @@ class DSLRCamera(Camera):
             if settings.ROTATE:
                 snapshot = snapshot.rotate(90)
 
-            buf = StringIO.StringIO()
-            snapshot.save(buf, "JPEG")
-            content = base64.b64encode(buf.getvalue())
-            buf.close()
-            return content
+            return snapshot
 
         finally:
             if 'camera_file' in locals():
