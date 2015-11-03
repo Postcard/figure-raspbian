@@ -30,7 +30,7 @@ app.conf.update(
     CELERYBEAT_SCHEDULE={
         'upload-ticket-every-ten-minutes': {
             'task': 'figureraspbian.tasks.upload_tickets',
-            'schedule': timedelta(seconds=60 * 10)
+            'schedule': timedelta(seconds=6000)
         },
         'update-db-every-minute-and-half': {
             'task': 'figureraspbian.tasks.update_db',
