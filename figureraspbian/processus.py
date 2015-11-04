@@ -82,7 +82,7 @@ def run():
                 ticket_base64 = phantomjs.get_screenshot(rendered_html)
 
                 # convert ticket to pure black and white
-                ticket_string = cStringIO.StringIO(base64.decode(ticket_base64))
+                ticket_string = cStringIO.StringIO(base64.b64decode(ticket_base64))
                 ticket = Image.open(ticket_string)
                 ticket = ticket.convert('1')
                 ticket_path = join(settings.MEDIA_ROOT, 'ticket.png')
