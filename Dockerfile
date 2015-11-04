@@ -66,6 +66,14 @@ RUN pip install gphoto2==1.2.1 \
     python-dateutil==2.4.2 \
     hashids==1.1.0
 
+RUN apt-get install -y git
+
+RUN git clone https://github.com/petrkutalek/png2pos.git && \
+    cd png2pos && \
+    git submodule init && \
+    git submodule update && \
+    make install
+
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
 ENV FIGURE_DIR /figure/figureraspbian
