@@ -11,14 +11,16 @@ logger = logging.getLogger(__name__)
 from usb.core import USBError
 from datetime import datetime
 import pytz
-import StringIO
+import cStringIO
 import base64
+import subprocess
 
 from . import devices, settings, ticketrenderer
 from .tasks import set_paper_status, upload_ticket
 from .db import Database, managed
 import phantomjs
 from hashids import Hashids
+from PIL import Image
 
 hashids = Hashids(salt='Titi Vicky Benni')
 
@@ -62,7 +64,7 @@ def run():
 
                 date = datetime.now(pytz.timezone(settings.TIMEZONE))
 
-                buf = StringIO.StringIO()
+                buf = cStringIO.StringIO()
                 snapshot.resize((512, 512)).save(buf, "JPEG")
                 content = base64.b64encode(buf.getvalue())
                 buf.close()
@@ -77,31 +79,43 @@ def run():
                     random_image_selections)
 
                 # get ticket as base64 stream
-                ticket = phantomjs.get_screenshot(rendered_html)
+                ticket_base64 = phantomjs.get_screenshot(rendered_html)
+
+                # convert ticket to pure black and white
+                ticket_string = cStringIO.StringIO(base64.decode(ticket_base64))
+                ticket = Image.open(ticket_string)
+                ticket = ticket.convert('1')
+                ticket_path = join(settings.MEDIA_ROOT, 'ticket.png')
+                ticket.save(ticket_path, ticket.format, quality=100)
 
                 end = time.time()
                 logger.info('Ticket successfully rendered in %s seconds', end - start)
 
                 # Print ticket
                 start = time.time()
-                devices.PRINTER.print_ticket(ticket)
+
+                args = ['png2pos', '-r', '-s2', '-aC', ticket_path]
+                p = subprocess.Popen(args, stdout=subprocess.PIPE)
+                pos_data, err = p.communicate()
+
+                devices.PRINTER.print_ticket(pos_data)
                 end = time.time()
                 logger.info('Ticket successfully printed in %s seconds', end - start)
+
+                buf = cStringIO.StringIO()
+                snapshot.save(buf, "JPEG")
+                snapshot_base64 = base64.b64encode(buf.getvalue())
+                buf.close()
 
                 unique_id = "{hash}{resin_uuid}".format(
                     hash=hashids.encode(installation.id, int(date.strftime('%Y%m%d%H%M%S'))),
                     resin_uuid=settings.RESIN_UUID[:4]).lower()
                 filename = "Figure_%s.jpg" % unique_id
 
-                buf = StringIO.StringIO()
-                snapshot.save(buf, "JPEG")
-                content = base64.b64encode(buf.getvalue())
-                buf.close()
-
                 ticket = {
                     'installation': installation.id,
-                    'snapshot': content,
-                    'ticket': ticket,
+                    'snapshot': snapshot_base64,
+                    'ticket': ticket_base64,
                     'dt': date,
                     'code': current_code,
                     'filename': filename
