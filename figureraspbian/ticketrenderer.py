@@ -2,6 +2,7 @@
 
 import os
 import random
+import settings
 
 from jinja2 import Environment
 
@@ -14,7 +15,7 @@ def with_base_html(rendered):
 <html class="figure figure-ticket-container">
     <head>
         <meta charset="utf-8">
-        <link rel="stylesheet" href="http://localhost:8080/resources/ticket.css">
+        <link rel="stylesheet" href="file://{static_root}/ticket.css">
     </head>
     <body class="figure figure-ticket-container">
         <div class="figure figure-ticket">
@@ -22,7 +23,7 @@ def with_base_html(rendered):
         </div>
     </body>
 </html>"""
-    return base.format(content=rendered)
+    return base.format(static_root=settings.STATIC_ROOT, content=rendered)
 
 
 def datetimeformat(value, format='%Y-%m-%d'):
@@ -54,12 +55,12 @@ def render(html, snapshot, code, date, images, random_text_selections, random_im
         text = item['text'] if item else ''
         context['textvariable_%s' % text_variable_id] = text
     for (image_variable_id, item) in random_image_selections:
-        image_url = 'http://localhost:8080/media/images/%s' % os.path.basename(item['image']) if item else ''
+        image_url = 'file://%s/images/%s' % (settings.MEDIA_ROOT, os.path.basename(item['image'])) if item else ''
         context['imagevariable_%s' % image_variable_id] = image_url
     context['datetime'] = date
     context['code'] = code
     for im in images:
-        image_url = 'http://localhost:8080/media/images/%s' % os.path.basename(im['image'])
+        image_url = 'file://%s/images/%s' % (settings.MEDIA_ROOT, os.path.basename(im['image']))
         context['image_%s' % im['id']] = image_url
     template = JINJA_ENV.from_string(with_base_html(html))
     rendered_html = template.render(context)
