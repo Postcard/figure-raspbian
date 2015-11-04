@@ -94,7 +94,7 @@ def run():
                 # Print ticket
                 start = time.time()
 
-                args = ['png2pos', '-r', '-s2', '-aC', ticket_path]
+                args = ['png2pos', '-r', '-s2', '-aL', ticket_path]
                 p = subprocess.Popen(args, stdout=subprocess.PIPE)
                 pos_data, err = p.communicate()
 
