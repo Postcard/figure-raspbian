@@ -2,6 +2,7 @@
 
 import json
 import urllib2
+import base64
 from os.path import join
 
 import requests
@@ -65,7 +66,10 @@ def create_ticket(ticket):
 
     url = "%s/tickets/" % settings.API_HOST
 
-    files = {'snapshot': (ticket['filename'], ticket['snapshot']), 'ticket': (ticket['filename'], ticket['ticket'])}
+    files = {
+        'snapshot': (ticket['filename'], base64.b64decode(ticket['snapshot'])),
+        'ticket': (ticket['filename'], base64.b64decode(ticket['ticket']))
+    }
 
     data = {
         'datetime': ticket['dt'],
