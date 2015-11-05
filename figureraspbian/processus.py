@@ -14,6 +14,7 @@ import pytz
 import cStringIO
 import base64
 import subprocess
+import os
 
 from . import devices, settings, ticketrenderer
 from .tasks import set_paper_status, upload_ticket
@@ -94,8 +95,10 @@ def run():
                 # Print ticket
                 start = time.time()
 
-                args = ['png2pos', '-r', '-s2', '-aL', ticket_path]
-                p = subprocess.Popen(args, stdout=subprocess.PIPE)
+                args = ['png2pos', '-r', '-s2', '-aC', ticket_path]
+                my_env = os.environ.copy()
+                my_env['PNG2POS_PRINTER_MAX_WIDTH'] = '576'
+                p = subprocess.Popen(args, stdout=subprocess.PIPE, env=my_env)
                 pos_data, err = p.communicate()
 
                 devices.PRINTER.print_ticket(pos_data)
