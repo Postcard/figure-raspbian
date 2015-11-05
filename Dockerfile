@@ -82,6 +82,7 @@ ENV PHANTOMJS_PATH /phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/b
 ENV STATIC_ROOT /data/static
 ENV MEDIA_ROOT /data/media
 ENV ZEO_SOCKET /var/run/zeo.sock
+ENV PNG2POS_PRINTER_MAX_WIDTH 576
 
 COPY figureraspbian /figureraspbian
 COPY ./start.sh /
