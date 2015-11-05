@@ -16,6 +16,9 @@ fi
 ntpdate -s time.nist.gov
 /etc/init.d/ntp start
 
+# Make sure $HOSTNAME is present in /etc/hosts
+if ! grep -q "$HOSTNAME" /etc/hosts ; then echo "127.0.0.1 $HOSTNAME" >> /etc/hosts; fi
+
 # Launch supervisor in the foreground
 echo 'Starting supervisor'
 supervisord --nodaemon --configuration /etc/supervisord.conf

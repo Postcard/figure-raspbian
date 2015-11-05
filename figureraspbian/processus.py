@@ -7,17 +7,25 @@ import shutil
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
-import io
-from PIL import Image
+
 from usb.core import USBError
+from datetime import datetime
+import pytz
+import cStringIO
+import base64
+import subprocess
+import os
 
 from . import devices, settings, ticketrenderer
-from .tasks import set_paper_status
+from .tasks import set_paper_status, upload_ticket
 from .db import Database, managed
 import phantomjs
+from hashids import Hashids
+from PIL import Image
+
+hashids = Hashids(salt='Titi Vicky Benni')
 
 # Pre-calculated random_ticket to be used
-random_snapshot_path = None
 code = None
 
 
@@ -30,7 +38,7 @@ def run():
 
                 # Take a snapshot
                 start = time.time()
-                snapshot_raspberry_path, snapshot, date, snapshot_camera_path = devices.CAMERA.capture(installation.id)
+                snapshot = devices.CAMERA.capture(installation.id)
                 end = time.time()
                 logger.info('Snapshot capture successfully executed in %s seconds', end - start)
 
@@ -55,65 +63,68 @@ def run():
                     end = time.time()
                     logger.info('Successfully claimed code in %s seconds', end - start)
 
-                global random_snapshot_path
-                if random_snapshot_path:
-                    current_random_snapshot_path = random_snapshot_path
-                else:
-                    random_ticket = db.get_random_ticket()
-                    current_random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
+                date = datetime.now(pytz.timezone(settings.TIMEZONE))
+
+                buf = cStringIO.StringIO()
+                snapshot.resize((512, 512)).save(buf, "JPEG")
+                content = base64.b64encode(buf.getvalue())
+                buf.close()
 
                 rendered_html = ticketrenderer.render(
                     ticket_template['html'],
-                    snapshot_raspberry_path,
-                    current_random_snapshot_path,
+                    "data:image/png;base64,%s" % content,
                     current_code,
                     date,
                     ticket_template['images'],
                     random_text_selections,
                     random_image_selections)
-                ticket_html_path = join(settings.STATIC_ROOT, 'ticket.html')
-
-                with io.open(ticket_html_path, mode='w', encoding='utf-8') as ticket_html:
-                    ticket_html.write(rendered_html)
 
                 # get ticket as base64 stream
-                ticket_data = phantomjs.get_screenshot()
+                ticket_base64 = phantomjs.get_screenshot(rendered_html)
+
+                # convert ticket to pure black and white
+                ticket_string = cStringIO.StringIO(base64.b64decode(ticket_base64))
+                ticket = Image.open(ticket_string)
+                ticket = ticket.convert('1')
+                ticket_path = join(settings.MEDIA_ROOT, 'ticket.png')
+                ticket.save(ticket_path, ticket.format, quality=100)
 
                 end = time.time()
                 logger.info('Ticket successfully rendered in %s seconds', end - start)
 
                 # Print ticket
                 start = time.time()
-                devices.PRINTER.print_ticket(ticket_data)
+
+                args = ['png2pos', '-r', '-s2', '-aC', ticket_path]
+                my_env = os.environ.copy()
+                my_env['PNG2POS_PRINTER_MAX_WIDTH'] = '576'
+                p = subprocess.Popen(args, stdout=subprocess.PIPE, env=my_env)
+                pos_data, err = p.communicate()
+
+                devices.PRINTER.print_ticket(pos_data)
                 end = time.time()
                 logger.info('Ticket successfully printed in %s seconds', end - start)
 
-                # Save ticket to disk
-                ticket_path = join(settings.MEDIA_ROOT, 'tickets', basename(snapshot_raspberry_path))
-                with open(ticket_path, "wb") as f:
-                    f.write(ticket_data.decode('base64'))
+                buf = cStringIO.StringIO()
+                snapshot.save(buf, "JPEG")
+                snapshot_base64 = base64.b64encode(buf.getvalue())
+                buf.close()
 
-                # Get good quality image in order to upload it
-                snapshot.thumbnail((1024, 1024), Image.ANTIALIAS)
-                snapshot.save(snapshot_raspberry_path)
-                if settings.BACKUP_ON:
-                    shutil.copy2(snapshot_raspberry_path, "/mnt/%s" % basename(snapshot_raspberry_path))
+                unique_id = "{hash}{resin_uuid}".format(
+                    hash=hashids.encode(installation.id, int(date.strftime('%Y%m%d%H%M%S'))),
+                    resin_uuid=settings.RESIN_UUID[:4]).lower()
+                filename = "Figure_%s.jpg" % unique_id
 
-                # add task upload ticket task to the queue
                 ticket = {
                     'installation': installation.id,
-                    'snapshot': snapshot_raspberry_path,
-                    'ticket': ticket_path,
+                    'snapshot': snapshot_base64,
+                    'ticket': ticket_base64,
                     'dt': date,
                     'code': current_code,
-                    'random_text_selections': random_text_selections,
-                    'random_image_selections': random_image_selections
+                    'filename': filename
                 }
-                db.add_ticket(ticket)
 
-                # Calculate random snapshot path
-                random_ticket = db.get_random_ticket()
-                random_snapshot_path = random_ticket['snapshot'] if random_ticket else None
+                upload_ticket.delay(ticket)
 
                 # Calculate new code
                 start = time.time()

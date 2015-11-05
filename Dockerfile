@@ -28,7 +28,8 @@ RUN apt-get update && apt-get install -y \
     libfontconfig \
     python-numpy \
     ntp \
-    ntpdate
+    ntpdate \
+    git
 
 RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/releases/download/2.5.8/gphoto2-updater.sh && \
     chmod +x gphoto2-updater.sh && \
@@ -46,6 +47,13 @@ RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-pri
     rm v1.7.1.zip && \
     cd python-epson-printer-1.7.1 && \
     python setup.py install
+
+RUN git clone https://github.com/Postcard/png2pos.git && \
+    cd png2pos && \
+    git checkout tags/1.0 && \
+    git submodule init && \
+    git submodule update && \
+    make install
 
 RUN pip install gphoto2==1.2.1 \
     requests==2.5.1 \
