@@ -86,6 +86,9 @@ ISO = int(get_env_setting('ISO', 3))
 blink_on = get_env_setting('BLINK_ON', '0')
 BLINK_ON = True if blink_on == '1' else False
 
+# Upload tickets interval in seconds, default 600
+UPLOAD_TICKETS_INTERVAL = int(get_env_setting('UPLOAD_TICKETS_INTERVAL', 600))
+
 
 def log_config():
     logger.info('ENVIRONMENT: %s' % ENVIRONMENT)
