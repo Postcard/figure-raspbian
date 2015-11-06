@@ -83,7 +83,7 @@ def upload_ticket(ticket):
     try:
         # try uploading the ticket
         api.create_ticket(ticket)
-    except api.ApiException as e:
+    except Exception as e:
         logger.error(e)
         with managed(Database()) as db:
             db.add_ticket(ticket)
