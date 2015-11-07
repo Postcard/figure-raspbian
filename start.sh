@@ -19,6 +19,11 @@ ntpdate -s time.nist.gov
 # Make sure $HOSTNAME is present in /etc/hosts
 if ! grep -q "$HOSTNAME" /etc/hosts ; then echo "127.0.0.1 $HOSTNAME" >> /etc/hosts; fi
 
+# Start Wifi Access Point for three minutes if WIFI_ON
+if [ "$WIFI_ON" = 1 ]; then
+    cd /usr/src/app && timeout 3m npm start
+fi
+
 # Launch supervisor in the foreground
 echo 'Starting supervisor'
 supervisord --nodaemon --configuration /etc/supervisord.conf
