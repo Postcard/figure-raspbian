@@ -19,7 +19,7 @@ import os
 from . import devices, settings, ticketrenderer
 from .tasks import set_paper_status, upload_ticket
 from .db import Database, managed
-from utils import weighted_choice
+from .ticketpicker import weighted_choice
 import phantomjs
 from hashids import Hashids
 from PIL import Image
@@ -45,20 +45,6 @@ def run():
 
                 # Render ticket
                 start = time.time()
-
-                # pick a ticket template randomly
-                sum_probabilities = sum(ticket_template['probability'] for
-                                        ticket_template in installation.ticket_templates
-                                        if 'probability' in ticket_template)
-                assert 0 < sum_probabilities < 1
-                equiprobable_choices = [ticket_template for
-                                        ticket_template in installation.ticket_templates
-                                        if 'probability' not in ticket_template]
-                p = (1 - sum_probabilities) / len(equiprobable_choices)
-                choices = []
-                for ticket_template in installation.ticket_templates:
-                    choices.append((ticket_template, ticket_template.get('probability', p)))
-
                 ticket_template = weighted_choice(installation.ticket_templates)
 
                 global code
