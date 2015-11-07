@@ -49,16 +49,8 @@ def random_selection(variable):
     return variable['id'], random.choice(variable['items'])
 
 
-def render(html, snapshot, code, date, images, random_text_selections, random_image_selections):
-    context = {'snapshot': snapshot}
-    for (text_variable_id, item) in random_text_selections:
-        text = item['text'] if item else ''
-        context['textvariable_%s' % text_variable_id] = text
-    for (image_variable_id, item) in random_image_selections:
-        image_url = 'file://%s/images/%s' % (settings.MEDIA_ROOT, os.path.basename(item['image'])) if item else ''
-        context['imagevariable_%s' % image_variable_id] = image_url
-    context['datetime'] = date
-    context['code'] = code
+def render(html, snapshot, code, date, images):
+    context = { 'snapshot': snapshot, 'datetime': date, 'code': code }
     for im in images:
         image_url = 'file://%s/images/%s' % (settings.MEDIA_ROOT, os.path.basename(im['image']))
         context['image_%s' % im['id']] = image_url

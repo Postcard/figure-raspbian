@@ -2,7 +2,7 @@
 
 import json
 import urllib2
-import base64
+import cStringIO
 from os.path import join
 
 import requests
@@ -66,9 +66,22 @@ def create_ticket(ticket):
 
     url = "%s/tickets/" % settings.API_HOST
 
+    # TODO find a better way to differentiate between file path and memory buffer
+    if len(ticket['snapshot']) > 200:
+        snapshot_io = ticket['snapshot']
+    else:
+        with open(ticket['snapshot'], 'rb') as f:
+            snapshot_io = cStringIO.StringIO(f.read()).getvalue()
+
+    if len(ticket['snapshot']) > 200:
+        ticket_io = ticket['ticket']
+    else:
+        with open(ticket['ticket'], 'rb') as f:
+            ticket_io = cStringIO.StringIO(f.read()).getvalue()
+
     files = {
-        'snapshot': (ticket['filename'], base64.b64decode(ticket['snapshot'])),
-        'ticket': (ticket['filename'], base64.b64decode(ticket['ticket']))
+        'snapshot': (ticket['filename'], snapshot_io),
+        'ticket': (ticket['filename'], ticket_io)
     }
 
     data = {

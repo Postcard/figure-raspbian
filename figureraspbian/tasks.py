@@ -8,7 +8,7 @@ import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 from . import api
-
+from os.path import join
 
 from django.conf import settings
 settings.configure(
@@ -85,5 +85,16 @@ def upload_ticket(ticket):
         api.create_ticket(ticket)
     except Exception as e:
         logger.error(e)
+        # Couldn't upload the ticket, save files to filesystem and add ticket to the db for schedule upload
+        snapshot_path = join(settings.MEDIA_ROOT, 'snapshots', ticket['filename'])
+        with open(snapshot_path, "wb") as f:
+            f.write(ticket['ticket'])
+        ticket['snapshot'] = snapshot_path
+
+        ticket_path = join(settings.MEDIA_ROOT, 'tickets', ticket['filename'])
+        with open(ticket_path, "wb") as f:
+            f.write(ticket['ticket'])
+        ticket['ticket'] = ticket_path
+
         with managed(Database()) as db:
             db.add_ticket(ticket)
