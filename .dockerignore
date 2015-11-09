@@ -16,3 +16,4 @@ db.lock
 db.tmp
 zeosocket
 ghostdriver.log
+.cache

@@ -22,3 +22,4 @@ db.tmp
 zeosocket
 ghostdriver.log
 celerybeat-schedule.db
+.cache
