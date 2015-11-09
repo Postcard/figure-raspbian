@@ -92,8 +92,8 @@ def run():
                 my_env = os.environ.copy()
                 my_env['PNG2POS_PRINTER_MAX_WIDTH'] = '576'
 
-                with subprocess.Popen(args, stdout=subprocess.PIPE, env=my_env) as p:
-                    pos_data, err = p.communicate()
+                p = subprocess.Popen(args, stdout=subprocess.PIPE, env=my_env)
+                pos_data, err = p.communicate()
 
                 devices.PRINTER.print_ticket(pos_data)
                 end = time.time()
