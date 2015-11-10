@@ -7,11 +7,12 @@ from datetime import timedelta
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
-from . import api
+from . import api, settings
 from os.path import join
 
-from django.conf import settings
-settings.configure(
+from django.conf import settings as django_settings
+
+django_settings.configure(
     CACHES={
         'default': {
             'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache'
