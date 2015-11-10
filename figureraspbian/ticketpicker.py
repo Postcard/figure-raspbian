@@ -14,7 +14,7 @@ def weighted_choice(ticket_templates):
     equiprobable_choices = [ticket_template for
                             ticket_template in ticket_templates if
                             not ticket_template['probability']]
-    p = (1 - sum_probabilities) / len(equiprobable_choices)
+    p = (1.0 - sum_probabilities) / len(equiprobable_choices)
     choices = []
     for ticket_template in ticket_templates:
         choices.append((ticket_template, ticket_template.get('probability') or p))
