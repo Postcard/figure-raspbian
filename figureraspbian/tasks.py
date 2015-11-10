@@ -89,7 +89,7 @@ def upload_ticket(ticket):
         # Couldn't upload the ticket, save files to filesystem and add ticket to the db for schedule upload
         snapshot_path = join(settings.MEDIA_ROOT, 'snapshots', ticket['filename'])
         with open(snapshot_path, "wb") as f:
-            f.write(ticket['ticket'])
+            f.write(ticket['snapshot'])
         ticket['snapshot'] = snapshot_path
 
         ticket_path = join(settings.MEDIA_ROOT, 'tickets', ticket['filename'])
