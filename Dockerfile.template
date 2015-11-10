@@ -92,12 +92,6 @@ ENV STATIC_ROOT /data/static
 ENV MEDIA_ROOT /data/media
 ENV ZEO_SOCKET /var/run/zeo.sock
 
-COPY figureraspbian /figureraspbian
-COPY ./start.sh /
-COPY ./supervisord.conf /etc/
-
-RUN mkdir -p /var/log /var/run && chmod 755 /start.sh
-
 COPY ./wifi-connect/assets/bind /etc/bind
 RUN mkdir -p /usr/src/app/
 WORKDIR /usr/src/app
@@ -117,6 +111,12 @@ RUN chown bind /var/log/named.log
 VOLUME /var/lib/connman
 
 WORKDIR /
+
+COPY figureraspbian /figureraspbian
+COPY ./start.sh /
+COPY ./supervisord.conf /etc/
+
+RUN mkdir -p /var/log /var/run && chmod 755 /start.sh
 
 CMD ["/bin/bash", "/start.sh"]
 

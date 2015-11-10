@@ -46,12 +46,6 @@ def run():
 
                 start = time.time()
                 ticket_template = random.choice(installation.ticket_templates)
-                random_text_selections = [ticketrenderer.random_selection(variable) for
-                                          variable in
-                                          ticket_template['text_variables']]
-                random_image_selections = [ticketrenderer.random_selection(variable) for
-                                           variable in
-                                           ticket_template['image_variables']]
 
                 global code
                 if code:
@@ -65,26 +59,24 @@ def run():
 
                 date = datetime.now(pytz.timezone(settings.TIMEZONE))
 
-                buf = cStringIO.StringIO()
-                snapshot.resize((512, 512)).save(buf, "JPEG")
-                content = base64.b64encode(buf.getvalue())
-                buf.close()
+                base64_snapshot_thumb = get_base64_snapshot_thumbnail(snapshot)
 
                 rendered_html = ticketrenderer.render(
                     ticket_template['html'],
-                    "data:image/png;base64,%s" % content,
+                    "data:image/jpeg;base64,%s" % base64_snapshot_thumb,
                     current_code,
                     date,
-                    ticket_template['images'],
-                    random_text_selections,
-                    random_image_selections)
+                    ticket_template['images'])
+
+                del base64_snapshot_thumb
 
                 # get ticket as base64 stream
                 ticket_base64 = phantomjs.get_screenshot(rendered_html)
 
                 # convert ticket to pure black and white
-                ticket_string = cStringIO.StringIO(base64.b64decode(ticket_base64))
-                ticket = Image.open(ticket_string)
+
+                ticket_io = base64.b64decode(ticket_base64)
+                ticket = Image.open(cStringIO.StringIO(ticket_io))
                 ticket = ticket.convert('1')
                 ticket_path = join(settings.MEDIA_ROOT, 'ticket.png')
                 ticket.save(ticket_path, ticket.format, quality=100)
@@ -95,9 +87,11 @@ def run():
                 # Print ticket
                 start = time.time()
 
+                # TODO make png2pos support passing base64 file argument
                 args = ['png2pos', '-r', '-s2', '-aC', ticket_path]
                 my_env = os.environ.copy()
                 my_env['PNG2POS_PRINTER_MAX_WIDTH'] = '576'
+
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, env=my_env)
                 pos_data, err = p.communicate()
 
@@ -107,7 +101,7 @@ def run():
 
                 buf = cStringIO.StringIO()
                 snapshot.save(buf, "JPEG")
-                snapshot_base64 = base64.b64encode(buf.getvalue())
+                snapshot_io = buf.getvalue()
                 buf.close()
 
                 unique_id = "{hash}{resin_uuid}".format(
@@ -117,8 +111,8 @@ def run():
 
                 ticket = {
                     'installation': installation.id,
-                    'snapshot': snapshot_base64,
-                    'ticket': ticket_base64,
+                    'snapshot': snapshot_io,
+                    'ticket': ticket_io,
                     'dt': date,
                     'code': current_code,
                     'filename': filename
@@ -141,3 +135,11 @@ def run():
             set_paper_status.delay('0')
         except Exception as e:
             logger.exception(e)
+
+
+def get_base64_snapshot_thumbnail(snapshot):
+    buf = cStringIO.StringIO()
+    snapshot.resize((512, 512)).save(buf, "JPEG")
+    content = base64.b64encode(buf.getvalue())
+    buf.close()
+    return content

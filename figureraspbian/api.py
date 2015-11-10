@@ -2,8 +2,10 @@
 
 import json
 import urllib2
-import base64
 from os.path import join
+import logging
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
 import requests
 
@@ -66,10 +68,14 @@ def create_ticket(ticket):
 
     url = "%s/tickets/" % settings.API_HOST
 
-    files = {
-        'snapshot': (ticket['filename'], base64.b64decode(ticket['snapshot'])),
-        'ticket': (ticket['filename'], base64.b64decode(ticket['ticket']))
-    }
+    try:
+        files = {'snapshot': open(ticket['snapshot'], 'rb'), 'ticket': open(ticket['ticket'], 'rb')}
+    except Exception as e:
+        logger.error(e)
+        files = {
+            'snapshot': (ticket['filename'], ticket['snapshot']),
+            'ticket': (ticket['filename'], ticket['ticket'])
+        }
 
     data = {
         'datetime': ticket['dt'],
