@@ -10,7 +10,7 @@ def weighted_choice(ticket_templates):
     sum_probabilities = sum(ticket_template['probability'] for
                             ticket_template in ticket_templates if
                             ticket_template['probability'])
-    assert 0 < sum_probabilities < 1
+    assert 0 <= sum_probabilities <= 1
     equiprobable_choices = [ticket_template for
                             ticket_template in ticket_templates if
                             not ticket_template['probability']]
