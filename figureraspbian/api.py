@@ -2,8 +2,10 @@
 
 import json
 import urllib2
-import cStringIO
 from os.path import join
+import logging
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
 import requests
 
@@ -67,19 +69,13 @@ def create_ticket(ticket):
     url = "%s/tickets/" % settings.API_HOST
 
     try:
-        with open(ticket['ticket'], 'rb') as f:
-            ticket_io = cStringIO.StringIO(f.read()).getvalue()
-        with open(ticket['snapshot'], 'rb') as f:
-            snapshot_io = cStringIO.StringIO(f.read()).getvalue()
-    except IOError:
-        # snapshot and ticket are already buffers
-        snapshot_io = ticket['snapshot']
-        ticket_io = ticket['ticket']
-
-    files = {
-        'snapshot': (ticket['filename'], snapshot_io),
-        'ticket': (ticket['filename'], ticket_io)
-    }
+        files = {'snapshot': open(ticket['snapshot'], 'rb'), 'ticket': open(ticket['ticket'], 'rb')}
+    except Exception as e:
+        logger.error(e)
+        files = {
+            'snapshot': (ticket['filename'], ticket['snapshot']),
+            'ticket': (ticket['filename'], ticket['ticket'])
+        }
 
     data = {
         'datetime': ticket['dt'],
