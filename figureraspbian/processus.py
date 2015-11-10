@@ -19,6 +19,7 @@ import os
 from . import devices, settings, ticketrenderer
 from .tasks import set_paper_status, upload_ticket
 from .db import Database, managed
+from .ticketpicker import weighted_choice
 import phantomjs
 from hashids import Hashids
 from PIL import Image
@@ -43,9 +44,8 @@ def run():
                 logger.info('Snapshot capture successfully executed in %s seconds', end - start)
 
                 # Render ticket
-
                 start = time.time()
-                ticket_template = random.choice(installation.ticket_templates)
+                ticket_template = weighted_choice(installation.ticket_templates)
 
                 global code
                 if code:

@@ -49,7 +49,7 @@ def transaction_decorate(retry_delay=1):
 
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
-DATABASE_VERSION = 4
+DATABASE_VERSION = 5
 
 
 class Database(object):
