@@ -212,9 +212,52 @@ class TestDatabase(unittest.TestCase):
 
     def test_update_installation(self):
         """
-        Installation should be updated correctly
+        update_installation should set installation the first time
         """
+        api.get_installation = MagicMock(return_value=self.mock_installation)
+        api.download = MagicMock()
+        with managed(Database()) as db:
+            db.set_installation = MagicMock()
+            db.update_installation()
+            self.assertTrue(db.set_installation.called)
 
+    def test_update_installation_not_modified(self):
+        """
+        update_installation should not update installation if it was not modified
+        """
+        api.get_installation = MagicMock(return_value=self.mock_installation)
+        api.download = MagicMock()
+        with managed(Database()) as db:
+            db.update_installation()
+            db.set_installation = MagicMock()
+            db.update_installation()
+            self.assertFalse(db.set_installation.called)
+
+    def test_update_installation_modified(self):
+        """
+        update_installation should update installation
+        """
+        api.get_installation = MagicMock(return_value=self.mock_installation)
+        api.download = MagicMock()
+        with managed(Database()) as db:
+            db.update_installation()
+            mock_installation = deepcopy(self.mock_installation)
+            mock_installation['scenario']['modified'] = "2015-05-12T08:31:01Z"
+            api.get_installation = MagicMock(return_value=mock_installation)
+            db.set_installation = MagicMock()
+            db.update_installation()
+            self.assertTrue(db.set_installation.called)
+            mock_installation['scenario']['ticket_templates'][0]['modified'] = "2015-05-13T08:31:01Z"
+            api.get_installation = MagicMock(return_value=mock_installation)
+            db.set_installation = MagicMock()
+            db.update_installation()
+            self.assertTrue(db.set_installation.called)
+            mock_installation['scenario']['ticket_templates']\
+                .append(mock_installation['scenario']['ticket_templates'][0])
+            api.get_installation = MagicMock(return_value=mock_installation)
+            db.set_installation = MagicMock()
+            db.update_installation()
+            self.assertTrue(db.set_installation.called)
 
     def test_get_installation_return_none(self):
         """
@@ -257,20 +300,6 @@ class TestDatabase(unittest.TestCase):
         with managed(database) as db:
             self.assertIsNone(db.data.installation.id)
 
-    def test_installation_does_not_change(self):
-        """
-        api.get_codes should not be called if installation.id does not change
-        """
-        api.download = MagicMock()
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_codes = MagicMock(return_value=self.mock_codes)
-        database = Database()
-        with managed(database) as db:
-            db.data.installation.update()
-            api.get_codes = Mock(side_effect=Exception('this method should not be called'))
-            db.data.installation.update()
-            self.assertEqual(db.data.installation.codes, self.mock_codes)
-
     def test_installation_changes(self):
         """
         codes should be updated if installation id changes
@@ -288,20 +317,33 @@ class TestDatabase(unittest.TestCase):
             db.data.installation.update()
             self.assertEqual(db.data.installation.codes, new_codes)
 
+    def test_claim_codes_if_necessary(self):
+        """
+        it should claim new codes from the api only if less than 1000 codes left
+        """
+        database = Database()
+        with managed(database) as db:
+            codes = ["AAAAA" for i in range(0, 2000)]
+            api.claim_codes = MagicMock(return_value=codes)
+            db.claim_new_codes_if_necessary()
+            self.assertTrue(api.claim_codes.called)
+            api.claim_codes = MagicMock(return_value=codes)
+            db.claim_new_codes_if_necessary()
+            self.assertFalse(api.claim_codes.called)
+            for i in range(0, 1001):
+                db.get_code()
+            db.claim_new_codes_if_necessary()
+            self.assertTrue(api.claim_codes.called)
+
     def test_get_code(self):
         """
-        db.get_code should get a code
+        db.get_code should get a code and remove it from code list
         """
-        api.download = MagicMock()
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_codes = MagicMock(return_value=['00000', '00001'])
         with managed(Database()) as db:
-            db.update_installation()
+            db.data.codes = ['00000', '00001']
             code = db.get_code()
             self.assertEqual(code, '00001')
-            self.assertEqual(db.data.installation.codes, ['00000'])
-        with managed(Database()) as db:
-            self.assertEqual(db.data.installation.codes, ['00000'])
+            self.assertEqual(db.data.codes, ['00000'])
 
     def test_add_ticket(self):
         """
@@ -320,8 +362,6 @@ class TestDatabase(unittest.TestCase):
                 'ticket': 'path/to/ticket',
                 'dt': now,
                 'code': 'JHUYG',
-                'random_text_selections': [],
-                'random_image_selections': [],
             }
             db.add_ticket(ticket)
             self.assertEqual(len(db.data.tickets), 1)
@@ -332,9 +372,6 @@ class TestDatabase(unittest.TestCase):
         """
         Uploading a ticket should upload all non uploaded tickets
         """
-        api.download = MagicMock()
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_codes = MagicMock(return_value=['00000', '00001'])
         api.create_ticket = MagicMock()
         with managed(Database()) as db:
             time1 = datetime.now(pytz.timezone(settings.TIMEZONE))
@@ -345,8 +382,7 @@ class TestDatabase(unittest.TestCase):
                 'ticket': 'path/to/ticket',
                 'dt': time1,
                 'code': 'JHUYG',
-                'random_text_selections': [],
-                'random_image_selections': []
+                'filename': 'Figure_foo.jpg'
             }
             ticket_2 = {
                 'installation': '1',
@@ -354,8 +390,7 @@ class TestDatabase(unittest.TestCase):
                 'ticket': 'path/to/ticket',
                 'dt': time2,
                 'code': 'JU76G',
-                'random_text_selections': [],
-                'random_image_selections': []
+                'filename': 'Figure_bar.jpg'
             }
             db.add_ticket(ticket_1)
             db.add_ticket(ticket_2)
@@ -366,36 +401,3 @@ class TestDatabase(unittest.TestCase):
             api.create_ticket = MagicMock()
             db.upload_tickets()
             self.assertFalse(api.create_ticket.called)
-
-    def test_get_random_ticket(self):
-        """
-        Get a random ticket should pick a random ticket in the ticket list
-        """
-        with managed(Database()) as db:
-            time1 = datetime.now(pytz.timezone(settings.TIMEZONE))
-            time2 = datetime.now(pytz.timezone(settings.TIMEZONE))
-            ticket = db.get_random_ticket()
-            self.assertIsNone(ticket)
-            ticket_1 = {
-                'installation': '1',
-                'snapshot': '/path/to/snapshot',
-                'ticket': 'path/to/ticket',
-                'dt': time1,
-                'code': 'JHUYG',
-                'random_text_selections': [],
-                'random_image_selections': []
-            }
-            ticket_2 = {
-                'installation': '1',
-                'snapshot': '/path/to/snapshot',
-                'ticket': 'path/to/ticket',
-                'dt': time2,
-                'code': 'JU76G',
-                'random_text_selections': [],
-                'random_image_selections': []
-            }
-            db.add_ticket(ticket_1)
-            db.add_ticket(ticket_2)
-            ticket = db.get_random_ticket()
-            self.assertIn(ticket, [ticket_1, ticket_2])
-

@@ -156,7 +156,7 @@ class Database(object):
                 logger.exception(e)
 
     def upload_tickets(self):
-        while self.data.last_upload_index != (len(self.data.tickets) - 1):
+        while self.data.last_upload_index < (len(self.data.tickets) - 1):
             try:
                 self.upload_oldest_ticket()
             except RequestException as e:
@@ -166,22 +166,21 @@ class Database(object):
 
     def upload_oldest_ticket(self):
         """Upload the oldest ticket that has not been uploaded """
-        if len(self.data.codes) > 0:
-            last_upload_index = self.data.last_upload_index
-            oldest_ticket = self.data.tickets[last_upload_index + 1]
-            try:
-                api.create_ticket(oldest_ticket)
-                self.increment_last_upload_index()
-            except api.ApiException as e:
-                # Api error, proceed with remaining tickets
-                logger.exception(e)
-                self.increment_last_upload_index()
-            except IOError as e:
-                if e.errno != errno.ENOENT:
-                    raise e
-                # snapshot or ticket may not exist, proceed with remaining tickets
-                logger.exception(e)
-                self.increment_last_upload_index()
+        last_upload_index = self.data.last_upload_index
+        oldest_ticket = self.data.tickets[last_upload_index + 1]
+        try:
+            api.create_ticket(oldest_ticket)
+            self.increment_last_upload_index()
+        except api.ApiException as e:
+            # Api error, proceed with remaining tickets
+            logger.exception(e)
+            self.increment_last_upload_index()
+        except IOError as e:
+            if e.errno != errno.ENOENT:
+                raise e
+            # snapshot or ticket may not exist, proceed with remaining tickets
+            logger.exception(e)
+            self.increment_last_upload_index()
 
 
     @transaction_decorate(0.5)
