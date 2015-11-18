@@ -396,8 +396,34 @@ class TestDatabase(unittest.TestCase):
             db.add_ticket(ticket_2)
             db.upload_tickets()
             self.assertTrue(api.create_ticket.called)
-        # check the transaction is actually commited
-        with managed(Database()):
-            api.create_ticket = MagicMock()
+            self.assertEqual([], db.data.tickets)
+
+    def test_upload_tickets_raise_error(self):
+        """
+        upload_tickets should stop while loop if it throws an error
+        """
+        api.create_ticket = Mock(side_effect=Exception)
+        with managed(Database()) as db:
+            time1 = datetime.now(pytz.timezone(settings.TIMEZONE))
+            time2 = datetime.now(pytz.timezone(settings.TIMEZONE))
+            ticket_1 = {
+                'installation': '1',
+                'snapshot': '/path/to/snapshot',
+                'ticket': 'path/to/ticket',
+                'dt': time1,
+                'code': 'JHUYG',
+                'filename': 'Figure_foo.jpg'
+            }
+            ticket_2 = {
+                'installation': '1',
+                'snapshot': '/path/to/snapshot',
+                'ticket': 'path/to/ticket',
+                'dt': time2,
+                'code': 'JU76G',
+                'filename': 'Figure_bar.jpg'
+            }
+            db.add_ticket(ticket_1)
+            db.add_ticket(ticket_2)
             db.upload_tickets()
-            self.assertFalse(api.create_ticket.called)
+        with managed(Database()) as db:
+            self.assertEqual(len(db.data.tickets), 2)

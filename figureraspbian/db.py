@@ -156,32 +156,27 @@ class Database(object):
                 logger.exception(e)
 
     def upload_tickets(self):
-        while self.data.last_upload_index < (len(self.data.tickets) - 1):
+        while self.data.tickets:
+            ticket = self.data.tickets[0]
             try:
-                self.upload_oldest_ticket()
-            except RequestException as e:
-                # We might have loose internet connection, break while loop
+                api.create_ticket(ticket)
+                self.pop_ticket()
+            except IOError as e:
+                logger.exception(e)
+                if e.errno != errno.ENOENT:
+                    # snapshot or ticket file may be corrupted, proceed with remaining tickets
+                    self.pop_ticket()
+                else:
+                    break
+            except Exception as e:
                 logger.exception(e)
                 break
 
-    def upload_oldest_ticket(self):
-        """Upload the oldest ticket that has not been uploaded """
-        last_upload_index = self.data.last_upload_index
-        oldest_ticket = self.data.tickets[last_upload_index + 1]
-        try:
-            api.create_ticket(oldest_ticket)
-            self.increment_last_upload_index()
-        except api.ApiException as e:
-            # Api error, proceed with remaining tickets
-            logger.exception(e)
-            self.increment_last_upload_index()
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                raise e
-            # snapshot or ticket may not exist, proceed with remaining tickets
-            logger.exception(e)
-            self.increment_last_upload_index()
-
+    @transaction_decorate(3)
+    def pop_ticket(self):
+        ticket = self.data.tickets.pop(0)
+        self.data._p_changed = True
+        return ticket
 
     @transaction_decorate(0.5)
     def add_ticket(self, ticket):
