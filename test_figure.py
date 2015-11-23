@@ -221,6 +221,21 @@ class TestDatabase(unittest.TestCase):
             db.update_installation()
             self.assertTrue(db.set_installation.called)
 
+    def test_update_installation_new_id(self):
+        """
+        installation should be updated if id changes
+        """
+        api.get_installation = MagicMock(return_value=self.mock_installation)
+        api.download = MagicMock()
+        with managed(Database()) as db:
+            db.update_installation()
+            new_installation = deepcopy(self.mock_installation)
+            db.set_installation = MagicMock()
+            new_installation['id'] = 2
+            api.get_installation = MagicMock(return_value=new_installation)
+            db.update_installation()
+            self.assertTrue(db.set_installation.called)
+
     def test_update_installation_not_modified(self):
         """
         update_installation should not update installation if it was not modified
