@@ -6,6 +6,9 @@ import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
+from pifacedigitalio import PiFaceDigital
+
+
 class ImproperlyConfigured(Exception):
     pass
 
@@ -85,6 +88,15 @@ ISO = int(get_env_setting('ISO', 3))
 # Blink
 blink_on = get_env_setting('BLINK_ON', '0')
 BLINK_ON = True if blink_on == '1' else False
+
+
+def get_input_initial_value():
+    pifacedigital = PiFaceDigital()
+    return pifacedigital.input_pins[TRIGGER_PIN].value
+
+# Input configuration
+INPUT_LOW = int(get_env_setting('INPUT_LOW', get_input_initial_value()))
+INPUT_HIGH = 0 if INPUT_LOW else 1
 
 
 def log_config():
