@@ -43,23 +43,17 @@ class TestTicketRenderer(unittest.TestCase):
         """
         TicketRenderer should render a ticket when no random_snapshot
         """
-        html = '{{snapshot}} {{code}} {{datetime | datetimeformat}} ' \
-               '{{textvariable_1}} {{imagevariable_2}} {{image_1}}'
+        html = '{{snapshot}} {{code}} {{datetime | datetimeformat}} {{image_1}}'
         code = '5KIJ7'
         date = parser.parse("Tue Jun 22 07:46:22 EST 2010")
         images = [{'id': '1', 'image': 'path/to/image'}]
-        random_text_selections = [('1', {'id': '2', 'text': 'Titi'}), ('2', None)]
-        random_image_slections = [('2', {'id': 1, 'image': '/path/to/image'})]
         rendered_html = ticketrenderer.render(
             html,
             'base64_encoded_snapshot',
             code,
             date,
-            images,
-            random_text_selections,
-            random_image_slections)
-        expected = 'base64_encoded_snapshot 5KIJ7 2010-06-22 Titi ' \
-                   'file:///Users/benoit/git/figure-raspbian/media/images/image ' \
+            images)
+        expected = 'base64_encoded_snapshot 5KIJ7 2010-06-22 ' \
                    'file:///Users/benoit/git/figure-raspbian/media/images/image'
         self.assertIn(expected, rendered_html)
 
@@ -69,7 +63,7 @@ class TestTicketRenderer(unittest.TestCase):
         """
         html = '{{datetime | datetimeformat("%Y")}}'
         date = parser.parse("Tue Jun 22 07:46:22 EST 2010")
-        rendered_html = ticketrenderer.render(html, '/path/to/snapshot', '00000', date, [], [], [])
+        rendered_html = ticketrenderer.render(html, '/path/to/snapshot', '00000', date, [])
         self.assertIn("2010", rendered_html)
 
     def test_encode_non_unicode_character(self):
@@ -78,7 +72,7 @@ class TestTicketRenderer(unittest.TestCase):
         """
         html = u"Du texte avec un accent ici: é"
         date = parser.parse("Tue Jun 22 07:46:22 EST 2010")
-        rendered_html = ticketrenderer.render(html, '/path/to/snapshot', '00000', date, [], [], [])
+        rendered_html = ticketrenderer.render(html, '/path/to/snapshot', '00000', date, [])
         self.assertTrue(u'Du texte avec un accent ici: é' in rendered_html)
 
 
@@ -180,7 +174,7 @@ class TestDatabase(unittest.TestCase):
         api.download = MagicMock()
         with managed(Database()) as db:
             self.assertIsNone(db.data.installation.id)
-            db.set_installation(self.mock_installation)
+            db.set_installation(self.mock_installation, datetime.now())
             installation = db.data.installation
             self.assertEqual(installation.id, "1")
             self.assertIsNotNone(installation.ticket_templates)
@@ -193,7 +187,7 @@ class TestDatabase(unittest.TestCase):
         # check it only download images if necessary
         with managed(Database()) as db:
             api.download = MagicMock()
-            db.set_installation(self.mock_installation)
+            db.set_installation(self.mock_installation, datetime.now())
             self.assertFalse(api.download.called)
             mock_installation = deepcopy(self.mock_installation)
             mock_installation['scenario']['ticket_templates'][0]['image_variables'] = [{
@@ -205,7 +199,7 @@ class TestDatabase(unittest.TestCase):
                         "image": "http://image5"
                     }]}]
             mock_installation['scenario']['ticket_templates'][0]['images'] = [{"image": "http://image6"}]
-            db.set_installation(mock_installation)
+            db.set_installation(mock_installation, datetime.now())
             calls = [call("http://image5", os.path.join(settings.MEDIA_ROOT, 'images')),
                      call("http://image6", os.path.join(settings.MEDIA_ROOT, 'images'))]
             api.download.assert_has_calls(calls)
@@ -314,23 +308,6 @@ class TestDatabase(unittest.TestCase):
         database = Database()
         with managed(database) as db:
             self.assertIsNone(db.data.installation.id)
-
-    def test_installation_changes(self):
-        """
-        codes should be updated if installation id changes
-        """
-        api.download = MagicMock()
-        api.get_installation = MagicMock(return_value=self.mock_installation)
-        api.get_codes = MagicMock(return_value=self.mock_codes)
-        database = Database()
-        with managed(database) as db:
-            db.data.installation.update()
-            changed = self.mock_installation
-            changed['id'] = '2'
-            new_codes = ['54JU5', 'JU598', 'KI598', 'KI568', 'JUI58']
-            api.get_codes = MagicMock(return_value=new_codes)
-            db.data.installation.update()
-            self.assertEqual(db.data.installation.codes, new_codes)
 
     def test_claim_codes_if_necessary(self):
         """

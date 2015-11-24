@@ -6,8 +6,6 @@ import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
-from pifacedigitalio import PiFaceDigital
-
 
 class ImproperlyConfigured(Exception):
     pass
@@ -53,9 +51,6 @@ MEDIA_ROOT = get_env_setting('MEDIA_ROOT', '/Users/benoit/git/figure-raspbian/me
 # Path to PhantomJS executable
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 
-# Pin used to trigger the process
-TRIGGER_PIN = get_env_setting('TRIGGER_PIN', 0)
-
 # ZEO socket adress
 ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(FIGURE_DIR, 'zeo.sock'))
 
@@ -90,12 +85,8 @@ blink_on = get_env_setting('BLINK_ON', '0')
 BLINK_ON = True if blink_on == '1' else False
 
 
-def get_input_initial_value():
-    pifacedigital = PiFaceDigital()
-    return pifacedigital.input_pins[TRIGGER_PIN].value
-
 # Input configuration
-INPUT_LOW = int(get_env_setting('INPUT_LOW', get_input_initial_value()))
+INPUT_LOW = int(get_env_setting('INPUT_LOW', 0))
 INPUT_HIGH = 0 if INPUT_LOW else 1
 
 
@@ -106,8 +97,6 @@ def log_config():
     logger.info('STATIC_ROOT: %s' % STATIC_ROOT)
     logger.info('MEDIA_ROOT: %s' % MEDIA_ROOT)
     logger.info('PHANTOMJS_PATH: %s' % PHANTOMJS_PATH)
-    logger.info('TRIGGER_PIN: %s' % TRIGGER_PIN)
-    logger.info('ZEO_SOCKET: %s' % TRIGGER_PIN)
     logger.info('TIMEZONE: %s' % TIMEZONE)
     logger.info('RETRY_DELAY: %s' % RETRY_DELAY)
     logger.info('CAMERA_MODEL: %s' % CAMERA_MODEL)

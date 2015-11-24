@@ -97,6 +97,7 @@ class Database(object):
                 api.download(image, IMAGE_DIR)
             self.data.installation.id = installation['id']
             self.data.installation.ticket_templates = ticket_templates
+            self.data.installation.modified = modified
             self.data.installation._p_changed = True
             transaction.commit()
         except (ConflictError, urllib2.HTTPError) as e:
@@ -118,24 +119,21 @@ class Database(object):
         try:
             installation = api.get_installation()
             if installation:
+                modified = datetime.strptime(installation['scenario']['modified'], DATE_FORMAT)
+                for ticket_template in installation['scenario']['ticket_templates']:
+                    modified = max(modified, datetime.strptime(ticket_template['modified'], DATE_FORMAT))
                 if installation['id'] != self.data.installation.id:
                     # new installation, need update
                     logger.info("New installation, saving changes")
-                    self.set_installation(installation, modified=installation['scenario']['modified'])
+                    self.set_installation(installation, modified=modified)
                 else:
                     # same installation, check for modifications
-                    modified = datetime.strptime(installation['scenario']['modified'], DATE_FORMAT)
-                    for ticket_template in installation['scenario']['ticket_templates']:
-                        modified = max(modified, datetime.strptime(ticket_template['modified'], DATE_FORMAT))
                     added_or_deleted = (len(installation['scenario']['ticket_templates']) !=
                                         len(self.data.installation.ticket_templates))
                     if (not self.data.installation.modified or
                             modified > self.data.installation.modified or added_or_deleted):
                         logger.info("Installation was modified, ")
-                        self.set_installation(installation)
-                        self.data.installation.modified = modified
-                        self.data.installation._p_changed = True
-                        transaction.commit()
+                        self.set_installation(installation, modified=modified)
         except (api.ApiException, RequestException) as e:
             # Log and do nothing, we can wait for next update
             logger.exception(e)
