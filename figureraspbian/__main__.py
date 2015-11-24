@@ -40,31 +40,31 @@ if __name__ == '__main__':
         start = None
         is_door_open = False
 
-        while True:
-            try:
-                curr_input = pifacedigital.input_pins[settings.TRIGGER_PIN].value
-                if curr_input == settings.INPUT_HIGH:
-                    # Button pressed
-                    if prev_input == settings.INPUT_LOW:
-                        start = time.time()
-                    else:
-                        delta = time.time() - start
-                        if 15 < delta < 20:
-                            logger.info("Someone unlocked the door...")
-                            pifacedigital.relays[0].turn_on()
-                            is_door_open = True
-                            time.sleep(5)
-                            pifacedigital.relays[0].turn_off()
+    while True:
+        try:
+            curr_input = pifacedigital.input_pins[settings.TRIGGER_PIN].value
+            if curr_input == settings.INPUT_HIGH:
+                # Button pressed
+                if prev_input == settings.INPUT_LOW:
+                    start = time.time()
+                else:
+                    delta = time.time() - start
+                    if 15 < delta < 20:
+                        logger.info("Someone unlocked the door...")
+                        pifacedigital.relays[0].turn_on()
+                        is_door_open = True
+                        time.sleep(5)
+                        pifacedigital.relays[0].turn_off()
 
-                if curr_input == settings.INPUT_LOW and prev_input == settings.INPUT_HIGH:
-                    # Button unpressed
-                    logger.info("A trigger occurred ! Running processus...")
-                    ticket = processus.run()
-                    ticket['is_door_open'] = is_door_open
-                    upload_ticket.delay(ticket)
-                is_door_open = False
-                prev_input = curr_input
-                # slight pause to debounce
-                time.sleep(0.05)
-            except Exception as e:
-                logger.error(e.message)
+            if curr_input == settings.INPUT_LOW and prev_input == settings.INPUT_HIGH:
+                # Button unpressed
+                logger.info("A trigger occurred ! Running processus...")
+                ticket = processus.run()
+                ticket['is_door_open'] = is_door_open
+                upload_ticket.delay(ticket)
+            is_door_open = False
+            prev_input = curr_input
+            # slight pause to debounce
+            time.sleep(0.05)
+        except Exception as e:
+            logger.error(e.message)
