@@ -51,6 +51,9 @@ MEDIA_ROOT = get_env_setting('MEDIA_ROOT', '/Users/benoit/git/figure-raspbian/me
 # Path to PhantomJS executable
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 
+# Pin used to trigger the process
+TRIGGER_PIN = get_env_setting('TRIGGER_PIN', 0)
+
 # ZEO socket adress
 ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(FIGURE_DIR, 'zeo.sock'))
 
@@ -86,7 +89,7 @@ BLINK_ON = True if blink_on == '1' else False
 
 
 # Input configuration
-INPUT_LOW = int(get_env_setting('INPUT_LOW', 0))
+INPUT_LOW = int(get_env_setting('INPUT_LOW'), 0)
 INPUT_HIGH = 0 if INPUT_LOW else 1
 
 

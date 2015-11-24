@@ -36,9 +36,9 @@ if __name__ == '__main__':
     except Exception:
         logger.info("An error occurred when downloading ticket css")
 
-        prev_input = settings.INPUT_LOW
-        start = None
-        is_door_open = False
+    prev_input = settings.INPUT_LOW
+    start = None
+    is_door_open = False
 
     while True:
         try:
