@@ -61,8 +61,8 @@ if __name__ == '__main__':
                 logger.info("A trigger occurred ! Running processus...")
                 ticket = processus.run()
                 ticket['is_door_open'] = is_door_open
+                is_door_open = False
                 upload_ticket.delay(ticket)
-            is_door_open = False
             prev_input = curr_input
             # slight pause to debounce
             time.sleep(0.05)
