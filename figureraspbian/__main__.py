@@ -68,3 +68,4 @@ if __name__ == '__main__':
             time.sleep(0.05)
         except Exception as e:
             logger.error(e.message)
+            time.sleep(5)
