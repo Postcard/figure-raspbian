@@ -89,7 +89,7 @@ BLINK_ON = True if blink_on == '1' else False
 
 
 # Input configuration
-INPUT_LOW = int(get_env_setting('INPUT_LOW'), 0)
+INPUT_LOW = int(get_env_setting('INPUT_LOW', 0))
 INPUT_HIGH = 0 if INPUT_LOW else 1
 
 
