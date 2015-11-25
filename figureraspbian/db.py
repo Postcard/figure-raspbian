@@ -80,7 +80,7 @@ class Database(object):
     def get_installation(self):
         return self.data.installation
 
-    def set_installation(self, installation):
+    def set_installation(self, installation, modified):
         try:
             ticket_templates = installation['scenario']['ticket_templates']
             local_items = self.get_images()
@@ -97,6 +97,7 @@ class Database(object):
                 api.download(image, IMAGE_DIR)
             self.data.installation.id = installation['id']
             self.data.installation.ticket_templates = ticket_templates
+            self.data.installation.modified = modified
             self.data.installation._p_changed = True
             transaction.commit()
         except (ConflictError, urllib2.HTTPError) as e:
@@ -121,15 +122,18 @@ class Database(object):
                 modified = datetime.strptime(installation['scenario']['modified'], DATE_FORMAT)
                 for ticket_template in installation['scenario']['ticket_templates']:
                     modified = max(modified, datetime.strptime(ticket_template['modified'], DATE_FORMAT))
-                added_or_deleted = (len(installation['scenario']['ticket_templates']) !=
-                                    len(self.data.installation.ticket_templates))
-                if (not self.data.installation.modified or
-                        modified > self.data.installation.modified or added_or_deleted):
-                    logger.info("Installation was modified, setting new installation in local db")
-                    self.set_installation(installation)
-                    self.data.installation.modified = modified
-                    self.data.installation._p_changed = True
-                    transaction.commit()
+                if installation['id'] != self.data.installation.id:
+                    # new installation, need update
+                    logger.info("New installation, saving changes")
+                    self.set_installation(installation, modified=modified)
+                else:
+                    # same installation, check for modifications
+                    added_or_deleted = (len(installation['scenario']['ticket_templates']) !=
+                                        len(self.data.installation.ticket_templates))
+                    if (not self.data.installation.modified or
+                            modified > self.data.installation.modified or added_or_deleted):
+                        logger.info("Installation was modified, ")
+                        self.set_installation(installation, modified=modified)
         except (api.ApiException, RequestException) as e:
             # Log and do nothing, we can wait for next update
             logger.exception(e)
@@ -156,33 +160,27 @@ class Database(object):
                 logger.exception(e)
 
     def upload_tickets(self):
-        while self.data.last_upload_index != (len(self.data.tickets) - 1):
+        while self.data.tickets:
+            ticket = self.data.tickets[0]
             try:
-                self.upload_oldest_ticket()
-            except RequestException as e:
-                # We might have loose internet connection, break while loop
+                api.create_ticket(ticket)
+                self.pop_ticket()
+            except IOError as e:
+                logger.exception(e)
+                if e.errno != errno.ENOENT:
+                    # snapshot or ticket file may be corrupted, proceed with remaining tickets
+                    self.pop_ticket()
+                else:
+                    break
+            except Exception as e:
                 logger.exception(e)
                 break
 
-    def upload_oldest_ticket(self):
-        """Upload the oldest ticket that has not been uploaded """
-        if len(self.data.codes) > 0:
-            last_upload_index = self.data.last_upload_index
-            oldest_ticket = self.data.tickets[last_upload_index + 1]
-            try:
-                api.create_ticket(oldest_ticket)
-                self.increment_last_upload_index()
-            except api.ApiException as e:
-                # Api error, proceed with remaining tickets
-                logger.exception(e)
-                self.increment_last_upload_index()
-            except IOError as e:
-                if e.errno != errno.ENOENT:
-                    raise e
-                # snapshot or ticket may not exist, proceed with remaining tickets
-                logger.exception(e)
-                self.increment_last_upload_index()
-
+    @transaction_decorate(3)
+    def pop_ticket(self):
+        ticket = self.data.tickets.pop(0)
+        self.data._p_changed = True
+        return ticket
 
     @transaction_decorate(0.5)
     def add_ticket(self, ticket):

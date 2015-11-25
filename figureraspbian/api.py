@@ -80,7 +80,8 @@ def create_ticket(ticket):
     data = {
         'datetime': ticket['dt'],
         'code': ticket['code'],
-        'installation': ticket['installation']
+        'installation': ticket['installation'],
+        'is_door_open': ticket['is_door_open']
     }
 
     r = session.post(url, files=files, data=data, timeout=20)

@@ -17,7 +17,7 @@ import subprocess
 import os
 
 from . import devices, settings, ticketrenderer
-from .tasks import set_paper_status, upload_ticket
+from .tasks import set_paper_status
 from .db import Database, managed
 from .ticketpicker import weighted_choice
 import phantomjs
@@ -118,8 +118,6 @@ def run():
                     'filename': filename
                 }
 
-                upload_ticket.delay(ticket)
-
                 # Calculate new code
                 start = time.time()
                 code = db.get_code()
@@ -127,6 +125,7 @@ def run():
                 end = time.time()
                 logger.info('Successfully claimed code in %s seconds', end - start)
                 set_paper_status.delay('1')
+                return ticket
 
             else:
                 logger.warning("No active installation. Skipping processus execution")

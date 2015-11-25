@@ -6,6 +6,7 @@ import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
+
 class ImproperlyConfigured(Exception):
     pass
 
@@ -34,12 +35,12 @@ API_HOST = get_env_setting('API_HOST', 'http://localhost:8000')
 STATIC_HOST = get_env_setting('STATIC_HOST', API_HOST)
 
 # Token to authenticate to the API
-TOKEN = get_env_setting('TOKEN')
+TOKEN = get_env_setting('TOKEN', 'token')
 
 # User to whom the device is belonging
-USER = get_env_setting('FIGURE_USER')
+USER = get_env_setting('FIGURE_USER', '1')
 
-RESIN_UUID = get_env_setting('RESIN_DEVICE_UUID')
+RESIN_UUID = get_env_setting('RESIN_DEVICE_UUID', 'resin_uuid')
 
 # Root directory for static files
 STATIC_ROOT = get_env_setting('STATIC_ROOT', '/Users/benoit/git/figure-raspbian/static')
@@ -54,7 +55,7 @@ PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 TRIGGER_PIN = get_env_setting('TRIGGER_PIN', 0)
 
 # ZEO socket adress
-ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(FIGURE_DIR, 'zeosocket'))
+ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(FIGURE_DIR, 'zeo.sock'))
 
 # Timezone information
 TIMEZONE = get_env_setting('TIMEZONE', 'Europe/Paris')
@@ -87,6 +88,11 @@ blink_on = get_env_setting('BLINK_ON', '0')
 BLINK_ON = True if blink_on == '1' else False
 
 
+# Input configuration
+INPUT_LOW = int(get_env_setting('INPUT_LOW', 0))
+INPUT_HIGH = 0 if INPUT_LOW else 1
+
+
 def log_config():
     logger.info('ENVIRONMENT: %s' % ENVIRONMENT)
     logger.info('FIGURE_DIR: %s' % FIGURE_DIR)
@@ -94,8 +100,6 @@ def log_config():
     logger.info('STATIC_ROOT: %s' % STATIC_ROOT)
     logger.info('MEDIA_ROOT: %s' % MEDIA_ROOT)
     logger.info('PHANTOMJS_PATH: %s' % PHANTOMJS_PATH)
-    logger.info('TRIGGER_PIN: %s' % TRIGGER_PIN)
-    logger.info('ZEO_SOCKET: %s' % TRIGGER_PIN)
     logger.info('TIMEZONE: %s' % TIMEZONE)
     logger.info('RETRY_DELAY: %s' % RETRY_DELAY)
     logger.info('CAMERA_MODEL: %s' % CAMERA_MODEL)

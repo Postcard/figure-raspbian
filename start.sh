@@ -17,7 +17,7 @@ ntpdate -s time.nist.gov
 /etc/init.d/ntp start
 
 # Make sure $HOSTNAME is present in /etc/hosts
-if ! grep -q "$HOSTNAME" /etc/hosts ; then echo "127.0.0.1 $HOSTNAME" >> /etc/hosts; fi
+grep -q "$HOSTNAME" /etc/hosts || echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
 
 # Start Wifi Access Point for three minutes if WIFI_ON
 if [ "$WIFI_ON" = 1 ]; then
