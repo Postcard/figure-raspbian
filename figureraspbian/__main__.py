@@ -55,14 +55,14 @@ if __name__ == '__main__':
                         is_door_open = True
                         time.sleep(5)
                         pifacedigital.relays[0].turn_off()
-
             if curr_input == settings.INPUT_LOW and prev_input == settings.INPUT_HIGH:
                 # Button unpressed
                 logger.info("A trigger occurred ! Running processus...")
                 ticket = processus.run()
-                ticket['is_door_open'] = is_door_open
+                if ticket:
+                    ticket['is_door_open'] = is_door_open
+                    upload_ticket.delay(ticket)
                 is_door_open = False
-                upload_ticket.delay(ticket)
             prev_input = curr_input
             # slight pause to debounce
             time.sleep(0.05)
