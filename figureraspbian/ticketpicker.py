@@ -7,14 +7,18 @@ def weighted_choice(ticket_templates):
     """
     Pick a ticket_template based on probability
     """
+    assert ticket_templates, "You should provide a list of choices"
     sum_probabilities = sum(ticket_template['probability'] for
                             ticket_template in ticket_templates if
                             ticket_template['probability'])
     assert 0 <= sum_probabilities <= 1
-    equiprobable_choices = [ticket_template for
-                            ticket_template in ticket_templates if
-                            not ticket_template['probability']]
-    p = (1.0 - sum_probabilities) / len(equiprobable_choices)
+
+    if sum_probabilities < 1:
+        equiprobable_choices = [ticket_template for
+                                ticket_template in ticket_templates if
+                                not ticket_template['probability']]
+        p = (1.0 - sum_probabilities) / (len(equiprobable_choices) or 1)
+
     choices = []
     for ticket_template in ticket_templates:
         choices.append((ticket_template, ticket_template.get('probability') or p))

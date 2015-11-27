@@ -4,20 +4,13 @@ import os
 import io
 
 from PIL import Image
-import gphoto2 as gp
-from hashids import Hashids
+try:
+    import gphoto2 as gp
+except ImportError:
+    print "Could not import gphoto2"
 
 from .. import settings
-
-
-hashids = Hashids(salt='Titi Vicky Benni')
-
-
-class Camera(object):
-    """ Camera interface """
-
-    def capture(self):
-        raise NotImplementedError
+from ..utils import timeit
 
 
 EOS_1200D_CONFIG = {
@@ -29,7 +22,7 @@ EOS_1200D_CONFIG = {
     'iso': settings.ISO}
 
 
-class DSLRCamera(Camera):
+class DSLRCamera:
     """
     Digital Single Lens Reflex camera
     It uses gphoto2 to communicate with the digital camera:
@@ -58,7 +51,8 @@ class DSLRCamera(Camera):
         # Clear camera space
         self.clear_space()
 
-    def capture(self, installation):
+    @timeit
+    def capture(self):
 
         try:
             context = gp.gp_context_new()
@@ -130,16 +124,3 @@ class DSLRCamera(Camera):
         for name in folders:
             result.extend(self.list_files(camera, context, os.path.join(path, name)))
         return result
-
-
-class DummyCamera(Camera):
-    """ Dummy camera used for tests purposes. It prints a message to the console """
-
-    def __init__(self):
-        pass
-
-    def capture(self):
-        print "Capture snapshot"
-        return os.path.join(settings.FIGURE_DIR, 'resources/2_20150331.jpg')
-
-

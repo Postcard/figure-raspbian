@@ -9,6 +9,7 @@ virtualenv
 media/images
 media/tickets
 media/snapshots
+media/ticket.png
 resources/ticket.css
 resources/ticket.html
 db.fs

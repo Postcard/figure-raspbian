@@ -6,6 +6,7 @@ import settings
 
 from jinja2 import Environment
 
+from utils import timeit
 
 def with_base_html(rendered):
     """
@@ -48,9 +49,9 @@ def random_selection(variable):
         return variable['id'], None
     return variable['id'], random.choice(variable['items'])
 
-
+@timeit
 def render(html, snapshot, code, date, images):
-    context = { 'snapshot': snapshot, 'datetime': date, 'code': code }
+    context = {'snapshot': snapshot, 'datetime': date, 'code': code}
     for im in images:
         image_url = 'file://%s/images/%s' % (settings.MEDIA_ROOT, os.path.basename(im['image']))
         context['image_%s' % im['id']] = image_url

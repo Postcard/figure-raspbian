@@ -93,20 +93,6 @@ INPUT_LOW = int(get_env_setting('INPUT_LOW', 0))
 INPUT_HIGH = 0 if INPUT_LOW else 1
 
 
-def log_config():
-    logger.info('ENVIRONMENT: %s' % ENVIRONMENT)
-    logger.info('FIGURE_DIR: %s' % FIGURE_DIR)
-    logger.info('API_HOST: %s' % API_HOST)
-    logger.info('STATIC_ROOT: %s' % STATIC_ROOT)
-    logger.info('MEDIA_ROOT: %s' % MEDIA_ROOT)
-    logger.info('PHANTOMJS_PATH: %s' % PHANTOMJS_PATH)
-    logger.info('TIMEZONE: %s' % TIMEZONE)
-    logger.info('RETRY_DELAY: %s' % RETRY_DELAY)
-    logger.info('CAMERA_MODEL: %s' % CAMERA_MODEL)
-    logger.info('ROTATE: %s' % ROTATE)
-    logger.info('FLASH_ON: %s' % FLASH_ON)
-    logger.info('BACKUP_ON: %s' % BACKUP_ON)
-
 
 
 

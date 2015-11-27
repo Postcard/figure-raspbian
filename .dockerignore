@@ -17,3 +17,6 @@ db.tmp
 zeosocket
 ghostdriver.log
 .cache
+test_ticket.jpg
+media
+static
