@@ -27,6 +27,7 @@ class App(object):
         self.prev_input = settings.INPUT_LOW
         self.timer = None
         self.code = None
+        self.is_door_open = False
 
     def run(self):
         """ Main execution loop polling for push button inputs """
@@ -44,8 +45,8 @@ class App(object):
                     else:
                         elapsed = time.time() - self.timer
                         if 15 < elapsed < 20:
-                            print "BITES"
                             logger.info("Someone unlocked the door...")
+                            self.is_door_open = True
                             self.output.turn_on()
                             time.sleep(5)
                             self.output.turn_off()
@@ -102,9 +103,10 @@ class App(object):
                             'ticket': ticket_io,
                             'dt': date,
                             'code': current_code,
-                            'filename': filename
+                            'filename': filename,
+                            'is_door_open': self.is_door_open
                         }
-
+                        self.is_door_open = False
                         self.code = db.get_code()
                         db.claim_new_codes_if_necessary()
                         upload_ticket.delay(ticket)

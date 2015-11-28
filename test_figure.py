@@ -596,7 +596,7 @@ class TestApp:
         assert upload_ticket_mock.delay.call_count == 1
         set_paper_status_mock.delay.assert_called_once_with('1')
 
-    def test_door_open(self, mocker):
+    def test_open_door(self, mocker):
 
         camera_mock = Mock()
         printer_mock = Mock()
@@ -658,7 +658,9 @@ class TestApp:
         assert camera_mock.capture.call_count == 1
         assert printer_mock.print_ticket.call_count == 1
         assert upload_ticket_mock.delay.call_count == 1
-
+        args, _ = upload_ticket_mock.delay.call_args
+        ticket = args[0]
+        assert ticket['is_door_open']
 
     def test_paper_empty(self, mocker):
 
@@ -717,6 +719,73 @@ class TestApp:
         assert printer_mock.print_ticket.call_count == 1
         assert upload_ticket_mock.delay.call_count == 1
         set_paper_status_mock.delay.assert_called_once_with('0')
+
+    def test_open_door_paper_empy(self, mocker):
+
+        camera_mock = Mock()
+        printer_mock = Mock()
+        input_mock = Mock()
+        output_mock = Mock()
+
+        upload_ticket_mock = mocker.patch('figureraspbian.app.upload_ticket')
+        upload_ticket_mock.delay.return_value = None
+
+        set_paper_status_mock = mocker.patch('figureraspbian.app.set_paper_status')
+        set_paper_status_mock.delay.return_value = None
+
+        camera_mock.capture.return_value = Image.open('test_snapshot.jpg')
+        printer_mock.print_ticket.side_effect = USBError("oups")
+        output_mock.turn_on.return_value = None
+        output_mock.turn_off.return_value = None
+
+        mock_installation = create_autospec(Installation)
+        mock_installation.id = '1'
+        mock_installation.modified = datetime(2015, 1, 1, 0, 0)
+        mock_installation.ticket_templates = \
+            [
+                {
+                    "id": 1,
+                    "modified": "2015-01-01T00:00:00Z",
+                    "html": "<div class=\"figure figure-ticket-content\">\n  <div class=\"figure figure-placeholder\"><img class=\"figure figure-image\" id=\"1\" src=\"{{image_1}}\"></div>\n  <div class=\"figure figure-snapshot-container\">\n    <img class=\"figure figure-snapshot\" src=\"{{snapshot}}\">\n  </div>\n  <div class=\"figure figure-layer-container\"><img class=\"figure figure-image\" id=\"1\" src=\"{{image_1}}\"></div>\n  <div class=\"figure figure-footer-container\">\n    <p class=\"figure figure-static-footer\" style=\"text-align: center;\">\n      <span class=\"figure figure-generic-variable h1\" style=\"letter-spacing: 0.2em; border: 2px solid #000; padding: 10px 9px 8px 13px; margin-bottom: 16px; display: inline-block; margin-top:10px;\" id=\"code\">{{code}}</span>\n      <br> Votre photo avec ce code\n      <br> sur jaiunticket.com\n    </p>\n  </div>\n</div>",
+                    "text_variables": [],
+                    "image_variables": [],
+                    "images": [
+                        {
+                            "id": 1,
+                            "image": "http://image.png",
+                            "variable": None
+                        }
+                    ],
+                    "probability": None
+                }
+            ]
+        mock_get_installation = mocker.patch.object(Database, 'get_installation', autospec=True)
+        mock_get_installation.return_value = mock_installation
+
+        mock_get_code = mocker.patch.object(Database, 'get_code', autospec=True)
+        mock_get_code.return_value = 'AAAAA'
+
+        mock_claim_new_codes_if_necessary = mocker.patch.object(Database, 'claim_new_codes_if_necessary', autospec=True)
+        mock_claim_new_codes_if_necessary.return_value = None
+
+        n = int(17.0 / 0.05)
+        input_sequence = [1] * n
+        input_sequence.extend([0, -1])
+        input_mock.get_value.side_effect = input_sequence
+
+        app = App(camera_mock, printer_mock, input_mock, output_mock)
+
+        app.run()
+
+        assert output_mock.turn_on.call_count == 1
+        assert output_mock.turn_off.call_count == 1
+        assert camera_mock.capture.call_count == 1
+        assert printer_mock.print_ticket.call_count == 1
+        assert upload_ticket_mock.delay.call_count == 1
+        args, _ = upload_ticket_mock.delay.call_args
+        ticket = args[0]
+        assert ticket['is_door_open']
+
 
 
 
