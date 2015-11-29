@@ -52,7 +52,6 @@ class App(object):
                             self.output.turn_off()
 
                 if curr_input == settings.INPUT_LOW and self.prev_input == settings.INPUT_HIGH:
-
                     # Button unpressed
                     logger.info("A trigger occurred !")
 
@@ -68,6 +67,8 @@ class App(object):
                         date = datetime.now(pytz.timezone(settings.TIMEZONE))
                         base64_snapshot_thumb = get_base64_snapshot_thumbnail(snapshot)
 
+                        # TODO render PAPER END message if settings.PAPER_ROLL_LENGTH - printed_paper_length < threshold
+
                         rendered_html = ticketrenderer.render(
                             ticket_template['html'],
                             "data:image/jpeg;base64,%s" % base64_snapshot_thumb,
@@ -79,16 +80,24 @@ class App(object):
 
                         ticket_base64 = phantomjs.get_screenshot(rendered_html)
                         ticket_io = base64.b64decode(ticket_base64)
-                        ticket_path = get_pure_black_and_white_ticket(ticket_io)
+                        ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
 
                         pos_data = png2pos(ticket_path)
 
                         try:
                             self.printer.print_ticket(pos_data)
-                            set_paper_status.delay(str(PAPER_OK))
+                            prev_paper_status = db.get_paper_status()
+                            db.set_paper_status(PAPER_OK)
+                            if prev_paper_status == PAPER_EMPTY:
+                                db.set_printed_paper_length(ticket_length)
+                            else:
+                                db.add_printed_paper_length(ticket_length)
+                            set_paper_status.delay(str(PAPER_OK), db.get_printed_paper_length())
+
                         except USBError:
-                            # There is no paper
-                            set_paper_status.delay(str(PAPER_EMPTY))
+                            # we are out of paper
+                            db.set_paper_status(str(PAPER_EMPTY))
+                            set_paper_status.delay(str(PAPER_EMPTY), db.get_printed_paper_length())
 
                         buf = cStringIO.StringIO()
                         snapshot.save(buf, "JPEG")
@@ -108,6 +117,7 @@ class App(object):
                         }
                         self.is_door_open = False
                         self.code = db.get_code()
+
                         db.claim_new_codes_if_necessary()
                         upload_ticket.delay(ticket)
 

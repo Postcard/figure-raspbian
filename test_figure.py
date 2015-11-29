@@ -231,6 +231,24 @@ class TestTicketRenderer:
         rendered_html = ticketrenderer.render(html, '/path/to/snapshot', '00000', date, [])
         assert u'Du texte avec un accent ici: é' in rendered_html
 
+    def test_get_pure_black_and_white_ticket(self, mocker):
+        """
+        it should convert PIL Image to '1' and return the path and the ticket length
+        """
+        im = Image.open('test_ticket.jpg')
+        mock_image_open = mocker.patch.object(Image, 'open')
+        mock_image_open.return_value = im
+        ticket_path, length = utils.get_pure_black_and_white_ticket('')
+        assert ticket_path == '/Users/benoit/git/figure-raspbian/media/ticket.png'
+        assert length == 958
+
+    def test_pixels2cm(self):
+        """
+        pixels2cm should convert image pixels into how many cm will actually be printed on the ticket
+        """
+        cm = utils.pixels2cm(1098)
+        assert abs(cm - 14.5) < 0.1
+
 
 class TestApi:
 
@@ -536,10 +554,32 @@ class TestDatabase:
         assert api_create_ticket_mock.call_count == 1
         assert len(db.data.tickets) == 2
 
+    def test_add_printed_paper_length(self, mocker, db):
+        """
+        it should add a ticket length to current paper roll length
+        """
+        db.data.printed_paper_length = 70
+        mock_pixels_to_cm = mocker.patch('figureraspbian.db.pixels2cm')
+        mock_pixels_to_cm.return_value = 20
+        db.add_printed_paper_length(1086)
+        mock_pixels_to_cm.assert_called_with(1086)
+        assert db.data.printed_paper_length == 90
+
+    def test_set_printed_paper_length(self, mocker, db):
+        db.data.printed_paper_length = 70
+        mock_pixels_to_cm = mocker.patch('figureraspbian.db.pixels2cm')
+        mock_pixels_to_cm.return_value = 20
+        db.set_printed_paper_length(1086)
+        mock_pixels_to_cm.assert_called_with(1086)
+        assert db.data.printed_paper_length == 20
+
 
 class TestApp:
 
     def test_trigger(self, mocker):
+        """
+        app.run() shoudl take a picture, print it and send data to the server
+        """
 
         camera_mock = Mock()
         printer_mock = Mock()
@@ -585,6 +625,10 @@ class TestApp:
         mock_claim_new_codes_if_necessary = mocker.patch.object(Database, 'claim_new_codes_if_necessary', autospec=True)
         mock_claim_new_codes_if_necessary.return_value = None
 
+        mock_add_printed_paper_length = mocker.patch.object(Database, 'add_printed_paper_length', autospec=True)
+        mock_get_printed_paper_length = mocker.patch.object(Database, 'get_printed_paper_length', autospec=True)
+        mock_get_printed_paper_length.return_value = 15
+
         input_mock.get_value.side_effect = [1, 0, -1]
 
         app = App(camera_mock, printer_mock, input_mock, output_mock)
@@ -594,7 +638,73 @@ class TestApp:
         assert camera_mock.capture.call_count == 1
         assert printer_mock.print_ticket.call_count == 1
         assert upload_ticket_mock.delay.call_count == 1
-        set_paper_status_mock.delay.assert_called_once_with('1')
+        args1, _ = set_paper_status_mock.delay.call_args
+        assert args1[0] == '1'
+        assert args1[1] == 15
+        args2, _ = mock_add_printed_paper_length.call_args
+        assert args2[1] == 1086
+
+    def test_first_trigger_after_paper_refill(self, mocker):
+        """
+        it should reset printed_paper_length
+        """
+        camera_mock = Mock()
+        printer_mock = Mock()
+        input_mock = Mock()
+        output_mock = Mock()
+
+        upload_ticket_mock = mocker.patch('figureraspbian.app.upload_ticket')
+        upload_ticket_mock.delay.return_value = None
+
+        set_paper_status_mock = mocker.patch('figureraspbian.app.set_paper_status')
+        set_paper_status_mock.delay.return_value = None
+
+        camera_mock.capture.return_value = Image.open('test_snapshot.jpg')
+        printer_mock.print_ticket.return_value = None
+
+        mock_installation = create_autospec(Installation)
+        mock_installation.id = '1'
+        mock_installation.modified = datetime(2015, 1, 1, 0, 0)
+        mock_installation.ticket_templates = \
+            [
+                {
+                    "id": 1,
+                    "modified": "2015-01-01T00:00:00Z",
+                    "html": "<div class=\"figure figure-ticket-content\">\n  <div class=\"figure figure-placeholder\"><img class=\"figure figure-image\" id=\"1\" src=\"{{image_1}}\"></div>\n  <div class=\"figure figure-snapshot-container\">\n    <img class=\"figure figure-snapshot\" src=\"{{snapshot}}\">\n  </div>\n  <div class=\"figure figure-layer-container\"><img class=\"figure figure-image\" id=\"1\" src=\"{{image_1}}\"></div>\n  <div class=\"figure figure-footer-container\">\n    <p class=\"figure figure-static-footer\" style=\"text-align: center;\">\n      <span class=\"figure figure-generic-variable h1\" style=\"letter-spacing: 0.2em; border: 2px solid #000; padding: 10px 9px 8px 13px; margin-bottom: 16px; display: inline-block; margin-top:10px;\" id=\"code\">{{code}}</span>\n      <br> Votre photo avec ce code\n      <br> sur jaiunticket.com\n    </p>\n  </div>\n</div>",
+                    "text_variables": [],
+                    "image_variables": [],
+                    "images": [
+                        {
+                            "id": 1,
+                            "image": "http://image.png",
+                            "variable": None
+                        }
+                    ],
+                    "probability": None
+                }
+            ]
+        mock_get_installation = mocker.patch.object(Database, 'get_installation', autospec=True)
+        mock_get_installation.return_value = mock_installation
+
+        mock_get_code = mocker.patch.object(Database, 'get_code', autospec=True)
+        mock_get_code.return_value = 'AAAAA'
+
+        mock_claim_new_codes_if_necessary = mocker.patch.object(Database, 'claim_new_codes_if_necessary', autospec=True)
+        mock_claim_new_codes_if_necessary.return_value = None
+
+        mock_get_paper_status = mocker.patch.object(Database, 'get_paper_status', autospec=True)
+        mock_get_paper_status.return_value = 0
+
+        mock_set_printed_paper_length = mocker.patch.object(Database, 'set_printed_paper_length', autospec=True)
+
+        input_mock.get_value.side_effect = [1, 0, -1]
+
+        app = App(camera_mock, printer_mock, input_mock, output_mock)
+
+        app.run()
+
+        args, _ = mock_set_printed_paper_length.call_args
+        assert args[1] == 1086
 
     def test_open_door(self, mocker):
 
@@ -710,6 +820,11 @@ class TestApp:
         mock_claim_new_codes_if_necessary = mocker.patch.object(Database, 'claim_new_codes_if_necessary', autospec=True)
         mock_claim_new_codes_if_necessary.return_value = None
 
+        mock_get_printed_paper_length = mocker.patch.object(Database, 'get_printed_paper_length', autospec=True)
+        mock_get_printed_paper_length.return_value = 7900
+
+        mock_set_paper_status_db = mocker.patch.object(Database, 'set_paper_status', autospec=True)
+
         input_mock.get_value.side_effect = [1, 0, -1]
 
         app = App(camera_mock, printer_mock, input_mock, output_mock)
@@ -718,9 +833,12 @@ class TestApp:
         assert camera_mock.capture.call_count == 1
         assert printer_mock.print_ticket.call_count == 1
         assert upload_ticket_mock.delay.call_count == 1
-        set_paper_status_mock.delay.assert_called_once_with('0')
+        assert mock_get_printed_paper_length.call_count == 1
+        args, _ = mock_set_paper_status_db.call_args
+        assert args[1] == '0'
+        set_paper_status_mock.delay.assert_called_with('0', 7900)
 
-    def test_open_door_paper_empy(self, mocker):
+    def test_open_door_paper_empty(self, mocker):
 
         camera_mock = Mock()
         printer_mock = Mock()

@@ -63,7 +63,8 @@ def get_pure_black_and_white_ticket(ticket_io):
     ticket = ticket.convert('1')
     ticket_path = join(settings.MEDIA_ROOT, 'ticket.png')
     ticket.save(ticket_path, ticket.format, quality=100)
-    return ticket_path
+    _, ticket_length = ticket.size
+    return ticket_path, ticket_length
 
 @timeit
 def png2pos(path):
@@ -87,3 +88,7 @@ def get_file_name(installation_id, date):
         hash=hashids.encode(installation_id, int(date.strftime('%Y%m%d%H%M%S'))),
         resin_uuid=settings.RESIN_UUID[:4]).lower()
     return "Figure_%s.jpg" % unique_id
+
+
+def pixels2cm(pixels):
+    return float(pixels) / settings.PIXEL_CM_RATIO

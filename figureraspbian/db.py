@@ -18,7 +18,7 @@ from requests.exceptions import RequestException
 import urllib2
 
 from . import settings, api
-from .utils import timeit
+from .utils import timeit, pixels2cm
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
@@ -50,7 +50,7 @@ def transaction_decorate(retry_delay=1):
 
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
-DATABASE_VERSION = 6
+DATABASE_VERSION = 8
 
 
 PAPER_EMPTY = 0
@@ -193,6 +193,29 @@ class Database(object):
         self.data.tickets.append(ticket)
         self.data._p_changed = True
 
+    @transaction_decorate(0.5)
+    def add_printed_paper_length(self, pixels):
+        cm = pixels2cm(pixels)
+        self.data.printed_paper_length += cm
+        self.data._p_changed = True
+
+    @transaction_decorate(0.5)
+    def set_printed_paper_length(self, pixels):
+        cm = pixels2cm(pixels)
+        self.data.printed_paper_length = cm
+        self.data._p_changed = True
+
+    def get_printed_paper_length(self):
+        return self.data.printed_paper_length
+
+    @transaction_decorate(0.5)
+    def set_paper_status(self, status):
+        self.data.paper_status = status
+        self.data._p_changed = True
+
+    def get_paper_status(self):
+        return self.data.paper_status
+
 
 class Data(persistent.Persistent):
     """ OO data storage """
@@ -201,6 +224,8 @@ class Data(persistent.Persistent):
         self.installation = Installation()
         self.codes = []
         self.tickets = []
+        self.paper_status = PAPER_OK
+        self.printed_paper_length = 0
         self.version = DATABASE_VERSION
 
 

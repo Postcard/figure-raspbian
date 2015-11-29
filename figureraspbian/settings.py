@@ -92,8 +92,9 @@ BLINK_ON = True if blink_on == '1' else False
 INPUT_LOW = int(get_env_setting('INPUT_LOW', 0))
 INPUT_HIGH = 0 if INPUT_LOW else 1
 
-
-
+# Paper roll length in cm
+PAPER_ROLL_LENGTH = int(get_env_setting('PAPER_ROLL_LENGTH', 8000))
+PIXEL_CM_RATIO = float(get_env_setting('PIXEL_CM_RATIO', 75.59))
 
 
 
