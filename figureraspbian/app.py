@@ -96,7 +96,7 @@ class App(object):
 
                         except USBError:
                             # we are out of paper
-                            db.set_paper_status(str(PAPER_EMPTY))
+                            db.set_paper_status(PAPER_EMPTY)
                             set_paper_status.delay(str(PAPER_EMPTY), db.get_printed_paper_length())
 
                         buf = cStringIO.StringIO()

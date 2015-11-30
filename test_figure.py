@@ -694,6 +694,7 @@ class TestApp:
 
         mock_get_paper_status = mocker.patch.object(Database, 'get_paper_status', autospec=True)
         mock_get_paper_status.return_value = 0
+        mock_set_paper_status = mocker.patch.object(Database, 'set_paper_status', autospec=True)
 
         mock_set_printed_paper_length = mocker.patch.object(Database, 'set_printed_paper_length', autospec=True)
 
@@ -705,6 +706,8 @@ class TestApp:
 
         args, _ = mock_set_printed_paper_length.call_args
         assert args[1] == 1086
+        args, _ = mock_set_paper_status.call_args
+        assert args[1] == 1
 
     def test_open_door(self, mocker):
 
@@ -835,7 +838,7 @@ class TestApp:
         assert upload_ticket_mock.delay.call_count == 1
         assert mock_get_printed_paper_length.call_count == 1
         args, _ = mock_set_paper_status_db.call_args
-        assert args[1] == '0'
+        assert args[1] == 0
         set_paper_status_mock.delay.assert_called_with('0', 7900)
 
     def test_open_door_paper_empty(self, mocker):
