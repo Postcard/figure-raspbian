@@ -70,9 +70,6 @@ CAMERA_MODEL = get_env_setting('CAMERA_MODEL', 'UNKNOWN')
 rotate = get_env_setting('ROTATE', '0')
 ROTATE = True if rotate == '1' else False
 
-# Flash
-flash_on = get_env_setting('FLASH_ON', '0')
-FLASH_ON = True if flash_on == '1' else False
 
 # Backup
 backup_on = get_env_setting('BACKUP_ON', '0')
@@ -82,11 +79,7 @@ BACKUP_ON = True if backup_on == '1' else False
 APERTURE = int(get_env_setting('APERTURE', 11))
 SHUTTER_SPEED = int(get_env_setting('SHUTTER_SPEED', 39))
 ISO = int(get_env_setting('ISO', 3))
-
-# Blink
-blink_on = get_env_setting('BLINK_ON', '0')
-BLINK_ON = True if blink_on == '1' else False
-
+CAPTURE_DELAY = float(get_env_setting('CAPTURE_DELAY'), 1.0)
 
 # Input configuration
 INPUT_LOW = int(get_env_setting('INPUT_LOW', 0))
@@ -98,6 +91,7 @@ PIXEL_CM_RATIO = float(get_env_setting('PIXEL_CM_RATIO', 75.59))
 
 # Number of line feed at the end of the ticket
 LINE_FEED_COUNT = int(get_env_setting('LINE_FEED_COUNT', 5))
+
 
 
 

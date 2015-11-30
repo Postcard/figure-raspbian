@@ -61,7 +61,7 @@ class App(object):
 
                     if installation and installation.ticket_templates:
 
-                        time.sleep(1)
+                        time.sleep(settings.CAPTURE_DELAY)
                         snapshot = self.camera.capture()
                         ticket_template = ticketpicker.weighted_choice(installation.ticket_templates)
 
