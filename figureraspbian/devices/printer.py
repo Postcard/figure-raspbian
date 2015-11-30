@@ -2,6 +2,7 @@
 
 import re
 import subprocess
+from .. import settings
 
 try:
     from epson_printer import epsonprinter
@@ -42,4 +43,5 @@ class EpsonPrinter(object):
 
     def print_ticket(self, ticket_data):
         self.printer.write(ticket_data)
+        self.printer.linefeed(settings.LINE_FEED_COUNT)
         self.printer.cut()

@@ -96,8 +96,8 @@ INPUT_HIGH = 0 if INPUT_LOW else 1
 PAPER_ROLL_LENGTH = int(get_env_setting('PAPER_ROLL_LENGTH', 8000))
 PIXEL_CM_RATIO = float(get_env_setting('PIXEL_CM_RATIO', 75.59))
 
-
-
+# Number of line feed at the end of the ticket
+LINE_FEED_COUNT = int(get_env_setting('LINE_FEED_COUNT', 6))
 
 
 
