@@ -42,5 +42,4 @@ class EpsonPrinter(object):
 
     def print_ticket(self, ticket_data):
         self.printer.write(ticket_data)
-        self.printer.linefeed(4)
         self.printer.cut()
