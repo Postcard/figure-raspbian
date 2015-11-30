@@ -79,7 +79,7 @@ def create_ticket(ticket):
     return json.loads(r.text)
 
 
-def set_paper_status(status, paper_length):
+def set_paper_status(status, printed_paper_length):
 
     url = "%s/photobooths/%s/" % (settings.API_HOST, settings.RESIN_UUID)
 
@@ -87,7 +87,7 @@ def set_paper_status(status, paper_length):
         'owner': int(settings.USER),
         'resin_uuid': settings.RESIN_UUID,
         'paper_status': status,
-        'paper_length': paper_length
+        'printed_paper_length': printed_paper_length
     }
 
     session.put(url, data=data, timeout=20)
