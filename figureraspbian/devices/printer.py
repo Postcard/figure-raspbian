@@ -3,6 +3,7 @@
 import re
 import subprocess
 from .. import settings
+from ..utils import timeit
 
 try:
     from epson_printer import epsonprinter
@@ -41,6 +42,7 @@ class EpsonPrinter(object):
         self.printer = epsonprinter.EpsonPrinter(int(vendor_id, 16), int(product_id, 16))
         self.printer.set_print_speed(2)
 
+    @timeit
     def print_ticket(self, ticket_data):
         self.printer.write(ticket_data)
         self.printer.linefeed(settings.LINE_FEED_COUNT)

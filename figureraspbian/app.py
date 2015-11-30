@@ -11,10 +11,12 @@ logger = logging.getLogger(__name__)
 
 from usb.core import USBError
 
-from . import settings, ticketrenderer, ticketpicker, phantomjs
+from . import settings, ticketpicker
 from .db import Database, managed, PAPER_OK, PAPER_EMPTY
 from .tasks import upload_ticket, set_paper_status
 from .utils import get_base64_snapshot_thumbnail, get_pure_black_and_white_ticket, png2pos, get_file_name
+from .phantomjs import get_screenshot
+from ticketrenderer import render
 
 
 class App(object):
@@ -69,7 +71,7 @@ class App(object):
 
                         # TODO render PAPER END message if settings.PAPER_ROLL_LENGTH - printed_paper_length < threshold
 
-                        rendered_html = ticketrenderer.render(
+                        rendered_html = render(
                             ticket_template['html'],
                             "data:image/jpeg;base64,%s" % base64_snapshot_thumb,
                             current_code,
@@ -78,7 +80,7 @@ class App(object):
 
                         del base64_snapshot_thumb
 
-                        ticket_base64 = phantomjs.get_screenshot(rendered_html)
+                        ticket_base64 = get_screenshot(rendered_html)
                         ticket_io = base64.b64decode(ticket_base64)
                         ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
 
