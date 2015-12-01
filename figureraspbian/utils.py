@@ -45,7 +45,7 @@ def timeit(func):
         ts = time.time()
         result = func(*args, **kw)
         te = time.time()
-        logger.info('%r (%r, %r) %2.2f sec' % (func.__name__, args, kw, te-ts))
+        logger.info('%r %2.2f sec' % (func.__name__, te-ts))
         return result
     return timed
 

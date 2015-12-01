@@ -625,6 +625,8 @@ class TestApp:
         mock_claim_new_codes_if_necessary = mocker.patch.object(Database, 'claim_new_codes_if_necessary', autospec=True)
         mock_claim_new_codes_if_necessary.return_value = None
 
+        mock_get_paper_status = mocker.patch.object(Database, 'get_paper_status', autospec=True)
+        mock_get_paper_status.return_value = 1
         mock_add_printed_paper_length = mocker.patch.object(Database, 'add_printed_paper_length', autospec=True)
         mock_get_printed_paper_length = mocker.patch.object(Database, 'get_printed_paper_length', autospec=True)
         mock_get_printed_paper_length.return_value = 15
