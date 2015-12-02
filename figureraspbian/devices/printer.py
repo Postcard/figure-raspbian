@@ -2,22 +2,18 @@
 
 import re
 import subprocess
+from .. import settings
+from ..utils import timeit
 
 try:
     from epson_printer import epsonprinter
 except ImportError:
     print("Could not import epsonprinter")
 
-
-class Printer(object):
-    """ Printer interface """
-
-    def print_ticket(self):
-        raise NotImplementedError
-
-
 DEVICE_RE = re.compile("Bus\s+(?P<bus>\d+)\s+Device\s+(?P<device>\d+).+ID\s(?P<vendor_id>\w+):(?P<product_id>\w+)\s(?P<tag>.+)$", re.I)
 
+# Identify Epson printers in usb devices
+EPSON_VENDOR_ID = '04b8'
 
 def get_product_id(vendor_id):
     df = subprocess.check_output("lsusb", shell=True)
@@ -37,10 +33,8 @@ def get_product_id(vendor_id):
         raise Exception("No EPSON Printer detected")
     return printer['product_id']
 
-# Identify Epson printers in usb devices
-EPSON_VENDOR_ID = '04b8'
 
-class EpsonPrinter(Printer):
+class EpsonPrinter(object):
 
     def __init__(self):
         vendor_id = '0x%s' % EPSON_VENDOR_ID
@@ -48,16 +42,8 @@ class EpsonPrinter(Printer):
         self.printer = epsonprinter.EpsonPrinter(int(vendor_id, 16), int(product_id, 16))
         self.printer.set_print_speed(2)
 
+    @timeit
     def print_ticket(self, ticket_data):
         self.printer.write(ticket_data)
-        self.printer.linefeed(4)
+        self.printer.linefeed(settings.LINE_FEED_COUNT)
         self.printer.cut()
-
-
-class DummyPrinter(Printer):
-
-    def __init__(self):
-        pass
-
-    def print_ticket(self, ticket):
-        print("Print ticket")

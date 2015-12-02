@@ -72,9 +72,9 @@ def update_db():
         db.update_installation()
 
 @app.task
-def set_paper_status(status):
+def set_paper_status(status, printed_paper_length):
     try:
-        api.set_paper_status(status)
+        api.set_paper_status(status, printed_paper_length)
     except RequestException as e:
         logger.exception(e)
 

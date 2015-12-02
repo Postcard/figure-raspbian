@@ -13,11 +13,6 @@ from . import settings
 from .utils import url2name
 
 
-class ApiException(Exception):
-    """Something went wrong while querying the API"""
-    pass
-
-
 session = requests.Session()
 session.headers.update({
         'As-User': int(settings.USER),
@@ -29,23 +24,17 @@ session.headers.update({
 def get_installation():
     url = "%s/photobooths/%s/" % (settings.API_HOST, settings.RESIN_UUID)
     r = session.get(url=url, timeout=10)
-    if r.status_code == 200:
-        r.encoding = 'utf-8'
-        return json.loads(r.text)['active_installation']
-    elif r.status_code == 404:
-        return None
-    else:
-        raise ApiException("Failed retrieving installation")
+    r.raise_for_status()
+    r.encoding = 'utf-8'
+    return json.loads(r.text)['active_installation']
 
 
 def claim_codes():
     url = "%s/codelist/claim/" % (settings.API_HOST)
     r = session.post(url=url, timeout=20)
-    if r.status_code == 200:
-        r.encoding = 'utf-8'
-        return json.loads(r.text)['codes']
-    else:
-        raise ApiException('Fail retrieving codes')
+    r.raise_for_status()
+    r.encoding = 'utf-8'
+    return json.loads(r.text)['codes']
 
 
 def download(url, path):
@@ -85,26 +74,23 @@ def create_ticket(ticket):
     }
 
     r = session.post(url, files=files, data=data, timeout=20)
-    if r.status_code == 201:
-        r.encoding = 'utf-8'
-        return json.loads(r.text)
-    else:
-        raise ApiException("Failed creating ticket with message %s" % r.text)
+    r.raise_for_status()
+    r.encoding = 'utf-8'
+    return json.loads(r.text)
 
 
-def set_paper_status(status):
+def set_paper_status(status, printed_paper_length):
 
     url = "%s/photobooths/%s/" % (settings.API_HOST, settings.RESIN_UUID)
 
     data = {
         'owner': int(settings.USER),
         'resin_uuid': settings.RESIN_UUID,
-        'paper_status': status
+        'paper_status': status,
+        'printed_paper_length': printed_paper_length
     }
 
     session.put(url, data=data, timeout=20)
-
-
 
 
 

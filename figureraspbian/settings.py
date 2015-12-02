@@ -70,9 +70,6 @@ CAMERA_MODEL = get_env_setting('CAMERA_MODEL', 'UNKNOWN')
 rotate = get_env_setting('ROTATE', '0')
 ROTATE = True if rotate == '1' else False
 
-# Flash
-flash_on = get_env_setting('FLASH_ON', '0')
-FLASH_ON = True if flash_on == '1' else False
 
 # Backup
 backup_on = get_env_setting('BACKUP_ON', '0')
@@ -82,34 +79,18 @@ BACKUP_ON = True if backup_on == '1' else False
 APERTURE = int(get_env_setting('APERTURE', 11))
 SHUTTER_SPEED = int(get_env_setting('SHUTTER_SPEED', 39))
 ISO = int(get_env_setting('ISO', 3))
-
-# Blink
-blink_on = get_env_setting('BLINK_ON', '0')
-BLINK_ON = True if blink_on == '1' else False
-
+CAPTURE_DELAY = float(get_env_setting('CAPTURE_DELAY', 1.0))
 
 # Input configuration
 INPUT_LOW = int(get_env_setting('INPUT_LOW', 0))
 INPUT_HIGH = 0 if INPUT_LOW else 1
 
+# Paper roll length in cm
+PAPER_ROLL_LENGTH = int(get_env_setting('PAPER_ROLL_LENGTH', 8000))
+PIXEL_CM_RATIO = float(get_env_setting('PIXEL_CM_RATIO', 75.59))
 
-def log_config():
-    logger.info('ENVIRONMENT: %s' % ENVIRONMENT)
-    logger.info('FIGURE_DIR: %s' % FIGURE_DIR)
-    logger.info('API_HOST: %s' % API_HOST)
-    logger.info('STATIC_ROOT: %s' % STATIC_ROOT)
-    logger.info('MEDIA_ROOT: %s' % MEDIA_ROOT)
-    logger.info('PHANTOMJS_PATH: %s' % PHANTOMJS_PATH)
-    logger.info('TIMEZONE: %s' % TIMEZONE)
-    logger.info('RETRY_DELAY: %s' % RETRY_DELAY)
-    logger.info('CAMERA_MODEL: %s' % CAMERA_MODEL)
-    logger.info('ROTATE: %s' % ROTATE)
-    logger.info('FLASH_ON: %s' % FLASH_ON)
-    logger.info('BACKUP_ON: %s' % BACKUP_ON)
-
-
-
-
+# Number of line feed at the end of the ticket
+LINE_FEED_COUNT = int(get_env_setting('LINE_FEED_COUNT', 5))
 
 
 

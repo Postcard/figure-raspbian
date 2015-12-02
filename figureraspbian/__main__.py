@@ -1,27 +1,19 @@
 # -*- coding: utf8 -*-
-import os
-import time
+
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
-import time
-
-from pifacedigitalio import PiFaceDigital
-
-from . import processus, settings, api
-from .db import Database, managed
-from .tasks import upload_ticket
-
-# Log configuration
-settings.log_config()
-
-pifacedigital = PiFaceDigital()
-
+from .app import App
+import api
+from db import Database, managed
+import settings
+from devices.camera import DSLRCamera
+from devices.printer import EpsonPrinter
+from devices.input import PiFaceDigitalInput
+from devices.output import PiFaceDigitalOutput
 
 if __name__ == '__main__':
-
-    logger.info("Initializing Figure application...")
 
     logger.info("Initializing database...")
     with managed(Database()) as db:
@@ -32,40 +24,17 @@ if __name__ == '__main__':
     ticket_css_url = "%s/%s" % (settings.STATIC_HOST, 'static/css/ticket.css')
     try:
         api.download(ticket_css_url, settings.STATIC_ROOT)
-        logger.info("Ready")
-    except Exception:
-        logger.info("An error occurred when downloading ticket css")
+    except Exception as e:
+        logger.exception(e)
+    logger.info("Ready")
 
-    prev_input = settings.INPUT_LOW
-    start = None
-    is_door_open = False
+    try:
+        devices = [DSLRCamera(), EpsonPrinter(), PiFaceDigitalInput(), PiFaceDigitalOutput()]
+        app = App(*devices)
+        app.run()
+    except Exception as e:
+        logger.exception(e)
+        raise e
 
-    while True:
-        try:
-            curr_input = pifacedigital.input_pins[settings.TRIGGER_PIN].value
-            if curr_input == settings.INPUT_HIGH:
-                # Button pressed
-                if prev_input == settings.INPUT_LOW:
-                    start = time.time()
-                else:
-                    delta = time.time() - start
-                    if 15 < delta < 20:
-                        logger.info("Someone unlocked the door...")
-                        pifacedigital.relays[0].turn_on()
-                        is_door_open = True
-                        time.sleep(5)
-                        pifacedigital.relays[0].turn_off()
-            if curr_input == settings.INPUT_LOW and prev_input == settings.INPUT_HIGH:
-                # Button unpressed
-                logger.info("A trigger occurred ! Running processus...")
-                ticket = processus.run()
-                if ticket:
-                    ticket['is_door_open'] = is_door_open
-                    upload_ticket.delay(ticket)
-                is_door_open = False
-            prev_input = curr_input
-            # slight pause to debounce
-            time.sleep(0.05)
-        except Exception as e:
-            logger.error(e.message)
-            time.sleep(5)
+
+

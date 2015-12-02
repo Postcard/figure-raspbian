@@ -18,6 +18,7 @@ from requests.exceptions import RequestException
 import urllib2
 
 from . import settings, api
+from .utils import timeit, pixels2cm
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
@@ -49,7 +50,11 @@ def transaction_decorate(retry_delay=1):
 
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
-DATABASE_VERSION = 5
+DATABASE_VERSION = 8
+
+
+PAPER_EMPTY = 0
+PAPER_OK = 1
 
 
 class Database(object):
@@ -134,11 +139,12 @@ class Database(object):
                             modified > self.data.installation.modified or added_or_deleted):
                         logger.info("Installation was modified, ")
                         self.set_installation(installation, modified=modified)
-        except (api.ApiException, RequestException) as e:
+        except RequestException as e:
             # Log and do nothing, we can wait for next update
             logger.exception(e)
 
     @transaction_decorate(retry_delay=0.1)
+    @timeit
     def get_code(self):
         # claim a code
         code = self.data.codes.pop()
@@ -187,10 +193,28 @@ class Database(object):
         self.data.tickets.append(ticket)
         self.data._p_changed = True
 
-    @transaction_decorate(1)
-    def increment_last_upload_index(self):
-        self.data.last_upload_index += 1
+    @transaction_decorate(0.5)
+    def add_printed_paper_length(self, pixels):
+        cm = pixels2cm(pixels)
+        self.data.printed_paper_length += cm
         self.data._p_changed = True
+
+    @transaction_decorate(0.5)
+    def set_printed_paper_length(self, pixels):
+        cm = pixels2cm(pixels)
+        self.data.printed_paper_length = cm
+        self.data._p_changed = True
+
+    def get_printed_paper_length(self):
+        return self.data.printed_paper_length
+
+    @transaction_decorate(0.5)
+    def set_paper_status(self, status):
+        self.data.paper_status = status
+        self.data._p_changed = True
+
+    def get_paper_status(self):
+        return self.data.paper_status
 
 
 class Data(persistent.Persistent):
@@ -200,7 +224,8 @@ class Data(persistent.Persistent):
         self.installation = Installation()
         self.codes = []
         self.tickets = []
-        self.last_upload_index = -1
+        self.paper_status = PAPER_OK
+        self.printed_paper_length = 0
         self.version = DATABASE_VERSION
 
 
