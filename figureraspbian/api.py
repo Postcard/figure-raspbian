@@ -58,11 +58,11 @@ def create_ticket(ticket):
     url = "%s/tickets/" % settings.API_HOST
 
     try:
-        files = {'snapshot': open(ticket['snapshot'], 'rb'), 'ticket': open(ticket['ticket'], 'rb')}
+        files = {'snapshot_color': open(ticket['snapshot'], 'rb'), 'ticket': open(ticket['ticket'], 'rb')}
     except Exception as e:
         logger.error(e)
         files = {
-            'snapshot': (ticket['filename'], ticket['snapshot']),
+            'snapshot_color': (ticket['filename'], ticket['snapshot']),
             'ticket': (ticket['filename'], ticket['ticket'])
         }
 
