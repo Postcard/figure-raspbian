@@ -8,6 +8,7 @@ import base64
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
+import transaction
 
 from usb.core import USBError
 
@@ -56,6 +57,8 @@ class App(object):
                 if curr_input == settings.INPUT_LOW and self.prev_input == settings.INPUT_HIGH:
                     # Button unpressed
                     logger.info("A trigger occurred !")
+
+                    transaction.commit()
 
                     installation = db.get_installation()
 
