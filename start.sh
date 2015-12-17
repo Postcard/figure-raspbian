@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo 'Starting Figure app'
+
 # Enable I2C. See http://docs.resin.io/#/pages/i2c-and-spi.md for more details
 modprobe i2c-dev
 
