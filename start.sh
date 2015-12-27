@@ -8,16 +8,6 @@ modprobe i2c-dev
 # create data directories
 mkdir -p /data/static /data/media/tickets /data/media/images /data/media/snapshots
 
-# Mount USB stick if BACKUP is activated
-if [ "$BACKUP_ON" = 1 ] ; then
-    mount /dev/sda1 /mnt && chmod 775 /mnt
-fi
-
-# Grap the correct time
-/etc/init.d/ntp stop
-ntpdate -s time.nist.gov
-/etc/init.d/ntp start
-
 # Make sure $HOSTNAME is present in /etc/hosts
 grep -q "$HOSTNAME" /etc/hosts || echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
 
