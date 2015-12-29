@@ -2,8 +2,12 @@
 
 echo 'Starting Figure app'
 
+sleep 1m
+
 # Enable I2C. See http://docs.resin.io/#/pages/i2c-and-spi.md for more details
 modprobe i2c-dev
+
+echo 'I2C enabled'
 
 # create data directories
 mkdir -p /data/static /data/media/tickets /data/media/images /data/media/snapshots
