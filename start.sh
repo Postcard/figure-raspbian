@@ -2,7 +2,7 @@
 
 echo 'Starting Figure app'
 
-sleep 1m
+sleep 30
 
 # Enable I2C. See http://docs.resin.io/#/pages/i2c-and-spi.md for more details
 modprobe i2c-dev
@@ -14,6 +14,8 @@ mkdir -p /data/static /data/media/tickets /data/media/images /data/media/snapsho
 
 # Make sure $HOSTNAME is present in /etc/hosts
 grep -q "$HOSTNAME" /etc/hosts || echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
+
+sleep 30
 
 # Start Wifi Access Point for three minutes if WIFI_ON
 if [ "$WIFI_ON" = 1 ]; then
