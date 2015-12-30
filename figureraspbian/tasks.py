@@ -25,7 +25,7 @@ from requests.exceptions import RequestException
 
 from .db import Database, managed
 
-app = Celery('tasks', broker='amqp://guest@localhost//')
+app = Celery('tasks', broker='redis://localhost:6379/0')
 
 app.conf.update(
     CELERYBEAT_SCHEDULE={
