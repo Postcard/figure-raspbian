@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y \
     usbutils \
     libfreetype6 \
     libfontconfig \
+    python-numpy \
     ntp \
     ntpdate \
     git \
@@ -42,6 +43,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN wget http://download.redis.io/releases/redis-stable.tar.gz && \
     tar xzf redis-stable.tar.gz && \
+    rm redis-stable.tar.gz && \
     cd redis-stable && \
     make && \
     make install && \
