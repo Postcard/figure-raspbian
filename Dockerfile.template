@@ -122,6 +122,10 @@ RUN chown bind /var/log/named.log
 
 VOLUME /var/lib/connman
 
+RUN mkdir -p /usr/share/fonts/opentype
+COPY fonts/*.otf /usr/share/fonts/opentype/
+RUN fc-cache -f -v
+
 WORKDIR /
 
 COPY figureraspbian /figureraspbian
