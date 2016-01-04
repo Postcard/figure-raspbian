@@ -36,6 +36,10 @@ app.conf.update(
         'update-db-every-minute-and-half': {
             'task': 'figureraspbian.tasks.update_db',
             'schedule': timedelta(seconds=90)
+        },
+        'pack-db-every-hour': {
+            'task': 'figureraspbian.tasks.pack_db',
+            'schedule': timedelta(hours=1)
         }
     },
     CELERY_TIMEZONE='UTC'
@@ -99,3 +103,10 @@ def upload_ticket(ticket):
 
         with managed(Database()) as db:
             db.add_ticket(ticket)
+
+
+@app.task
+def pack_db():
+    """ remove old transaction history """
+    with managed(Database()) as db:
+        db.pack()

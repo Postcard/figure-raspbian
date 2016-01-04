@@ -61,8 +61,8 @@ class Database(object):
     """ Handle retrieving and updating data"""
 
     def __init__(self):
-        storage = ClientStorage.ClientStorage(settings.ZEO_SOCKET)
-        self.db = DB(storage)
+        self.storage = ClientStorage.ClientStorage(settings.ZEO_SOCKET)
+        self.db = DB(self.storage)
         self.dbroot = self.db.open().root()
         if 'data' not in self.dbroot:
             self.dbroot['data'] = Data()
@@ -215,6 +215,10 @@ class Database(object):
 
     def get_paper_status(self):
         return self.data.paper_status
+
+    def pack(self):
+        self.storage.pack(wait=True)
+        os.remove(os.path.join(settings.DATA_ROOT, 'db.fs.old'))
 
 
 class Data(persistent.Persistent):
