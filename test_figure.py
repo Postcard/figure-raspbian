@@ -573,6 +573,18 @@ class TestDatabase:
         mock_pixels_to_cm.assert_called_with(1086)
         assert db.data.printed_paper_length == 20
 
+    def test_pack_db(self, db):
+        """
+        packing db should reduce the size of the db
+        """
+        # increase size of db
+        for i in range(0, 1000):
+            db.dbroot['counter'] = i
+            transaction.commit()
+        assert os.path.getsize(os.path.join(settings.DATA_ROOT, 'db.fs')) > 100000
+        db.pack()
+        assert os.path.getsize(os.path.join(settings.DATA_ROOT, 'db.fs')) < 1000
+
 
 class TestApp:
 

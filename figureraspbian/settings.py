@@ -42,6 +42,9 @@ USER = get_env_setting('FIGURE_USER', '1')
 
 RESIN_UUID = get_env_setting('RESIN_DEVICE_UUID', 'resin_uuid')
 
+# Root directory to store data
+DATA_ROOT = get_env_setting('DATA_ROOT', '/Users/benoit/git/figure-raspbian')
+
 # Root directory for static files
 STATIC_ROOT = get_env_setting('STATIC_ROOT', '/Users/benoit/git/figure-raspbian/static')
 
@@ -55,7 +58,7 @@ PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 TRIGGER_PIN = get_env_setting('TRIGGER_PIN', 0)
 
 # ZEO socket adress
-ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(FIGURE_DIR, 'zeo.sock'))
+ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(DATA_ROOT, 'zeo.sock'))
 
 # Timezone information
 TIMEZONE = get_env_setting('TIMEZONE', 'Europe/Paris')
@@ -69,7 +72,6 @@ CAMERA_MODEL = get_env_setting('CAMERA_MODEL', 'UNKNOWN')
 # Set rotation of the picture. If ROTATE=1, picture will be rotated 90°
 rotate = get_env_setting('ROTATE', '0')
 ROTATE = True if rotate == '1' else False
-
 
 # Backup
 backup_on = get_env_setting('BACKUP_ON', '0')

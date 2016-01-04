@@ -99,9 +99,10 @@ ENV C_FORCE_ROOT true
 ENV FIGURE_DIR /figure/figureraspbian
 ENV IMAGE_DIR /data/images
 ENV PHANTOMJS_PATH /phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
+ENV DATA_ROOT /data
 ENV STATIC_ROOT /data/static
 ENV MEDIA_ROOT /data/media
-ENV ZEO_SOCKET /var/run/zeo.sock
+ENV ZEO_SOCKET /data/zeo.sock
 
 COPY ./wifi-connect/assets/bind /etc/bind
 RUN mkdir -p /usr/src/app/
