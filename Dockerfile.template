@@ -131,6 +131,7 @@ RUN fc-cache -f -v
 WORKDIR /
 
 COPY figureraspbian /figureraspbian
+COPY resources /resources
 COPY ./start.sh /
 COPY ./supervisord.conf /etc/
 
