@@ -8,7 +8,7 @@ from .app import App
 import api
 from db import Database, managed
 import settings
-from devices.camera import DSLRCamera
+from devices.camera import DSLRCamera, MockCamera
 from devices.printer import EpsonPrinter
 from devices.input import PiFaceDigitalInput
 from devices.output import PiFaceDigitalOutput
@@ -29,8 +29,17 @@ if __name__ == '__main__':
     logger.info("Ready")
 
     try:
-        devices = [DSLRCamera(), EpsonPrinter(), PiFaceDigitalInput(), PiFaceDigitalOutput()]
-        app = App(*devices)
+        try:
+            camera = DSLRCamera()
+        except Exception as e:
+            logger.exception(e)
+            camera = MockCamera()
+
+        printer = EpsonPrinter()
+        pifaceinput = PiFaceDigitalInput()
+        pifaceoutput = PiFaceDigitalOutput()
+
+        app = App(camera, printer, pifaceinput, pifaceoutput)
         app.run()
     except Exception as e:
         logger.exception(e)

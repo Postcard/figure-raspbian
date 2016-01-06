@@ -124,3 +124,14 @@ class DSLRCamera:
         for name in folders:
             result.extend(self.list_files(camera, context, os.path.join(path, name)))
         return result
+
+
+class MockCamera:
+    """
+    This class is used to mock the behavior of DSLRCamera in case the device cannot be loaded
+    """
+
+    def capture(self):
+
+        snapshot = Image.open('./resources/snapshot.jpg')
+        return snapshot
