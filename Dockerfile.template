@@ -50,7 +50,9 @@ RUN wget http://download.redis.io/releases/redis-stable.tar.gz && \
     cd utils && \
     ./install_server.sh 
 
-RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/releases/download/2.5.8/gphoto2-updater.sh && \
+RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/archive/2.5.9.zip && \
+    unzip 2.5.9.zip && \
+    cd gphoto2-updater-2.5.9 && \
     chmod +x gphoto2-updater.sh && \
     ./gphoto2-updater.sh
 
