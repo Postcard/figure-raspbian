@@ -6,6 +6,7 @@ if [[ $DD_API_KEY ]];
 then
     sed -i -e "s/^.*api_key:.*$/api_key: ${DD_API_KEY}/" ~/.datadog-agent/agent/datadog.conf
     # The agent needs to be executed with the current working directory set datadog-agent directory
+    unlink /root/.datadog-agent/run/agent-supervisor.sock
     cd /root/.datadog-agent
     ./bin/agent start &
 else
