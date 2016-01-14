@@ -42,7 +42,8 @@ app.conf.update(
             'schedule': timedelta(hours=1)
         }
     },
-    CELERY_TIMEZONE='UTC'
+    CELERY_TIMEZONE='UTC',
+    CELERYD_CONCURRENCY=2
 )
 
 
