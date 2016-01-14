@@ -5,8 +5,11 @@ echo 'Starting Figure app'
 if [[ $DD_API_KEY ]];
 then
     sed -i -e "s/^.*api_key:.*$/api_key: ${DD_API_KEY}/" ~/.datadog-agent/agent/datadog.conf
+    if [  -f /root/.datadog-agent/run/agent-supervisor.sock ]
+    then
+        unlink /root/.datadog-agent/run/agent-supervisor.sock
+    fi
     # The agent needs to be executed with the current working directory set datadog-agent directory
-    unlink /root/.datadog-agent/run/agent-supervisor.sock
     cd /root/.datadog-agent
     ./bin/agent start &
 else
@@ -30,7 +33,11 @@ if [ "$WIFI_ON" = 1 ]; then
     cd /usr/src/app && timeout 3m npm start
 fi
 
-unlink /var/run/supervisor.sock
+if [  -f /var/run/supervisor.sock ]
+then
+    unlink /var/run/supervisor.sock
+fi
+
 
 # Launch supervisor in the foreground
 echo 'Starting supervisor'
