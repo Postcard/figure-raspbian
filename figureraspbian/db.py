@@ -173,7 +173,7 @@ class Database(object):
                 self.pop_ticket()
             except IOError as e:
                 logger.exception(e)
-                if e.errno != errno.ENOENT:
+                if e.errno == errno.ENOENT:
                     # snapshot or ticket file may be corrupted, proceed with remaining tickets
                     self.pop_ticket()
                 else:
