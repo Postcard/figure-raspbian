@@ -38,6 +38,8 @@ then
     unlink /var/run/supervisor.sock
 fi
 
+# tune redis configuration file to store data in /data directory
+sed -i -e '/dir / s, /var/lib/redis/6379*, /data,' /etc/redis/6379.conf
 
 # Launch supervisor in the foreground
 echo 'Starting supervisor'
