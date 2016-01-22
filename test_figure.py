@@ -554,6 +554,39 @@ class TestDatabase:
         assert api_create_ticket_mock.call_count == 1
         assert len(db.data.tickets) == 2
 
+
+    def test_upload_tickets_raise_ConnectionError(self, mocker, db):
+        """
+        upload_tickets should stop while loop if it throws a ConnectionError
+        """
+        api_create_ticket_mock = mocker.patch('figureraspbian.db.api.create_ticket', autospec=True)
+        api_create_ticket_mock.side_effect = ConnectionError
+
+        time1 = datetime.now(pytz.timezone(settings.TIMEZONE))
+        time2 = datetime.now(pytz.timezone(settings.TIMEZONE))
+        ticket_1 = {
+            'installation': '1',
+            'snapshot': '/path/to/snapshot',
+            'ticket': 'path/to/ticket',
+            'dt': time1,
+            'code': 'JHUYG',
+            'filename': 'Figure_foo.jpg'
+        }
+        ticket_2 = {
+            'installation': '1',
+            'snapshot': '/path/to/snapshot',
+            'ticket': 'path/to/ticket',
+            'dt': time2,
+            'code': 'JU76G',
+            'filename': 'Figure_bar.jpg'
+        }
+        db.add_ticket(ticket_1)
+        db.add_ticket(ticket_2)
+        db.upload_tickets()
+        assert api_create_ticket_mock.call_count == 1
+        assert len(db.data.tickets) == 2
+
+
     def test_add_printed_paper_length(self, mocker, db):
         """
         it should add a ticket length to current paper roll length
