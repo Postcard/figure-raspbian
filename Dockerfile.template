@@ -102,7 +102,8 @@ RUN pip install gphoto2==1.2.1 \
     Django==1.8 \
     gunicorn==19.3.0 \
     python-dateutil==2.4.2 \
-    hashids==1.1.0
+    hashids==1.1.0 \
+    -e git+https://github.com/Postcard/ticket-renderer-python.git@84a772593be22ac5bc69f37341f7a1369b19424d#egg=ticket-render-python
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true

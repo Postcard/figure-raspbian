@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 import time
 import os
 import errno
-from datetime import datetime
 
 from ZEO import ClientStorage
 from ZODB import DB
@@ -50,7 +49,7 @@ def transaction_decorate(retry_delay=1):
 
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
-DATABASE_VERSION = 8
+DATABASE_VERSION = 9
 
 
 PAPER_EMPTY = 0
@@ -82,100 +81,94 @@ class Database(object):
     def clear(self):
         self.dbroot['data'] = Data()
 
-    def get_installation(self):
-        return self.data.installation
+    def get_photobooth(self):
+        return self.data.photobooth
 
-    def set_installation(self, installation, modified):
+    def set_ticket_template(self, ticket_template):
         try:
-            ticket_templates = installation['scenario']['ticket_templates']
-            local_items = self.get_images()
-            items = []
-            for ticket_template in ticket_templates:
-                for image_variable in ticket_template['image_variables']:
-                    items.append(image_variable['items'])
-                items.append(ticket_template['images'])
-            items = [item for sub_items in items for item in sub_items]
-            items = map(lambda x: x['image'], items)
+            local_items = self.get_images_from_ticket_template(self.data.photobooth.ticket_template)
+            items = self.get_images_from_ticket_template(ticket_template)
             # Download all images that have not been previously downloaded
             images_to_download = list(set(items) - set(local_items))
             for image in images_to_download:
                 api.download(image, IMAGE_DIR)
-            self.data.installation.id = installation['id']
-            self.data.installation.ticket_templates = ticket_templates
-            self.data.installation.modified = modified
-            self.data.installation._p_changed = True
+            self.data.photobooth.ticket_template = ticket_template
+            self.data.photobooth._p_changed = True
             transaction.commit()
         except (ConflictError, urllib2.HTTPError) as e:
             # Log and do nothing, we can wait for next update
             logger.exception(e)
             transaction.abort()
 
-    def get_images(self):
+    def get_images_from_ticket_template(self, ticket_template):
         items = []
-        for ticket_template in self.data.installation.ticket_templates:
+        if ticket_template:
             for image_variable in ticket_template['image_variables']:
                 items.append(image_variable['items'])
             items.append(ticket_template['images'])
-        items = [item for sub_items in items for item in sub_items]
-        items = map(lambda x: x['image'], items)
+            items = [item for sub_items in items for item in sub_items]
+            items = map(lambda x: x['image'], items)
+            return items
         return items
 
-    def update_installation(self):
+    def update_photobooth(self):
         try:
-            installation = api.get_installation()
-            if installation:
-                modified = datetime.strptime(installation['scenario']['modified'], DATE_FORMAT)
-                for ticket_template in installation['scenario']['ticket_templates']:
-                    modified = max(modified, datetime.strptime(ticket_template['modified'], DATE_FORMAT))
-                if installation['id'] != self.data.installation.id:
-                    # new installation, need update
-                    logger.info("New installation, saving changes")
-                    self.set_installation(installation, modified=modified)
-                else:
-                    # same installation, check for modifications
-                    added_or_deleted = (len(installation['scenario']['ticket_templates']) !=
-                                        len(self.data.installation.ticket_templates))
-                    if (not self.data.installation.modified or
-                            modified > self.data.installation.modified or added_or_deleted):
-                        logger.info("Installation was modified, ")
-                        self.set_installation(installation, modified=modified)
+            photobooth = api.get_photobooth()
+            if photobooth:
+                # check if place has changed
+                if photobooth['place']['id'] != self.data.photobooth.place:
+                    logger.info("New place, saving changes")
+                    self.data.photobooth.place = photobooth['place']['id']
+                # check if event has changed
+                if photobooth['event']['id'] != self.data.photobooth.event:
+                    logger.info("New event, saving changes")
+                    self.data.photobooth.event = photobooth['event']['id']
+                # check if ticket_template has changed
+                ticket_template = photobooth['ticket_template']
+                is_null = self.data.photobooth.ticket_template == None
+                has_been_modified = self.data.photobooth.ticket_template and \
+                                    ticket_template['modified'] > self.data.photobooth.ticket_template['modified']
+                if is_null or has_been_modified:
+                    logger.info("ticket template is not set or has been modified, saving changes")
+                    self.set_ticket_template(ticket_template)
         except RequestException as e:
             # Log and do nothing, we can wait for next update
             logger.exception(e)
+
 
     @transaction_decorate(retry_delay=0.1)
     @timeit
     def get_code(self):
         # claim a code
-        code = self.data.codes.pop()
+        code = self.data.photobooth.codes.pop()
         self.data._p_changed = True
         return code
 
     @transaction_decorate(retry_delay=5)
     def add_codes(self, codes):
-        self.data.codes.extend(codes)
+        self.data.photobooth.codes.extend(codes)
         self.data._p_changed = True
 
     def claim_new_codes_if_necessary(self):
         """ Claim new codes from api if there are less than 1000 codes left """
-        if len(self.data.codes) < 1000:
+        if len(self.data.photobooth.codes) < 1000:
             try:
                 new_codes = api.claim_codes()
                 self.add_codes(new_codes)
             except (api.ApiException, RequestException, urllib2.HTTPError) as e:
                 logger.exception(e)
 
-    def upload_tickets(self):
-        while self.data.tickets:
-            ticket = self.data.tickets[0]
+    def upload_portraits(self):
+        while self.data.photobooth.portraits:
+            portrait = self.data.photobooth.portraits[0]
             try:
-                api.create_ticket(ticket)
-                self.pop_ticket()
+                api.create_portrait(portrait)
+                self.pop_portrait()
             except IOError as e:
                 logger.exception(e)
                 if e.errno == errno.ENOENT:
                     # snapshot or ticket file may be corrupted, proceed with remaining tickets
-                    self.pop_ticket()
+                    self.pop_portrait()
                 else:
                     break
             except Exception as e:
@@ -183,38 +176,42 @@ class Database(object):
                 break
 
     @transaction_decorate(3)
-    def pop_ticket(self):
-        ticket = self.data.tickets.pop(0)
+    def pop_portrait(self):
+        portrait = self.data.photobooth.portraits.pop(0)
         self.data._p_changed = True
-        return ticket
+        return portrait
 
     @transaction_decorate(0.5)
-    def add_ticket(self, ticket):
-        self.data.tickets.append(ticket)
+    def add_portrait(self, portrait):
+        self.data.photobooth.portraits.append(portrait)
         self.data._p_changed = True
+
+    def get_new_paper_level(self, pixels):
+        if pixels == 0:
+            # we are out of paper
+            new_paper_level = 0
+        else:
+            old_paper_level = self.get_paper_level()
+            if old_paper_level == 0:
+                # Someone just refill the paper
+                new_paper_level = 100
+            else:
+                cm = pixels2cm(pixels)
+                new_paper_level = old_paper_level - (cm / float(settings.PAPER_ROLL_LENGTH)) * 100
+                if new_paper_level <= 0:
+                    # estimate is wrong, guess it's 10%
+                    new_paper_level = 10
+        self.set_paper_level(new_paper_level)
+        return new_paper_level
+
 
     @transaction_decorate(0.5)
-    def add_printed_paper_length(self, pixels):
-        cm = pixels2cm(pixels)
-        self.data.printed_paper_length += cm
+    def set_paper_level(self, paper_level):
+        self.data.photobooth.paper_level = paper_level
         self.data._p_changed = True
 
-    @transaction_decorate(0.5)
-    def set_printed_paper_length(self, pixels):
-        cm = pixels2cm(pixels)
-        self.data.printed_paper_length = cm
-        self.data._p_changed = True
-
-    def get_printed_paper_length(self):
-        return self.data.printed_paper_length
-
-    @transaction_decorate(0.5)
-    def set_paper_status(self, status):
-        self.data.paper_status = status
-        self.data._p_changed = True
-
-    def get_paper_status(self):
-        return self.data.paper_status
+    def get_paper_level(self):
+        return self.data.photobooth.paper_level
 
     def pack(self):
         self.storage.pack(wait=True)
@@ -225,20 +222,16 @@ class Data(persistent.Persistent):
     """ OO data storage """
 
     def __init__(self):
-        self.installation = Installation()
-        self.codes = []
-        self.tickets = []
-        self.paper_status = PAPER_OK
-        self.printed_paper_length = 0
+        self.photobooth = Photobooth()
         self.version = DATABASE_VERSION
 
 
-class Installation(persistent.Persistent):
+class Photobooth(persistent.Persistent):
 
     def __init__(self):
-        self.id = None
-        self.modified = None
-        self.ticket_templates = []
-
-
-
+        self.ticket_template = None
+        self.place = None
+        self.event = None
+        self.paper_level = 100
+        self.codes = []
+        self.portraits = []

@@ -12,12 +12,13 @@ import transaction
 
 from usb.core import USBError
 
-from . import settings, ticketpicker
-from .db import Database, managed, PAPER_OK, PAPER_EMPTY
-from .tasks import upload_ticket, set_paper_status
+from ticketrenderer import TicketRenderer
+
+from . import settings
+from .db import Database, managed
+from .tasks import upload_portrait, set_paper_level
 from .utils import get_base64_snapshot_thumbnail, get_pure_black_and_white_ticket, png2pos, get_file_name
 from .phantomjs import get_screenshot
-from ticketrenderer import render
 
 
 class App(object):
@@ -60,30 +61,33 @@ class App(object):
 
                     transaction.commit()
 
-                    installation = db.get_installation()
+                    photobooth = db.get_photobooth()
+                    ticket_template = photobooth.ticket_template
+                    place = photobooth.place
+                    event = photobooth.event
 
-                    if installation and installation.ticket_templates:
+                    if ticket_template:
 
                         time.sleep(settings.CAPTURE_DELAY)
                         snapshot = self.camera.capture()
-                        ticket_template = ticketpicker.weighted_choice(installation.ticket_templates)
+
+                        media_url = 'file://%s' % settings.MEDIA_ROOT
+                        ticket_css_url = 'file://%s/ticket.css' % settings.STATIC_ROOT
+
+                        ticket_renderer = TicketRenderer(ticket_template, media_url, ticket_css_url)
 
                         current_code = self.code or db.get_code()
                         date = datetime.now(pytz.timezone(settings.TIMEZONE))
                         base64_snapshot_thumb = get_base64_snapshot_thumbnail(snapshot)
 
-                        # TODO render PAPER END message if settings.PAPER_ROLL_LENGTH - printed_paper_length < threshold
-
-                        rendered_html = render(
-                            ticket_template['html'],
-                            "data:image/jpeg;base64,%s" % base64_snapshot_thumb,
-                            current_code,
-                            date,
-                            ticket_template['images'])
+                        rendered = ticket_renderer.render(
+                            picture="data:image/jpeg;base64,%s" % base64_snapshot_thumb,
+                            code=current_code,
+                            date=date)
 
                         del base64_snapshot_thumb
 
-                        ticket_base64 = get_screenshot(rendered_html)
+                        ticket_base64 = get_screenshot(rendered)
                         ticket_io = base64.b64decode(ticket_base64)
                         ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
 
@@ -91,40 +95,35 @@ class App(object):
 
                         try:
                             self.printer.print_ticket(pos_data)
-                            prev_paper_status = db.get_paper_status()
-                            db.set_paper_status(PAPER_OK)
-                            if prev_paper_status == PAPER_EMPTY:
-                                db.set_printed_paper_length(ticket_length)
-                            else:
-                                db.add_printed_paper_length(ticket_length)
-                            set_paper_status.delay(str(PAPER_OK), db.get_printed_paper_length())
-
+                            new_paper_level = db.get_new_paper_level(ticket_length)
+                            set_paper_level.delay(new_paper_level)
                         except USBError:
-                            # we are out of paper
-                            db.set_paper_status(PAPER_EMPTY)
-                            set_paper_status.delay(str(PAPER_EMPTY), db.get_printed_paper_length())
-
+                            # Oups, it seems we are out of paper
+                            new_paper_level = db.get_new_paper_level(0)
+                            set_paper_level.delay(new_paper_level)
                         buf = cStringIO.StringIO()
                         snapshot.save(buf, "JPEG")
-                        snapshot_io = buf.getvalue()
+                        picture_io = buf.getvalue()
                         buf.close()
 
-                        filename = get_file_name(installation.id, date)
+                        filename = get_file_name(current_code)
 
-                        ticket = {
-                            'installation': installation.id,
-                            'snapshot': snapshot_io,
+                        portrait = {
+                            'picture': picture_io,
                             'ticket': ticket_io,
-                            'dt': date,
+                            'taken': date,
+                            'place': place,
+                            'event': event,
                             'code': current_code,
                             'filename': filename,
                             'is_door_open': self.is_door_open
                         }
+
                         self.is_door_open = False
                         self.code = db.get_code()
 
                         db.claim_new_codes_if_necessary()
-                        upload_ticket.delay(ticket)
+                        upload_portrait.delay(portrait)
 
                     else:
                         logger.info("Could not find any installation or ticket templates")

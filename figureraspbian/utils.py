@@ -27,18 +27,6 @@ def url2name(url):
     return basename(urllib.unquote(urlsplit(url)[2]))
 
 
-def weighted_choice(choices):
-    """ Weighted random.choice """
-    total = sum(w for c, w in choices)
-    r = random.uniform(0, total)
-    upto = 0
-    for c, w in choices:
-        if upto + w > r:
-            return c
-        upto += w
-    assert False, "Shouldn't get here"
-
-
 def timeit(func):
 
     def timed(*args, **kw):
@@ -83,11 +71,11 @@ def png2pos(path):
 hashids = Hashids(salt='Titi Vicky Benni')
 
 
-def get_file_name(installation_id, date):
-    unique_id = "{hash}{resin_uuid}".format(
-        hash=hashids.encode(installation_id, int(date.strftime('%Y%m%d%H%M%S'))),
-        resin_uuid=settings.RESIN_UUID[:4]).lower()
-    return "Figure_%s.jpg" % unique_id
+def get_file_name(code):
+    # TODO check for unicity
+    ascii = [ord(c) for c in code]
+    hash = hashids.encode(*ascii)
+    return "Figure_%s.jpg" % hash
 
 
 def pixels2cm(pixels):

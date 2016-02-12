@@ -15,22 +15,21 @@ from .utils import url2name
 
 session = requests.Session()
 session.headers.update({
-        'As-User': int(settings.USER),
-        'Authorization': 'Bearer %s' % settings.TOKEN,
-        'Accept': 'application/json',
+    'Authorization': 'Bearer %s' % settings.TOKEN,
+    'Accept': 'application/json'
 })
 
 
-def get_installation():
+def get_photobooth():
     url = "%s/photobooths/%s/" % (settings.API_HOST, settings.RESIN_UUID)
     r = session.get(url=url, timeout=10)
     r.raise_for_status()
     r.encoding = 'utf-8'
-    return json.loads(r.text)['active_installation']
+    return json.loads(r.text)
 
 
 def claim_codes():
-    url = "%s/codelist/claim/" % (settings.API_HOST)
+    url = "%s/codelist/claim/" % settings.API_HOST
     r = session.post(url=url, timeout=20)
     r.raise_for_status()
     r.encoding = 'utf-8'
@@ -53,24 +52,25 @@ def download(url, path):
     return path_to_file
 
 
-def create_ticket(ticket):
+def create_portrait(portrait):
 
-    url = "%s/tickets/" % settings.API_HOST
+    url = "%s/portraits/" % settings.API_HOST
 
     try:
-        files = {'snapshot_color': open(ticket['snapshot'], 'rb'), 'ticket': open(ticket['ticket'], 'rb')}
+        files = {'picture_color': open(portrait['picture'], 'rb'), 'ticket': open(portrait['ticket'], 'rb')}
     except Exception as e:
         logger.error(e)
         files = {
-            'snapshot_color': (ticket['filename'], ticket['snapshot']),
-            'ticket': (ticket['filename'], ticket['ticket'])
+            'picture_color': (portrait['filename'], portrait['picture']),
+            'ticket': (portrait['filename'], portrait['ticket'])
         }
 
     data = {
-        'datetime': ticket['dt'],
-        'code': ticket['code'],
-        'installation': ticket['installation'],
-        'is_door_open': ticket['is_door_open']
+        'taken': portrait['taken'],
+        'place': portrait['place'],
+        'event': portrait['event'],
+        'code': portrait['code'],
+        'is_door_open': portrait['is_door_open']
     }
 
     r = session.post(url, files=files, data=data, timeout=20)
@@ -79,15 +79,13 @@ def create_ticket(ticket):
     return json.loads(r.text)
 
 
-def set_paper_status(status, printed_paper_length):
+def set_paper_level(paper_level):
 
     url = "%s/photobooths/%s/" % (settings.API_HOST, settings.RESIN_UUID)
 
     data = {
-        'owner': int(settings.USER),
         'resin_uuid': settings.RESIN_UUID,
-        'paper_status': status,
-        'printed_paper_length': printed_paper_length
+        'paper_level': paper_level
     }
 
     session.put(url, data=data, timeout=20)
