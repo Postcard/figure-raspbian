@@ -139,13 +139,13 @@ class Database(object):
     def get_code(self):
         # claim a code
         code = self.data.photobooth.codes.pop()
-        self.data._p_changed = True
+        self.data.photobooth._p_changed = True
         return code
 
     @transaction_decorate(retry_delay=5)
     def add_codes(self, codes):
         self.data.photobooth.codes.extend(codes)
-        self.data._p_changed = True
+        self.data.photobooth._p_changed = True
 
     def claim_new_codes_if_necessary(self):
         """ Claim new codes from api if there are less than 1000 codes left """
@@ -176,13 +176,13 @@ class Database(object):
     @transaction_decorate(3)
     def pop_portrait(self):
         portrait = self.data.photobooth.portraits.pop(0)
-        self.data._p_changed = True
+        self.data.photobooth._p_changed = True
         return portrait
 
     @transaction_decorate(0.5)
     def add_portrait(self, portrait):
         self.data.photobooth.portraits.append(portrait)
-        self.data._p_changed = True
+        self.data.photobooth._p_changed = True
 
     def get_new_paper_level(self, pixels):
         if pixels == 0:
@@ -206,7 +206,7 @@ class Database(object):
     @transaction_decorate(0.5)
     def set_paper_level(self, paper_level):
         self.data.photobooth.paper_level = paper_level
-        self.data._p_changed = True
+        self.data.photobooth._p_changed = True
 
     def get_paper_level(self):
         return self.data.photobooth.paper_level

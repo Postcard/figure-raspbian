@@ -263,6 +263,7 @@ class TestDatabase:
         assert db.data.photobooth.place == 1
         assert db.data.photobooth.event == 1
 
+
     def test_update_photobooth_no_place_no_event(self, mocker, db, mock_photobooth):
         db.data.photobooth.place = 1
         db.data.photobooth.event = 1
@@ -310,6 +311,13 @@ class TestDatabase:
         db.update_photobooth()
         assert db.data.photobooth.ticket_template == None
 
+    def test_add_codes(self, db):
+        db.add_codes(['AAAAA'])
+        assert len(db.data.photobooth.codes) == 1
+        db = Database()
+        assert db.data.photobooth.codes == ['AAAAA']
+        db.clear()
+        db.close()
 
     def test_claim_codes_if_necessary(self, mocker, db):
         """
