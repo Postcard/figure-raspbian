@@ -52,10 +52,6 @@ IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
 DATABASE_VERSION = 9
 
 
-PAPER_EMPTY = 0
-PAPER_OK = 1
-
-
 class Database(object):
     """ Handle retrieving and updating data"""
 
