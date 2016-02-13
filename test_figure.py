@@ -8,6 +8,7 @@ import time
 import json
 from usb.core import USBError
 
+
 from mock import Mock, patch, create_autospec
 import os
 from ZODB.POSException import ConflictError
@@ -262,6 +263,18 @@ class TestDatabase:
         assert db.data.photobooth.place == 1
         assert db.data.photobooth.event == 1
 
+    def test_update_photobooth_no_place_no_event(self, mocker, db, mock_photobooth):
+        db.data.photobooth.place = 1
+        db.data.photobooth.event = 1
+        mocker.patch.object(Database, 'set_ticket_template', autospec=True)
+        api_get_photobooth_mock = mocker.patch('figureraspbian.db.api.get_photobooth', autospec=True)
+        photobooth = mock_photobooth
+        photobooth['place'] = None
+        photobooth['event'] = None
+        api_get_photobooth_mock.return_value = photobooth
+        db.update_photobooth()
+        assert db.data.photobooth.place == None
+        assert db.data.photobooth.event == None
 
     def test_update_photobooth_ticket_template_not_modified(self, mocker, db, mock_photobooth):
         """
@@ -274,7 +287,7 @@ class TestDatabase:
         db.update_photobooth()
         assert not set_ticket_template_mock.called
 
-    def test_update_installation_modified(self, mocker, db, mock_photobooth):
+    def test_update_photobooth_modified(self, mocker, db, mock_photobooth):
         """
         update_photobooth should set ticket template if it has been modified
         """

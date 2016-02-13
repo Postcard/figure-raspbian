@@ -126,7 +126,7 @@ class App(object):
                         upload_portrait.delay(portrait)
 
                     else:
-                        logger.info("Could not find any installation or ticket templates")
+                        logger.info("Could not find any ticket template")
 
                 if curr_input == -1:
                     # used to break the loop during test execution

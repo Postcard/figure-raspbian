@@ -116,16 +116,18 @@ class Database(object):
             photobooth = api.get_photobooth()
             if photobooth:
                 # check if place has changed
-                if photobooth['place']['id'] != self.data.photobooth.place:
+                place = photobooth['place']['id'] if photobooth.get('place') else None
+                if place != self.data.photobooth.place:
                     logger.info("New place, saving changes")
-                    self.data.photobooth.place = photobooth['place']['id']
+                    self.data.photobooth.place = place
                 # check if event has changed
-                if photobooth['event']['id'] != self.data.photobooth.event:
+                event = photobooth['event']['id'] if photobooth.get('event') else None
+                if event != self.data.photobooth.event:
                     logger.info("New event, saving changes")
-                    self.data.photobooth.event = photobooth['event']['id']
+                    self.data.photobooth.event = event
                 # check if ticket_template has changed
                 ticket_template = photobooth['ticket_template']
-                is_null = self.data.photobooth.ticket_template == None
+                is_null = not self.data.photobooth.ticket_template
                 has_been_modified = self.data.photobooth.ticket_template and \
                                     ticket_template['modified'] > self.data.photobooth.ticket_template['modified']
                 if is_null or has_been_modified:
@@ -155,7 +157,7 @@ class Database(object):
             try:
                 new_codes = api.claim_codes()
                 self.add_codes(new_codes)
-            except (api.ApiException, RequestException, urllib2.HTTPError) as e:
+            except (RequestException, urllib2.HTTPError) as e:
                 logger.exception(e)
 
     def upload_portraits(self):

@@ -30,11 +30,11 @@ app = Celery('tasks', broker='redis://localhost:6379/0')
 app.conf.update(
     CELERYBEAT_SCHEDULE={
         'upload-tickets': {
-            'task': 'figureraspbian.tasks.upload_tickets',
+            'task': 'figureraspbian.tasks.upload_portraits',
             'schedule': timedelta(seconds=120)
         },
         'update-db-every-minute-and-half': {
-            'task': 'figureraspbian.tasks.update_db',
+            'task': 'figureraspbian.tasks.update_photobooth',
             'schedule': timedelta(seconds=90)
         },
         'pack-db-every-hour': {
@@ -72,7 +72,7 @@ def upload_portraits():
 
 
 @app.task
-def update_db():
+def update_photobooth():
     with managed(Database()) as db:
         db.update_photobooth()
 
