@@ -107,6 +107,14 @@ class Database(object):
             return items
         return items
 
+    @transaction_decorate(retry_delay=1)
+    def set_place(self, place):
+        self.data.photobooth.place = place
+
+    @transaction_decorate(retry_delay=1)
+    def set_event(self, event):
+        self.data.photobooth.event = event
+
     def update_photobooth(self):
         try:
             photobooth = api.get_photobooth()
@@ -115,12 +123,12 @@ class Database(object):
                 place = photobooth['place']['id'] if photobooth.get('place') else None
                 if place != self.data.photobooth.place:
                     logger.info("New place, saving changes")
-                    self.data.photobooth.place = place
+                    self.set_place(place)
                 # check if event has changed
                 event = photobooth['event']['id'] if photobooth.get('event') else None
                 if event != self.data.photobooth.event:
                     logger.info("New event, saving changes")
-                    self.data.photobooth.event = event
+                    self.set_event(event)
                 # check if ticket_template has changed
                 ticket_template = photobooth['ticket_template']
                 is_null = not self.data.photobooth.ticket_template
