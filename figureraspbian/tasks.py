@@ -30,11 +30,11 @@ app = Celery('tasks', broker='redis://localhost:6379/0')
 app.conf.update(
     CELERYBEAT_SCHEDULE={
         'upload-tickets': {
-            'task': 'figureraspbian.tasks.upload_tickets',
+            'task': 'figureraspbian.tasks.upload_portraits',
             'schedule': timedelta(seconds=120)
         },
         'update-db-every-minute-and-half': {
-            'task': 'figureraspbian.tasks.update_db',
+            'task': 'figureraspbian.tasks.update_photobooth',
             'schedule': timedelta(seconds=90)
         },
         'pack-db-every-hour': {
@@ -65,45 +65,46 @@ def single_instance_task(timeout):
 
 @single_instance_task(60 * 10)
 @app.task
-def upload_tickets():
-    """ Upload all tickets that have not been previously updated"""
+def upload_portraits():
+    """ Upload all portraits that have not been previously updated"""
     with managed(Database()) as db:
-        db.upload_tickets()
+        db.upload_portraits()
 
 
 @app.task
-def update_db():
+def update_photobooth():
     with managed(Database()) as db:
-        db.update_installation()
+        db.update_photobooth()
 
 @app.task
-def set_paper_status(status, printed_paper_length):
+def set_paper_level(paper_level):
     try:
-        api.set_paper_status(status, printed_paper_length)
+        api.set_paper_level(paper_level)
     except RequestException as e:
         logger.exception(e)
 
 @app.task
-def upload_ticket(ticket):
-    """ Upload a ticket or add to tickets list"""
+def upload_portrait(portrait):
+    """ Upload a portrait or add to local portrait list"""
     try:
         # try uploading the ticket
-        api.create_ticket(ticket)
+        api.create_portrait(portrait)
     except Exception as e:
         logger.error(e)
-        # Couldn't upload the ticket, save files to filesystem and add ticket to the db for schedule upload
-        snapshot_path = join(settings.MEDIA_ROOT, 'snapshots', ticket['filename'])
-        with open(snapshot_path, "wb") as f:
-            f.write(ticket['snapshot'])
-        ticket['snapshot'] = snapshot_path
+        # Couldn't upload the portrait, save picture and ticket
+        # to filesystem and add the portrait to local db for scheduled upload
+        picture_path = join(settings.MEDIA_ROOT, 'snapshots', portrait['filename'])
+        with open(picture_path, "wb") as f:
+            f.write(portrait['picture'])
+        portrait['picture'] = picture_path
 
-        ticket_path = join(settings.MEDIA_ROOT, 'tickets', ticket['filename'])
+        ticket_path = join(settings.MEDIA_ROOT, 'tickets', portrait['filename'])
         with open(ticket_path, "wb") as f:
-            f.write(ticket['ticket'])
-        ticket['ticket'] = ticket_path
+            f.write(portrait['ticket'])
+        portrait['ticket'] = ticket_path
 
         with managed(Database()) as db:
-            db.add_ticket(ticket)
+            db.add_portrait(portrait)
 
 
 @app.task

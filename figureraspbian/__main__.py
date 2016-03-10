@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     logger.info("Initializing database...")
     with managed(Database()) as db:
-        db.update_installation()
+        db.update_photobooth()
         db.claim_new_codes_if_necessary()
 
     logger.info("Downloading ticket css...")
