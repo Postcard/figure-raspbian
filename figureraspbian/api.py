@@ -8,9 +8,14 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 import requests
+from requests.exceptions import HTTPError
 
 from . import settings
 from .utils import url2name
+
+
+class CodeAlreadyExistsError(HTTPError):
+    pass
 
 
 session = requests.Session()
@@ -74,9 +79,14 @@ def create_portrait(portrait):
     }
 
     r = session.post(url, files=files, data=data, timeout=20)
-    r.raise_for_status()
     r.encoding = 'utf-8'
-    return json.loads(r.text)
+    json = r.json()
+    if 'error' in json:
+        error = json['error']
+        if 'code' in error and 'Portrait with this code already exists.' in error['code']:
+            raise CodeAlreadyExistsError()
+    r.raise_for_status()
+    return json
 
 
 def set_paper_level(paper_level):

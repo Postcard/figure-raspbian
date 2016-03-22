@@ -30,12 +30,20 @@ def mock_ticket_template(request):
         "modified": "2015-01-01T00:00:00Z",
         "html": "<div></div>",
         "title": "title",
-        "subtitle": "subtitle",
+        "description": "description",
         "text_variables": [
             {
                 "id": 1,
                 "name": "sentiment",
-                "items": ["Un peu", "Beaucoup"]
+                "items": [{
+                    "id": 4,
+                    "text": "Un peu",
+                    "variable": 1
+                }, {
+                    "id": 5,
+                    "text": "Beaucoup",
+                    "variable": 1
+                }]
             }
         ],
         "image_variables": [
@@ -158,7 +166,7 @@ class TestApi:
 
         response = create_autospec(Response)
         response.status_code = 201
-        response.text = json.dumps(portrait)
+        response.json.return_value = portrait
         session_post_mock = mocker.patch.object(Session, 'post', autospec=True)
         session_post_mock.return_value = response
 
@@ -207,6 +215,29 @@ class TestApi:
         session_post_mock.return_value = response
 
         with pytest.raises(HTTPError):
+            api.create_portrait(portrait)
+
+    def test_create_portrait_raise_400_code_already_exists(self, mocker):
+        """
+        create_portrait should raise CodeAlreadyExistsError
+        """
+        portrait = {
+            'picture': '/path/to/picture',
+            'ticket': 'path/to/ticket',
+            'taken': "2015-01-01T00:00:00Z",
+            'place': None,
+            'event': None,
+            'code': "JHUYG",
+            'filename': 'Figure.jpg',
+            'is_door_open': False
+        }
+        response = create_autospec(Response)
+        response.json.return_value = {'error': {'code': ['Portrait with this code already exists.']}}
+
+        session_post_mock = mocker.patch.object(Session, 'post', autospec=True)
+        session_post_mock.return_value = response
+
+        with pytest.raises(api.CodeAlreadyExistsError):
             api.create_portrait(portrait)
 
 class TestDatabase:
@@ -472,6 +503,28 @@ class TestDatabase:
         db.upload_portraits()
         assert api_create_portrait_mock.call_count == 1
         assert len(db.data.photobooth.portraits) == 2
+
+    def test_upload_portraits_raise_code_already_exists(self, mocker, db):
+        """
+        it should pop portrait that raised error
+        """
+        api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
+        api_create_portrait_mock.side_effect = api.CodeAlreadyExistsError()
+        now = datetime.now(pytz.timezone(settings.TIMEZONE))
+        portrait1 = {
+            'picture': '/path/to/picture',
+            'ticket': 'path/to/ticket',
+            'taken': now,
+            'place': None,
+            'event': None,
+            'code': "TITIS",
+            'filename': 'Figure.jpg',
+            'is_door_open': False
+        }
+        db.add_portrait(portrait1)
+        db.upload_portraits()
+        assert api_create_portrait_mock.call_count == 1
+        assert len(db.data.photobooth.portraits) == 0
 
     def test_get_new_paper_level(self, mocker, db):
         """

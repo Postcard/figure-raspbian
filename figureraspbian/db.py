@@ -13,7 +13,7 @@ from ZODB import DB
 from ZODB.POSException import ConflictError
 import transaction
 import persistent
-from requests.exceptions import RequestException
+from requests.exceptions import RequestException, HTTPError
 import urllib2
 
 from . import settings, api
@@ -168,7 +168,11 @@ class Database(object):
         while self.data.photobooth.portraits:
             portrait = self.data.photobooth.portraits[0]
             try:
-                api.create_portrait(portrait)
+                r = api.create_portrait(portrait)
+
+                r.raise_for_status()
+                self.pop_portrait()
+            except api.CodeAlreadyExistsError:
                 self.pop_portrait()
             except IOError as e:
                 logger.exception(e)
