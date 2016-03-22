@@ -49,7 +49,7 @@ def transaction_decorate(retry_delay=1):
 
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
-DATABASE_VERSION = 9
+DATABASE_VERSION = 10
 
 
 class Database(object):
@@ -120,14 +120,16 @@ class Database(object):
             photobooth = api.get_photobooth()
             if photobooth:
                 # check if place has changed
-                place = photobooth['place']['id'] if photobooth.get('place') else None
-                if place != self.data.photobooth.place:
-                    logger.info("New place, saving changes")
+                place = photobooth.get('place')
+                place_is_the_same = (place and self.data.photobooth.place and
+                                     place['id'] == self.data.photobooth.place['id'])
+                if not place_is_the_same:
                     self.set_place(place)
                 # check if event has changed
-                event = photobooth['event']['id'] if photobooth.get('event') else None
-                if event != self.data.photobooth.event:
-                    logger.info("New event, saving changes")
+                event = photobooth.get('event')
+                event_is_the_same = (event and self.data.photobooth.event and
+                                     event['id'] == self.data.photobooth.event['id'])
+                if not event_is_the_same:
                     self.set_event(event)
                 # check if ticket_template has changed
                 ticket_template = photobooth['ticket_template']
@@ -135,7 +137,6 @@ class Database(object):
                 has_been_modified = self.data.photobooth.ticket_template and \
                                     ticket_template['modified'] > self.data.photobooth.ticket_template['modified']
                 if is_null or has_been_modified:
-                    logger.info("ticket template is not set or has been modified, saving changes")
                     self.set_ticket_template(ticket_template)
         except RequestException as e:
             # Log and do nothing, we can wait for next update

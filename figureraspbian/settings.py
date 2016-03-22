@@ -61,7 +61,7 @@ TRIGGER_PIN = get_env_setting('TRIGGER_PIN', 0)
 ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(DATA_ROOT, 'zeo.sock'))
 
 # Timezone information
-TIMEZONE = get_env_setting('TIMEZONE', 'Europe/Paris')
+DEFAULT_TIMEZONE = 'Europe/Paris'
 
 # Countdown for retrying uploading a ticket
 RETRY_DELAY = get_env_setting('RETRY_DELAY', 3600)

@@ -63,8 +63,12 @@ class App(object):
 
                     photobooth = db.get_photobooth()
                     ticket_template = photobooth.ticket_template
+
                     place = photobooth.place
-                    event = photobooth.event
+                    place_id = place['id'] if place else None
+                    tz = place['tz'] if (place and 'tz' in place) else settings.DEFAULT_TIMEZONE
+
+                    event_id = photobooth.event['id'] if photobooth.event else None
 
                     if ticket_template:
 
@@ -77,7 +81,7 @@ class App(object):
                         ticket_renderer = TicketRenderer(ticket_template, media_url, ticket_css_url)
 
                         current_code = self.code or db.get_code()
-                        date = datetime.now(pytz.timezone(settings.TIMEZONE))
+                        date = datetime.now(pytz.timezone(tz))
                         base64_snapshot_thumb = get_base64_snapshot_thumbnail(snapshot)
 
                         rendered = ticket_renderer.render(
@@ -112,8 +116,8 @@ class App(object):
                             'picture': picture_io,
                             'ticket': ticket_io,
                             'taken': date,
-                            'place': place,
-                            'event': event,
+                            'place': place_id,
+                            'event': event_id,
                             'code': current_code,
                             'filename': filename,
                             'is_door_open': self.is_door_open
