@@ -135,11 +135,11 @@ def update_wifi_networks():
         if networks:
             with managed(Database()) as db:
                 photobooth = db.get_photobooth()
-                place = photobooth.place.id
+                place_id = photobooth.place['id']
 
             for network in networks:
                 try:
-                    network['place'] = place
+                    network['place'] = place_id
                     api.create_wifi_network(network)
                 except IOError:
                     pass
