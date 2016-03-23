@@ -80,7 +80,7 @@ PIXEL_CM_RATIO = float(get_env_setting('PIXEL_CM_RATIO', 75.59))
 # Number of line feed at the end of the ticket
 LINE_FEED_COUNT = int(get_env_setting('LINE_FEED_COUNT', 5))
 
-WIFI_ON = int(get_env_setting('WIFI_ON'), 0)
+WIFI_ON = int(get_env_setting('WIFI_ON', 0))
 
 
 
