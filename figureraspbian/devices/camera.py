@@ -34,19 +34,17 @@ class DSLRCamera:
     def __init__(self):
         self.camera = gp.check_result(gp.gp_camera_new())
 
-        # Camera specific configuration
-        if settings.CAMERA_MODEL == 'CANON_1200D':
-            try:
-                context = gp.gp_context_new()
-                gp.check_result(gp.gp_camera_init(self.camera, context))
-                config = gp.check_result(gp.gp_camera_get_config(self.camera, context))
-                for param, choice in EOS_1200D_CONFIG.iteritems():
-                    widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
-                    value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
-                    gp.gp_widget_set_value(widget, value)
-                gp.gp_camera_set_config(self.camera, config, context)
-            finally:
-                gp.check_result(gp.gp_camera_exit(self.camera, context))
+        try:
+            context = gp.gp_context_new()
+            gp.check_result(gp.gp_camera_init(self.camera, context))
+            config = gp.check_result(gp.gp_camera_get_config(self.camera, context))
+            for param, choice in EOS_1200D_CONFIG.iteritems():
+                widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
+                value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
+                gp.gp_widget_set_value(widget, value)
+            gp.gp_camera_set_config(self.camera, config, context)
+        finally:
+            gp.check_result(gp.gp_camera_exit(self.camera, context))
 
         # Clear camera space
         self.clear_space()

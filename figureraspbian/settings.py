@@ -63,20 +63,6 @@ ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(DATA_ROOT, 'zeo.sock'))
 # Timezone information
 DEFAULT_TIMEZONE = 'Europe/Paris'
 
-# Countdown for retrying uploading a ticket
-RETRY_DELAY = get_env_setting('RETRY_DELAY', 3600)
-
-# Camera model
-CAMERA_MODEL = get_env_setting('CAMERA_MODEL', 'UNKNOWN')
-
-# Set rotation of the picture. If ROTATE=1, picture will be rotated 90°
-rotate = get_env_setting('ROTATE', '0')
-ROTATE = True if rotate == '1' else False
-
-# Backup
-backup_on = get_env_setting('BACKUP_ON', '0')
-BACKUP_ON = True if backup_on == '1' else False
-
 # Camera config
 APERTURE = int(get_env_setting('APERTURE', 11))
 SHUTTER_SPEED = int(get_env_setting('SHUTTER_SPEED', 39))
@@ -93,6 +79,8 @@ PIXEL_CM_RATIO = float(get_env_setting('PIXEL_CM_RATIO', 75.59))
 
 # Number of line feed at the end of the ticket
 LINE_FEED_COUNT = int(get_env_setting('LINE_FEED_COUNT', 5))
+
+WIFI_ON = int(get_env_setting('WIFI_ON'), 0)
 
 
 

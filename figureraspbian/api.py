@@ -101,5 +101,11 @@ def set_paper_level(paper_level):
     session.put(url, data=data, timeout=20)
 
 
+def create_wifi_network(wifi_network):
+
+    url = "%s/wifinetworks/" % settings.API_HOST
+
+    r = session.post(url, data=wifi_network, timeout=20)
+    r.raise_for_status()
 
 
