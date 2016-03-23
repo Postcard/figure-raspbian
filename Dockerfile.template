@@ -40,14 +40,8 @@ RUN apt-get update && apt-get install -y \
     net-tools \
     wireless-tools \
     sysstat \
-    && rm -rf /var/lib/apt/lists/* \
-    && DD_START_AGENT=0 sh -c "$(curl -L https://raw.githubusercontent.com/DataDog/dd-agent/master/packaging/datadog-agent/source/setup_agent.sh)"
+    && rm -rf /var/lib/apt/lists/*
 
-RUN mv ~/.datadog-agent/agent/datadog.conf.example ~/.datadog-agent/agent/datadog.conf \
-    && sed -i -e"s/^.*non_local_traffic:.*$/non_local_traffic: yes/" ~/.datadog-agent/agent/datadog.conf \
-    && sed -i -e"s/^.*log_to_syslog:.*$/log_to_syslog: no/" ~/.datadog-agent/agent/datadog.conf \
-    && sed -i "/user=dd-agent/d" ~/.datadog-agent/supervisord/supervisord.conf \
-    && rm ~/.datadog-agent/agent/conf.d/network.yaml.default
 
 RUN wget http://download.redis.io/releases/redis-stable.tar.gz && \
     tar xzf redis-stable.tar.gz && \
