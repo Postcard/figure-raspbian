@@ -78,9 +78,6 @@ class DSLRCamera:
             right = w - left
             bottom = h
             snapshot = snapshot.crop((left, top, right, bottom))
-            if settings.ROTATE:
-                snapshot = snapshot.rotate(90)
-
             return snapshot
 
         finally:
