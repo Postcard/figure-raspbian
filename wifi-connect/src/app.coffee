@@ -28,7 +28,7 @@ catch
 ignore = ->
 
 getIptablesRules = (callback) ->
-	async.retry {times: 100, interval: 100}, (cb) ->
+	async.retry {times: 100, interval: 200}, (cb) ->
 		Promise.try ->
 			os.networkInterfaces().tether[0].address
 		.nodeify(cb)
@@ -47,6 +47,7 @@ getIptablesRules = (callback) ->
 				table: 'nat'
 				rule: "TETHER -p udp --dport 53 -j DNAT --to-destination #{myIP}:53"
 		]
+
 
 startServer = (wifi) ->
 	console.log('Getting networks list')
@@ -119,7 +120,11 @@ manageConnection = (retryCallback) ->
 			.then ->
 				dnsServer.kill()
 				console.log('Server closed and captive portal disabled')
-				wifi.joinAsync(req.body.ssid, req.body.passphrase)
+				Promise.fromNode (callback) ->
+					async.retry {times: 3, interval: 1000}, (done) ->
+						wifi.joinAsync(req.body.ssid, req.body.passphrase)
+						.nodeify(done)
+					, callback
 			.then ->
 				saveToFile(req.body.ssid, req.body.passphrase)
 			.then ->
