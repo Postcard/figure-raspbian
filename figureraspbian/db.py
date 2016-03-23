@@ -169,9 +169,7 @@ class Database(object):
         while self.data.photobooth.portraits:
             portrait = self.data.photobooth.portraits[0]
             try:
-                r = api.create_portrait(portrait)
-
-                r.raise_for_status()
+                api.create_portrait(portrait)
                 self.pop_portrait()
             except api.CodeAlreadyExistsError:
                 self.pop_portrait()
