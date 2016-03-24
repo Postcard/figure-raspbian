@@ -26,6 +26,7 @@ if __name__ == '__main__':
         api.download(ticket_css_url, settings.STATIC_ROOT)
     except Exception as e:
         logger.exception(e)
+
     logger.info("Ready")
 
     try:

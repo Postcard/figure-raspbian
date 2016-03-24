@@ -40,14 +40,8 @@ RUN apt-get update && apt-get install -y \
     net-tools \
     wireless-tools \
     sysstat \
-    && rm -rf /var/lib/apt/lists/* \
-    && DD_START_AGENT=0 sh -c "$(curl -L https://raw.githubusercontent.com/DataDog/dd-agent/master/packaging/datadog-agent/source/setup_agent.sh)"
+    && rm -rf /var/lib/apt/lists/*
 
-RUN mv ~/.datadog-agent/agent/datadog.conf.example ~/.datadog-agent/agent/datadog.conf \
-    && sed -i -e"s/^.*non_local_traffic:.*$/non_local_traffic: yes/" ~/.datadog-agent/agent/datadog.conf \
-    && sed -i -e"s/^.*log_to_syslog:.*$/log_to_syslog: no/" ~/.datadog-agent/agent/datadog.conf \
-    && sed -i "/user=dd-agent/d" ~/.datadog-agent/supervisord/supervisord.conf \
-    && rm ~/.datadog-agent/agent/conf.d/network.yaml.default
 
 RUN wget http://download.redis.io/releases/redis-stable.tar.gz && \
     tar xzf redis-stable.tar.gz && \
@@ -90,18 +84,14 @@ RUN pip install gphoto2==1.2.1 \
     Pillow==2.6.0 \
     pifacecommon==4.1.2 \
     pifacedigitalio==3.0.5 \
-    jinja2==2.7.3 \
     persistent==4.0.8 \
     ZEO==4.1.0 \
     ZODB==4.1.0 \
     ZODB3==3.11.0 \
     pytz==2015.2 \
     celery[redis]==3.1.17 \
-    Flask==0.10.1 \
     supervisor==3.1.3 \
     Django==1.8 \
-    gunicorn==19.3.0 \
-    python-dateutil==2.4.2 \
     hashids==1.1.0 \
     ticketrenderer==0.1.9
 

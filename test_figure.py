@@ -30,12 +30,20 @@ def mock_ticket_template(request):
         "modified": "2015-01-01T00:00:00Z",
         "html": "<div></div>",
         "title": "title",
-        "subtitle": "subtitle",
+        "description": "description",
         "text_variables": [
             {
                 "id": 1,
                 "name": "sentiment",
-                "items": ["Un peu", "Beaucoup"]
+                "items": [{
+                    "id": 4,
+                    "text": "Un peu",
+                    "variable": 1
+                }, {
+                    "id": 5,
+                    "text": "Beaucoup",
+                    "variable": 1
+                }]
             }
         ],
         "image_variables": [
@@ -66,7 +74,8 @@ def mock_photobooth(request):
     return {
         "id": 1,
         "place": {
-            "id": 1
+            "id": 1,
+            "tz": "Europe/Paris"
         },
         "event": {
             "id": 1
@@ -158,7 +167,7 @@ class TestApi:
 
         response = create_autospec(Response)
         response.status_code = 201
-        response.text = json.dumps(portrait)
+        response.json.return_value = portrait
         session_post_mock = mocker.patch.object(Session, 'post', autospec=True)
         session_post_mock.return_value = response
 
@@ -207,6 +216,29 @@ class TestApi:
         session_post_mock.return_value = response
 
         with pytest.raises(HTTPError):
+            api.create_portrait(portrait)
+
+    def test_create_portrait_raise_400_code_already_exists(self, mocker):
+        """
+        create_portrait should raise CodeAlreadyExistsError
+        """
+        portrait = {
+            'picture': '/path/to/picture',
+            'ticket': 'path/to/ticket',
+            'taken': "2015-01-01T00:00:00Z",
+            'place': None,
+            'event': None,
+            'code': "JHUYG",
+            'filename': 'Figure.jpg',
+            'is_door_open': False
+        }
+        response = create_autospec(Response)
+        response.json.return_value = {'error': {'code': ['Portrait with this code already exists.']}}
+
+        session_post_mock = mocker.patch.object(Session, 'post', autospec=True)
+        session_post_mock.return_value = response
+
+        with pytest.raises(api.CodeAlreadyExistsError):
             api.create_portrait(portrait)
 
 class TestDatabase:
@@ -260,8 +292,9 @@ class TestDatabase:
         api_get_photobooth_mock.call_count == 1
         args, kwargs = set_ticket_template_mock.call_args
         assert mock_photobooth['ticket_template'] in args
-        assert db.data.photobooth.place == 1
-        assert db.data.photobooth.event == 1
+        assert db.data.photobooth.place['id'] == 1
+        assert db.data.photobooth.place['tz'] == 'Europe/Paris'
+        assert db.data.photobooth.event['id'] == 1
 
 
     def test_update_photobooth_no_place_no_event(self, mocker, db, mock_photobooth):
@@ -356,7 +389,7 @@ class TestDatabase:
         db.add_portrait should add a portrait in local cache
         """
         assert len(db.data.photobooth.portraits) == 0
-        now = datetime.now(pytz.timezone(settings.TIMEZONE))
+        now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
         portrait = {
             'picture': '/path/to/picture',
             'ticket': 'path/to/ticket',
@@ -376,7 +409,7 @@ class TestDatabase:
         """
         api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
 
-        now = datetime.now(pytz.timezone(settings.TIMEZONE))
+        now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
         portrait1 = {
             'picture': '/path/to/picture',
             'ticket': 'path/to/ticket',
@@ -411,7 +444,7 @@ class TestDatabase:
         api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
         api_create_portrait_mock.side_effect = Exception()
 
-        now = datetime.now(pytz.timezone(settings.TIMEZONE))
+        now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
         portrait1 = {
             'picture': '/path/to/picture',
             'ticket': 'path/to/ticket',
@@ -446,7 +479,7 @@ class TestDatabase:
         api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
         api_create_portrait_mock.side_effect = ConnectionError()
 
-        now = datetime.now(pytz.timezone(settings.TIMEZONE))
+        now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
         portrait1 = {
             'picture': '/path/to/picture',
             'ticket': 'path/to/ticket',
@@ -472,6 +505,28 @@ class TestDatabase:
         db.upload_portraits()
         assert api_create_portrait_mock.call_count == 1
         assert len(db.data.photobooth.portraits) == 2
+
+    def test_upload_portraits_raise_code_already_exists(self, mocker, db):
+        """
+        it should pop portrait that raised error
+        """
+        api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
+        api_create_portrait_mock.side_effect = api.CodeAlreadyExistsError()
+        now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
+        portrait1 = {
+            'picture': '/path/to/picture',
+            'ticket': 'path/to/ticket',
+            'taken': now,
+            'place': None,
+            'event': None,
+            'code': "TITIS",
+            'filename': 'Figure.jpg',
+            'is_door_open': False
+        }
+        db.add_portrait(portrait1)
+        db.upload_portraits()
+        assert api_create_portrait_mock.call_count == 1
+        assert len(db.data.photobooth.portraits) == 0
 
     def test_get_new_paper_level(self, mocker, db):
         """
@@ -550,8 +605,8 @@ class TestApp:
         printer_mock.print_ticket.return_value = None
 
         mock_photobooth = create_autospec(Photobooth)
-        mock_photobooth.place = "1"
-        mock_photobooth.event = "1"
+        mock_photobooth.place = {"id": "1", "tz": "Europe/Paris"}
+        mock_photobooth.event = {"id": "1"}
         mock_photobooth.ticket_template = mock_ticket_template
 
         mock_get_photobooth = mocker.patch.object(Database, 'get_photobooth', autospec=True)
@@ -602,8 +657,8 @@ class TestApp:
         output_mock.turn_off.return_value = None
 
         mock_photobooth = create_autospec(Photobooth)
-        mock_photobooth.place = "1"
-        mock_photobooth.event = "1"
+        mock_photobooth.place = {"id": "1", "tz": "Europe/Paris"}
+        mock_photobooth.event = {"id": "1"}
         mock_photobooth.ticket_template = mock_ticket_template
 
         mock_get_photobooth = mocker.patch.object(Database, 'get_photobooth', autospec=True)
@@ -652,8 +707,8 @@ class TestApp:
         output_mock.turn_off.return_value = None
 
         mock_photobooth = create_autospec(Photobooth)
-        mock_photobooth.place = "1"
-        mock_photobooth.event = "1"
+        mock_photobooth.place = {"id": "1", "tz": "Europe/Paris"}
+        mock_photobooth.event = {"id": "1"}
         mock_photobooth.ticket_template = mock_ticket_template
 
         mock_get_photobooth = mocker.patch.object(Database, 'get_photobooth', autospec=True)
@@ -699,8 +754,8 @@ class TestApp:
         output_mock.turn_off.return_value = None
 
         mock_photobooth = create_autospec(Photobooth)
-        mock_photobooth.place = "1"
-        mock_photobooth.event = "1"
+        mock_photobooth.place = {"id": "1", "tz": "Europe/Paris"}
+        mock_photobooth.event = {"id": "1"}
         mock_photobooth.ticket_template = mock_ticket_template
 
         mock_get_photobooth = mocker.patch.object(Database, 'get_photobooth', autospec=True)

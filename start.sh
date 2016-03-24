@@ -28,9 +28,9 @@ mkdir -p /data/static /data/media/tickets /data/media/images /data/media/snapsho
 grep -q "$HOSTNAME" /etc/hosts || echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
 
 
-# Start Wifi Access Point for three minutes if WIFI_ON
+# Start Wifi Access Point if WIFI_ON
 if [ "$WIFI_ON" = 1 ]; then
-    cd /usr/src/app && timeout 3m npm start
+    cd /usr/src/app && npm start &
 fi
 
 if [  -f /var/run/supervisor.sock ]

@@ -9,6 +9,7 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 from . import api, settings
 from os.path import join
+import json
 
 from django.conf import settings as django_settings
 
@@ -36,6 +37,10 @@ app.conf.update(
         'update-db-every-minute-and-half': {
             'task': 'figureraspbian.tasks.update_photobooth',
             'schedule': timedelta(seconds=90)
+        },
+        'update-wifi-networks-every-10-minutes': {
+            'task': 'figureraspbian.tasks.update_wifi_networks',
+            'schedule': timedelta(seconds=60*10)
         },
         'pack-db-every-hour': {
             'task': 'figureraspbian.tasks.pack_db',
@@ -112,3 +117,29 @@ def pack_db():
     """ remove old transaction history """
     with managed(Database()) as db:
         db.pack()
+
+
+@app.task
+def update_wifi_networks():
+    """
+    Read known wifi networks from wifi-reconnect and associate it to the current place
+    """
+    if settings.WIFI_ON:
+        try:
+            with open('/data/connections.json', 'rb') as data_file:
+                networks = json.load(data_file)
+        except IOError:
+            # File does not exist
+            return
+
+        if networks:
+            with managed(Database()) as db:
+                photobooth = db.get_photobooth()
+                place_id = photobooth.place['id']
+
+            for network in networks:
+                try:
+                    network['place'] = place_id
+                    api.create_wifi_network(network)
+                except IOError:
+                    pass
