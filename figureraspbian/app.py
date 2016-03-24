@@ -72,7 +72,6 @@ class App(object):
 
                     if ticket_template:
 
-                        time.sleep(settings.CAPTURE_DELAY)
                         snapshot = self.camera.capture()
 
                         media_url = 'file://%s' % settings.MEDIA_ROOT
