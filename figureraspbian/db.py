@@ -2,24 +2,31 @@
 
 from contextlib import contextmanager
 import logging
-logging.basicConfig(level='INFO')
-logger = logging.getLogger(__name__)
 import time
 import os
 import errno
+import figure
 
 from ZEO import ClientStorage
 from ZODB import DB
 from ZODB.POSException import ConflictError
 import transaction
 import persistent
-from requests.exceptions import RequestException, HTTPError
+from requests.exceptions import RequestException
 import urllib2
 
 from . import settings, api
 from .utils import timeit, pixels2cm
 
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
+
+
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+figure.api_base = settings.API_HOST
+figure.token = settings.TOKEN
+
 
 @contextmanager
 def managed(database):
@@ -117,7 +124,7 @@ class Database(object):
 
     def update_photobooth(self):
         try:
-            photobooth = api.get_photobooth()
+            photobooth = figure.Photobooth.get(settings.RESIN_UUID)
             if photobooth:
                 # check if place has changed
                 place = photobooth.get('place')
@@ -160,9 +167,9 @@ class Database(object):
         """ Claim new codes from api if there are less than 1000 codes left """
         if len(self.data.photobooth.codes) < 1000:
             try:
-                new_codes = api.claim_codes()
+                new_codes = figure.CodeList.claim()['codes']
                 self.add_codes(new_codes)
-            except (RequestException, urllib2.HTTPError) as e:
+            except Exception as e:
                 logger.exception(e)
 
     def upload_portraits(self):
@@ -171,7 +178,8 @@ class Database(object):
             try:
                 api.create_portrait(portrait)
                 self.pop_portrait()
-            except api.CodeAlreadyExistsError:
+            except figure.BadRequestError:
+                # Duplicate code or files empty
                 self.pop_portrait()
             except IOError as e:
                 logger.exception(e)

@@ -94,7 +94,7 @@ RUN pip install gphoto2==1.2.1 \
     hashids==1.1.0 \
     ticketrenderer==0.1.9
 
-RUN pip install git+https://github.com/Postcard/figure-sdk-python.git
+RUN pip install git+https://github.com/Postcard/figure-sdk-python.git@46510ade0b065b495171ac0d0b0506de8b9205dd
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
