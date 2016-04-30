@@ -90,7 +90,7 @@ def update_photobooth():
 @app.task
 def set_paper_level(paper_level):
     figure.Photobooth.edit(
-        settings.RESIN_UUID, {'paper_level': paper_level, 'resin_uuid': settings.RESIN_UUID})
+        settings.RESIN_UUID, data={'paper_level': paper_level})
 
 
 @app.task
@@ -147,6 +147,6 @@ def update_wifi_networks():
                     for network in networks:
                         try:
                             network['place'] = place_id
-                            figure.WifiNetwork.create(network)
+                            figure.WifiNetwork.create(data=network)
                         except IOError:
                             pass
