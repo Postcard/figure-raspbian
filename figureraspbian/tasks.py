@@ -12,7 +12,6 @@ import figure
 
 from django.conf import settings as django_settings
 
-from django.core.cache import cache
 from celery import Celery
 
 from .db import Database, managed
@@ -27,6 +26,8 @@ django_settings.configure(
         }
     }
 )
+
+from django.core.cache import cache
 
 app = Celery('tasks', broker='redis://localhost:6379/0')
 
