@@ -12,7 +12,6 @@ from ZODB import DB
 from ZODB.POSException import ConflictError
 import transaction
 import persistent
-from requests.exceptions import RequestException
 import urllib2
 
 from . import settings, api
@@ -145,7 +144,7 @@ class Database(object):
                                     ticket_template['modified'] > self.data.photobooth.ticket_template['modified']
                 if is_null or has_been_modified:
                     self.set_ticket_template(ticket_template)
-        except RequestException as e:
+        except figure.FigureError as e:
             # Log and do nothing, we can wait for next update
             logger.exception(e)
 

@@ -5,18 +5,16 @@ import urllib2
 from datetime import datetime
 import pytz
 import time
-import json
 from usb.core import USBError
-
 
 from mock import Mock, patch, create_autospec
 import os
 from ZODB.POSException import ConflictError
 import transaction
 from PIL import Image
-from requests import Response, Session, ConnectionError, HTTPError
+import figure
 
-from figureraspbian import utils, settings, api
+from figureraspbian import utils, settings
 from figureraspbian.db import Database, transaction_decorate, Photobooth
 from figureraspbian.utils import timeit
 from figureraspbian.app import App
@@ -150,97 +148,6 @@ class TestUtilityFunction:
         assert length == 958
 
 
-class TestApi:
-
-    def test_create_portrait(self, mocker):
-
-        portrait = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': "2015-01-01T00:00:00Z",
-            'place': None,
-            'event': None,
-            'code': "JHUYG",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
-        }
-
-        response = create_autospec(Response)
-        response.status_code = 201
-        response.json.return_value = portrait
-        session_post_mock = mocker.patch.object(Session, 'post', autospec=True)
-        session_post_mock.return_value = response
-
-        r = api.create_portrait(portrait)
-        assert r == portrait
-        assert session_post_mock.called
-
-    def test_create_portrait_raise_Request_Exception(self, mocker):
-        """
-        create_portrait should propagate requests errors (ConectionError, HttpError, Timeout, etc)
-        """
-
-        portrait = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': "2015-01-01T00:00:00Z",
-            'place': None,
-            'event': None,
-            'code': "JHUYG",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
-        }
-        session_post_mock = mocker.patch.object(Session, 'post', autospec=True)
-        session_post_mock.side_effect = ConnectionError()
-
-        with pytest.raises(ConnectionError):
-            api.create_portrait(portrait)
-
-    def test_create_ticket_raise_status_code_exception(self, mocker):
-        """
-        create_portrait should propagate erros caused by response.raise_for_status
-        """
-        portrait = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': "2015-01-01T00:00:00Z",
-            'place': None,
-            'event': None,
-            'code': "JHUYG",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
-        }
-        response = create_autospec(Response)
-        response.raise_for_status.side_effect = HTTPError()
-        session_post_mock = mocker.patch.object(Session, 'post', autospec=True)
-        session_post_mock.return_value = response
-
-        with pytest.raises(HTTPError):
-            api.create_portrait(portrait)
-
-    def test_create_portrait_raise_400_code_already_exists(self, mocker):
-        """
-        create_portrait should raise CodeAlreadyExistsError
-        """
-        portrait = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': "2015-01-01T00:00:00Z",
-            'place': None,
-            'event': None,
-            'code': "JHUYG",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
-        }
-        response = create_autospec(Response)
-        response.json.return_value = {'error': {'code': ['Portrait with this code already exists.']}}
-
-        session_post_mock = mocker.patch.object(Session, 'post', autospec=True)
-        session_post_mock.return_value = response
-
-        with pytest.raises(api.CodeAlreadyExistsError):
-            api.create_portrait(portrait)
-
 class TestDatabase:
 
     def test_transaction_decorator(self, mocker):
@@ -286,10 +193,10 @@ class TestDatabase:
         update_photobooth should set place, event and ticket template the first time
         """
         set_ticket_template_mock = mocker.patch.object(Database, 'set_ticket_template', autospec=True)
-        api_get_photobooth_mock = mocker.patch('figureraspbian.db.api.get_photobooth', autospec=True)
-        api_get_photobooth_mock.return_value = mock_photobooth
+        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
+        api_photobooth_mock.get.return_value = mock_photobooth
         db.update_photobooth()
-        api_get_photobooth_mock.call_count == 1
+        api_photobooth_mock.get.call_count == 1
         args, kwargs = set_ticket_template_mock.call_args
         assert mock_photobooth['ticket_template'] in args
         assert db.data.photobooth.place['id'] == 1
@@ -301,11 +208,11 @@ class TestDatabase:
         db.data.photobooth.place = 1
         db.data.photobooth.event = 1
         mocker.patch.object(Database, 'set_ticket_template', autospec=True)
-        api_get_photobooth_mock = mocker.patch('figureraspbian.db.api.get_photobooth', autospec=True)
+        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
         photobooth = mock_photobooth
         photobooth['place'] = None
         photobooth['event'] = None
-        api_get_photobooth_mock.return_value = photobooth
+        api_photobooth_mock.get.return_value = photobooth
         db.update_photobooth()
         assert db.data.photobooth.place == None
         assert db.data.photobooth.event == None
@@ -315,8 +222,8 @@ class TestDatabase:
         update_photobooth should not set ticket_template if it was not modified
         """
         db.data.photobooth.ticket_template = mock_photobooth['ticket_template']
-        api_get_photobooth_mock = mocker.patch('figureraspbian.db.api.get_photobooth', autospec=True)
-        api_get_photobooth_mock.return_value = mock_photobooth
+        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
+        api_photobooth_mock.get.return_value = mock_photobooth
         set_ticket_template_mock = mocker.patch.object(Database, 'set_ticket_template', autospec=True)
         db.update_photobooth()
         assert not set_ticket_template_mock.called
@@ -327,9 +234,9 @@ class TestDatabase:
         """
         import copy
         db.data.photobooth.ticket_template = copy.deepcopy(mock_photobooth['ticket_template'])
-        api_get_photobooth_mock = mocker.patch('figureraspbian.db.api.get_photobooth', autospec=True)
+        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
         mock_photobooth['ticket_template']['modified'] = "2015-01-02T00:00:00Z"
-        api_get_photobooth_mock.return_value = mock_photobooth
+        api_photobooth_mock.get.return_value = mock_photobooth
         set_ticket_template_mock = mocker.patch.object(Database, 'set_ticket_template', autospec=True)
         db.update_photobooth()
         assert set_ticket_template_mock.call_count == 1
@@ -339,8 +246,8 @@ class TestDatabase:
         """
         Photobooth should catch exception and do nothing if api raises exception
         """
-        api_get_photobooth_mock = mocker.patch('figureraspbian.db.api.get_photobooth', autospec=True)
-        api_get_photobooth_mock.side_effect = HTTPError()
+        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
+        api_photobooth_mock.get.side_effect = figure.FigureError()
         db.update_photobooth()
         assert db.data.photobooth.ticket_template == None
 
@@ -357,11 +264,11 @@ class TestDatabase:
         it should claim new codes from the api if less than 1000 codes left
         """
         db.data.photobooth.codes = ["AAAAA"] * 999
-        claim_codes_mock = mocker.patch('figureraspbian.db.api.claim_codes', autospec=True)
-        claim_codes_mock.return_value = ["BBBB"] * 1000
+        api_codelist_mock = mocker.patch('figureraspbian.db.figure.CodeList', autospec=True)
+        api_codelist_mock.claim.return_value = {'codes': ["BBBB"] * 1000}
         mocker.patch.object(Database, 'add_codes', autospec=True)
         db.claim_new_codes_if_necessary()
-        assert claim_codes_mock.called
+        assert api_codelist_mock.claim.called
         args, kwargs = db.add_codes.call_args
         assert ["BBBB"] * 1000 in args
 
@@ -370,10 +277,10 @@ class TestDatabase:
         it should not claim new codes from the api if more than 1000 codes left
         """
         db.data.photobooth.codes = ["AAAAA"] * 1001
-        claim_codes_mock = mocker.patch('figureraspbian.db.api.claim_codes', autospec=True)
+        api_codelist_mock = mocker.patch('figureraspbian.db.figure.CodeList', autospec=True)
         mocker.patch.object(Database, 'add_codes', autospec=True)
         db.claim_new_codes_if_necessary()
-        assert not claim_codes_mock.called
+        assert not api_codelist_mock.claim.called
 
     def test_get_code(self, db):
         """
@@ -477,7 +384,7 @@ class TestDatabase:
         upload_tickets should stop while loop if it throws a ConnectionError
         """
         api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
-        api_create_portrait_mock.side_effect = ConnectionError()
+        api_create_portrait_mock.side_effect = figure.APIConnectionError
 
         now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
         portrait1 = {
@@ -506,12 +413,12 @@ class TestDatabase:
         assert api_create_portrait_mock.call_count == 1
         assert len(db.data.photobooth.portraits) == 2
 
-    def test_upload_portraits_raise_code_already_exists(self, mocker, db):
+    def test_upload_portraits_raise_Bad_Request(self, mocker, db):
         """
         it should pop portrait that raised error
         """
         api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
-        api_create_portrait_mock.side_effect = api.CodeAlreadyExistsError()
+        api_create_portrait_mock.side_effect = figure.BadRequestError
         now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
         portrait1 = {
             'picture': '/path/to/picture',
