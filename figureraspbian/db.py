@@ -168,7 +168,7 @@ class Database(object):
             try:
                 new_codes = figure.CodeList.claim()['codes']
                 self.add_codes(new_codes)
-            except Exception as e:
+            except figure.FigureError as e:
                 logger.exception(e)
 
     def upload_portraits(self):

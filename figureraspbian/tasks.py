@@ -148,5 +148,5 @@ def update_wifi_networks():
                         try:
                             network['place'] = place_id
                             figure.WifiNetwork.create(data=network)
-                        except IOError:
+                        except figure.FigureError:
                             pass
