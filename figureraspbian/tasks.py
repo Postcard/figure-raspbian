@@ -5,13 +5,19 @@ from __future__ import absolute_import
 import functools
 from datetime import timedelta
 import logging
-logging.basicConfig(level='INFO')
-logger = logging.getLogger(__name__)
 from . import api, settings
 from os.path import join
 import json
+import figure
 
 from django.conf import settings as django_settings
+
+from celery import Celery
+
+from .db import Database, managed
+
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
 django_settings.configure(
     CACHES={
@@ -20,13 +26,13 @@ django_settings.configure(
         }
     }
 )
-from django.core.cache import cache
-from celery import Celery
-from requests.exceptions import RequestException
 
-from .db import Database, managed
+from django.core.cache import cache
 
 app = Celery('tasks', broker='redis://localhost:6379/0')
+
+figure.api_base = settings.API_HOST
+figure.token = settings.TOKEN
 
 app.conf.update(
     CELERYBEAT_SCHEDULE={
@@ -83,10 +89,9 @@ def update_photobooth():
 
 @app.task
 def set_paper_level(paper_level):
-    try:
-        api.set_paper_level(paper_level)
-    except RequestException as e:
-        logger.exception(e)
+    figure.Photobooth.edit(
+        settings.RESIN_UUID, data={'paper_level': paper_level})
+
 
 @app.task
 def upload_portrait(portrait):
@@ -135,11 +140,13 @@ def update_wifi_networks():
         if networks:
             with managed(Database()) as db:
                 photobooth = db.get_photobooth()
-                place_id = photobooth.place['id']
 
-            for network in networks:
-                try:
-                    network['place'] = place_id
-                    api.create_wifi_network(network)
-                except IOError:
-                    pass
+                if photobooth.place:
+                    place_id = photobooth.place['id']
+
+                    for network in networks:
+                        try:
+                            network['place'] = place_id
+                            figure.WifiNetwork.create(data=network)
+                        except figure.FigureError:
+                            pass

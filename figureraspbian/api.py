@@ -1,44 +1,19 @@
 # -*- coding: utf8 -*-
 
-import json
 import urllib2
 from os.path import join
 import logging
-logging.basicConfig(level='INFO')
-logger = logging.getLogger(__name__)
 
-import requests
-from requests.exceptions import HTTPError
+import figure
 
 from . import settings
 from .utils import url2name
 
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
-class CodeAlreadyExistsError(HTTPError):
-    pass
-
-
-session = requests.Session()
-session.headers.update({
-    'Authorization': 'Bearer %s' % settings.TOKEN,
-    'Accept': 'application/json'
-})
-
-
-def get_photobooth():
-    url = "%s/photobooths/%s/" % (settings.API_HOST, settings.RESIN_UUID)
-    r = session.get(url=url, timeout=10)
-    r.raise_for_status()
-    r.encoding = 'utf-8'
-    return json.loads(r.text)
-
-
-def claim_codes():
-    url = "%s/codelist/claim/" % settings.API_HOST
-    r = session.post(url=url, timeout=20)
-    r.raise_for_status()
-    r.encoding = 'utf-8'
-    return json.loads(r.text)['codes']
+figure.api_base = settings.API_HOST
+figure.token = settings.TOKEN
 
 
 def download(url, path):
@@ -59,8 +34,6 @@ def download(url, path):
 
 def create_portrait(portrait):
 
-    url = "%s/portraits/" % settings.API_HOST
-
     try:
         files = {'picture_color': open(portrait['picture'], 'rb'), 'ticket': open(portrait['ticket'], 'rb')}
     except Exception as e:
@@ -78,34 +51,5 @@ def create_portrait(portrait):
         'is_door_open': portrait['is_door_open']
     }
 
-    r = session.post(url, files=files, data=data, timeout=20)
-    r.encoding = 'utf-8'
-    json = r.json()
-    if 'error' in json:
-        error = json['error']
-        if 'code' in error and 'Portrait with this code already exists.' in error['code']:
-            raise CodeAlreadyExistsError()
-    r.raise_for_status()
-    return json
-
-
-def set_paper_level(paper_level):
-
-    url = "%s/photobooths/%s/" % (settings.API_HOST, settings.RESIN_UUID)
-
-    data = {
-        'resin_uuid': settings.RESIN_UUID,
-        'paper_level': paper_level
-    }
-
-    session.put(url, data=data, timeout=20)
-
-
-def create_wifi_network(wifi_network):
-
-    url = "%s/wifinetworks/" % settings.API_HOST
-
-    r = session.post(url, data=wifi_network, timeout=20)
-    r.raise_for_status()
-
+    figure.Portrait.create(data=data, files=files)
 
