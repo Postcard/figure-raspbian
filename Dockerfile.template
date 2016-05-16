@@ -27,7 +27,6 @@ RUN apt-get update && apt-get install -y \
     usbutils \
     libfreetype6 \
     libfontconfig \
-    python-numpy \
     ntp \
     ntpdate \
     git \
@@ -65,11 +64,6 @@ RUN wget --no-check-certificate https://github.com/aeberhardo/phantomjs-linux-ar
     bunzip2 *.bz2 && \
     tar xf *.tar
 
-RUN wget --no-check-certificate https://github.com/benoitguigal/python-epson-printer/archive/v1.7.1.zip && \
-    unzip v1.7.1.zip && \
-    rm v1.7.1.zip && \
-    cd python-epson-printer-1.7.1 && \
-    python setup.py install
 
 RUN git clone https://github.com/Postcard/png2pos.git && \
     cd png2pos && \
@@ -80,7 +74,7 @@ RUN git clone https://github.com/Postcard/png2pos.git && \
 
 
 RUN pip install gphoto2==1.2.1 \
-    Pillow==2.6.0 \
+    Pillow==3.1.0 \
     pifacecommon==4.1.2 \
     pifacedigitalio==3.0.5 \
     persistent==4.0.8 \
@@ -93,7 +87,8 @@ RUN pip install gphoto2==1.2.1 \
     Django==1.8 \
     hashids==1.1.0 \
     ticketrenderer==0.1.9 \
-    figure-sdk==0.1.2
+    figure-sdk==0.1.2 \
+    python-epson-printer==1.8.0
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
