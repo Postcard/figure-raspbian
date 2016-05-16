@@ -93,7 +93,7 @@ RUN pip install gphoto2==1.2.1 \
     Django==1.8 \
     hashids==1.1.0 \
     ticketrenderer==0.1.9 \
-    figure-sdk==0.1.1
+    figure-sdk==0.1.2
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
