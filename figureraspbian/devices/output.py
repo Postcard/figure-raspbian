@@ -5,13 +5,14 @@ try:
 except ImportError:
     print "Could not find PiFaceDigital"
 
+from .. import settings
 
 class PiFaceDigitalOutput(object):
     
     def __init__(self):
         
         self.pifacedigital = PiFaceDigital()
-        self.pin = 0
+        self.pin = settings.OUTPUT_PIN
 
     def turn_on(self):
         self.pifacedigital.relays[self.pin].turn_on()

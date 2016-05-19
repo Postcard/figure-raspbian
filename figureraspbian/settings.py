@@ -57,6 +57,9 @@ PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 # Pin used to trigger the process
 TRIGGER_PIN = get_env_setting('TRIGGER_PIN', 0)
 
+# Pin used for the relay
+OUTPUT_PIN = get_env_setting('OUTPUT_PIN', 0)
+
 # ZEO socket adress
 ZEO_SOCKET = get_env_setting('ZEO_SOCKET', os.path.join(DATA_ROOT, 'zeo.sock'))
 
