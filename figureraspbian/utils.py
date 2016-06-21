@@ -5,7 +5,6 @@ from os.path import basename, join
 import urllib
 import time
 from urlparse import urlsplit
-import random
 import cStringIO
 import base64
 import subprocess
