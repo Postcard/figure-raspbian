@@ -6,6 +6,7 @@ from datetime import datetime
 import pytz
 import time
 from usb.core import USBError
+from copy import deepcopy
 
 from mock import Mock, patch, create_autospec
 import os
@@ -228,6 +229,19 @@ class TestDatabase:
         db.update_photobooth()
         assert not set_ticket_template_mock.called
 
+    def test_update_photobooth_ticket_template_has_been_replaced(self, mocker, db, mock_photobooth):
+        """
+        update_photobooth should set ticket template if id has changed
+        """
+        db.data.photobooth.ticket_template = mock_photobooth['ticket_template']
+        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
+        photobooth = deepcopy(mock_photobooth)
+        photobooth['ticket_template']['id'] = 2
+        api_photobooth_mock.get.return_value = photobooth
+        set_ticket_template_mock = mocker.patch.object(Database, 'set_ticket_template', autospec=True)
+        db.update_photobooth()
+        assert set_ticket_template_mock.called
+
     def test_update_photobooth_modified(self, mocker, db, mock_photobooth):
         """
         update_photobooth should set ticket template if it has been modified
@@ -240,7 +254,6 @@ class TestDatabase:
         set_ticket_template_mock = mocker.patch.object(Database, 'set_ticket_template', autospec=True)
         db.update_photobooth()
         assert set_ticket_template_mock.call_count == 1
-
 
     def test_get_photobooth_raise_exception(self, mocker, db):
         """

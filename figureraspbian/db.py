@@ -142,7 +142,9 @@ class Database(object):
                 is_null = not self.data.photobooth.ticket_template
                 has_been_modified = self.data.photobooth.ticket_template and \
                                     ticket_template['modified'] > self.data.photobooth.ticket_template['modified']
-                if is_null or has_been_modified:
+                has_changed = self.data.photobooth.ticket_template and \
+                    ticket_template['id'] != self.data.photobooth.ticket_template['id']
+                if is_null or has_changed or has_been_modified:
                     self.set_ticket_template(ticket_template)
         except figure.FigureError as e:
             # Log and do nothing, we can wait for next update
