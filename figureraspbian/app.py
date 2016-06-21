@@ -117,6 +117,7 @@ class App(object):
                             'taken': date,
                             'place': place_id,
                             'event': event_id,
+                            'photobooth': photobooth['id'],
                             'code': current_code,
                             'filename': filename,
                             'is_door_open': self.is_door_open

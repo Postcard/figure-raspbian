@@ -200,6 +200,7 @@ class TestDatabase:
         api_photobooth_mock.get.call_count == 1
         args, kwargs = set_ticket_template_mock.call_args
         assert mock_photobooth['ticket_template'] in args
+        assert db.data.photobooth.id == 1
         assert db.data.photobooth.place['id'] == 1
         assert db.data.photobooth.place['tz'] == 'Europe/Paris'
         assert db.data.photobooth.event['id'] == 1

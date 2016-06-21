@@ -55,7 +55,7 @@ def transaction_decorate(retry_delay=1):
 
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
-DATABASE_VERSION = 10
+DATABASE_VERSION = 11
 
 
 class Database(object):
@@ -121,11 +121,20 @@ class Database(object):
     def set_event(self, event):
         self.data.photobooth.event = event
 
+    @transaction_decorate(retry_delay=1)
+    def set_photobooth_id(self, id):
+        self.data.photobooth.id = id
+
     def update_photobooth(self):
         try:
             photobooth = figure.Photobooth.get(settings.RESIN_UUID)
             if photobooth:
                 # check if place has changed
+                id = photobooth.get('id')
+                id_is_the_same = (id and self.data.photobooth.id and
+                                  id == self.data.photobooth.id)
+                if not id_is_the_same:
+                    self.set_photobooth_id(id)
                 place = photobooth.get('place')
                 place_is_the_same = (place and self.data.photobooth.place and
                                      place['id'] == self.data.photobooth.place['id'])
@@ -247,6 +256,7 @@ class Data(persistent.Persistent):
 class Photobooth(persistent.Persistent):
 
     def __init__(self):
+        self.id = None
         self.ticket_template = None
         self.place = None
         self.event = None

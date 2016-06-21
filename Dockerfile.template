@@ -87,7 +87,7 @@ RUN pip install gphoto2==1.2.1 \
     Django==1.8 \
     hashids==1.1.0 \
     ticketrenderer==0.1.9 \
-    figure-sdk==0.1.2 \
+    figure-sdk==0.1.6 \
     python-epson-printer==1.8.0
 
 ENV LANG C.UTF-8
