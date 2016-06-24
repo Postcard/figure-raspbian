@@ -47,6 +47,7 @@ def create_portrait(portrait):
         'taken': portrait['taken'],
         'place': portrait['place'],
         'event': portrait['event'],
+        'photobooth': portrait['photobooth'],
         'code': portrait['code'],
         'is_door_open': portrait['is_door_open']
     }
