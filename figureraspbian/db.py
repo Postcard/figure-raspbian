@@ -225,7 +225,7 @@ class Database(object):
             else:
                 cm = pixels2cm(pixels)
                 new_paper_level = old_paper_level - (cm / float(settings.PAPER_ROLL_LENGTH)) * 100
-                if new_paper_level <= 0:
+                if new_paper_level <= 1:
                     # estimate is wrong, guess it's 10%
                     new_paper_level = 10
         self.set_paper_level(new_paper_level)
