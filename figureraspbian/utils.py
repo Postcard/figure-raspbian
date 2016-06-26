@@ -1,29 +1,21 @@
 # -*- coding: utf8 -*-
 
 import os
-from os.path import basename, join
-import urllib
+from os.path import join
 import time
-from urlparse import urlsplit
 import cStringIO
 import base64
 import subprocess
 import logging
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
+from datetime import datetime
+import random
 
 from PIL import Image
 from hashids import Hashids
 
 import settings
-
-
-def url2name(url):
-    """
-    Convert a file url to its base name
-    http://api.figuredevices.com/static/css/ticket.css => ticket.css
-    """
-    return basename(urllib.unquote(urlsplit(url)[2]))
 
 
 def timeit(func):
@@ -69,13 +61,16 @@ def png2pos(path):
 
 hashids = Hashids(salt='Titi Vicky Benni')
 
-
-def get_file_name(code):
-    # TODO check for unicity
-    ascii = [ord(c) for c in code]
-    hash = hashids.encode(*ascii)
+def get_file_name(count):
+    now = datetime.now()
+    hash = hashids.encode(
+        now.year,
+        now.month,
+        now.day,
+        now.hour,
+        now.minute,
+        now.second,
+        count,
+        random.randint(0, 100))
     return "Figure_%s.jpg" % hash
 
-
-def pixels2cm(pixels):
-    return float(pixels) / settings.PIXEL_CM_RATIO

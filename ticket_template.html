@@ -1,0 +1,26 @@
+<!doctype html>
+<html class="figure-ticket-container">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="{{css_url}}">
+  </head>
+  <body class="figure-ticket-container">
+    <div class="figure-ticket">
+      <div class="figure-header">
+        <p>
+          {% if title %}
+          <span class="figure-title">{{title}}</span>
+          <br>
+          {% endif %}
+          {% if description %}
+          <span class="figure-description">{{description}}</span>
+          <br><br>
+          {% endif %}
+        </p>
+      </div>
+      <div class="figure-snapshot-container">
+        <img class="figure-snapshot" src={{picture}}>
+      </div>
+    </div>
+  </body>
+</html>

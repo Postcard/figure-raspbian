@@ -9,17 +9,7 @@ try:
 except ImportError:
     print "Could not import gphoto2"
 
-from .. import settings
 from ..utils import timeit
-
-
-EOS_1200D_CONFIG = {
-    'capturetarget': 1,
-    'focusmode': 3,
-    'imageformat': 6,
-    'aperture': settings.APERTURE,
-    'shutterspeed': settings.SHUTTER_SPEED,
-    'iso': settings.ISO}
 
 
 class DSLRCamera:
@@ -33,19 +23,6 @@ class DSLRCamera:
 
     def __init__(self):
         self.camera = gp.check_result(gp.gp_camera_new())
-
-        try:
-            context = gp.gp_context_new()
-            gp.check_result(gp.gp_camera_init(self.camera, context))
-            config = gp.check_result(gp.gp_camera_get_config(self.camera, context))
-            for param, choice in EOS_1200D_CONFIG.iteritems():
-                widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
-                value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
-                gp.gp_widget_set_value(widget, value)
-            gp.gp_camera_set_config(self.camera, config, context)
-        finally:
-            gp.check_result(gp.gp_camera_exit(self.camera, context))
-
         # Clear camera space
         self.clear_space()
 
@@ -119,14 +96,3 @@ class DSLRCamera:
         for name in folders:
             result.extend(self.list_files(camera, context, os.path.join(path, name)))
         return result
-
-
-class MockCamera:
-    """
-    This class is used to mock the behavior of DSLRCamera in case the device cannot be loaded
-    """
-
-    def capture(self):
-
-        snapshot = Image.open('./resources/snapshot.jpg')
-        return snapshot

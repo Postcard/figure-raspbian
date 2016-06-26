@@ -1,0 +1,104 @@
+/**********************
+  RESET
+***********************/
+*,
+*:before,
+*:after{
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+  line-height: inherit;
+}
+
+
+/**********************
+  ADJUST VERTICAL MARGINS
+***********************/
+body.figure-ticket-container {
+  margin-top: 15px !important;
+}
+
+
+
+/**********************
+  TEMPLATE BASE
+***********************/
+.figure-ticket-container {
+  margin: 0px;
+  width: 576px;
+  overflow-x:hidden;
+  font-family: 'ASM\-Regular', sans-serif;
+  line-height: 1.7em;
+  font-size: 25px;
+  word-wrap: break-word;
+  white-space: normal;
+  background: #fff;
+}
+.figure-ticket-container .figure-ticket .figure-header .figure-title{
+  padding-bottom:1px;
+  border-bottom:1px solid
+}
+.figure-ticket-container .figure-ticket .figure-snapshot-container{
+  width:100%;
+}
+.figure-ticket-container .figure-ticket .figure-snapshot{
+  width: 100%;
+}
+.figure-ticket-container .figure-ticket img{
+  display: block;
+  width: auto;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+/**********************
+  TEMPLATE LAYER
+***********************/
+.figure-ticket-container.figure-layer-template{
+  font-family: sans-serif;
+  text-align: center;
+}
+.figure-ticket-container.figure-layer-template .figure-ticket{
+  position: relative;
+}
+.figure-ticket-container.figure-layer-template .figure-ticket .figure-placeholder{
+  width: 100%;
+}
+.figure-ticket-container.figure-layer-template .figure-ticket .figure-placeholder img{
+  visibility: hidden;
+}
+.figure-ticket-container.figure-layer-template .figure-ticket .figure-placeholder:empty{
+  height: 0;
+  padding-bottom: calc(100% + 130px);
+}
+.figure-ticket-container.figure-layer-template .figure-ticket .figure-layer-container{
+  height:100%;
+  position:absolute;
+  top:0px;
+  left:0px;
+  pointer-events:none;
+}
+.figure-ticket-container.figure-layer-template .figure-ticket .figure-snapshot-container{
+  height:100%;
+  position:absolute;
+  top:0px;
+  left:0px;
+}
+.figure-ticket-container.figure-layer-template .figure-ticket .figure-snapshot{
+  position: relative;
+  left: 0px;
+}
+.figure-ticket-container.figure-layer-template .figure-ticket .figure-footer{
+  position:absolute;
+  bottom:0px;
+  left:0px;
+  width:100%;
+}
