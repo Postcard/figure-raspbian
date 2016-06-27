@@ -28,7 +28,7 @@ class App(object):
         self.printer = printer
         self.button = Button(settings.BUTTON_PIN)
         ticket_template_path = path.join(settings.STATIC_ROOT, 'ticket_template.html')
-        with codecs.open(ticket_template_path, 'utf-8') as html:
+        with codecs.open(ticket_template_path, 'rb', 'utf-8') as html:
             self.ticket_template_html = html.read()
         self.ticket_template = {
             'html': self.ticket_template_html,
