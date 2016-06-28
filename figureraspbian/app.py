@@ -48,11 +48,11 @@ class App(object):
                         self.timer = time.time()
                     else:
                         elapsed = time.time() - self.timer
-                        if 15 < elapsed < 20:
+                        if settings.DOOR_OPENING_DELAY < elapsed < settings.DOOR_OPENING_DELAY + 5:
                             logger.info("Someone unlocked the door...")
                             self.is_door_open = True
                             self.output.turn_on()
-                            time.sleep(5)
+                            time.sleep(settings.DOOR_OPENING_TIME)
                             self.output.turn_off()
 
                 if curr_input == settings.INPUT_LOW and self.prev_input == settings.INPUT_HIGH:

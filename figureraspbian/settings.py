@@ -82,7 +82,7 @@ LINE_FEED_COUNT = int(get_env_setting('LINE_FEED_COUNT', 5))
 
 WIFI_ON = int(get_env_setting('WIFI_ON', 0))
 
-
-
+DOOR_OPENING_DELAY = int(get_env_setting('DOOR_OPENING_DELAY', 15))
+DOOR_OPENING_TIME = int(get_env_setting('DOOR_OPENING_TIME', 5))
 
 
