@@ -54,13 +54,13 @@ class App(object):
 
         base64_snapshot_thumb = get_base64_snapshot_thumbnail(snapshot)
 
-        rendered = ticket_renderer.render(picture="data:image/jpeg;base64,%s" % base64_snapshot_thumb)
+        rendered = ticket_renderer.render("data:image/jpeg;base64,%s" % base64_snapshot_thumb, None, None)
 
         del base64_snapshot_thumb
 
         ticket_base64 = get_screenshot(rendered)
         ticket_io = base64.b64decode(ticket_base64)
-        ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
+        ticket_path, _ = get_pure_black_and_white_ticket(ticket_io)
 
         pos_data = png2pos(ticket_path)
 

@@ -55,11 +55,13 @@ RUN pip install gphoto2==1.2.1 \
     python-epson-printer==1.8.0 \
     gpiozero==1.2.0
 
+RUN apt-get install -y vim
+
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
 ENV PHANTOMJS_PATH /phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
 
-RUN mkdir -p /figure/data
+RUN mkdir -p /figure/data/static /figure/data/media
 ENV STATIC_ROOT /figure/data/static
 COPY ticket_template.html /figure/data/static/
 COPY ticket.css /figure/data/static
@@ -68,6 +70,7 @@ ENV MEDIA_ROOT /figure/data/media
 RUN mkdir -p /usr/share/fonts/opentype
 COPY fonts/*.otf /usr/share/fonts/opentype/
 RUN fc-cache -f -v
+
 
 WORKDIR /
 
