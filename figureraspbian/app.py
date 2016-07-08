@@ -70,6 +70,8 @@ class App(object):
 
                     event_id = photobooth.event['id'] if photobooth.event else None
 
+                    counter = photobooth.counter
+
                     if ticket_template:
 
                         snapshot = self.camera.capture()
@@ -86,7 +88,9 @@ class App(object):
                         rendered = ticket_renderer.render(
                             picture="data:image/jpeg;base64,%s" % base64_snapshot_thumb,
                             code=current_code,
-                            date=date)
+                            date=date,
+                            counter=counter
+                        )
 
                         del base64_snapshot_thumb
 
@@ -127,6 +131,7 @@ class App(object):
                         self.code = db.get_code()
 
                         db.claim_new_codes_if_necessary()
+                        db.increment_counter()
                         upload_portrait.delay(portrait)
 
                     else:

@@ -55,7 +55,7 @@ def transaction_decorate(retry_delay=1):
 
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
-DATABASE_VERSION = 11
+DATABASE_VERSION = 12
 
 
 class Database(object):
@@ -240,6 +240,10 @@ class Database(object):
     def get_paper_level(self):
         return self.data.photobooth.paper_level
 
+    @transaction_decorate(0.5)
+    def increment_counter(self):
+        self.data.photobooth.counter += 1
+
     def pack(self):
         self.storage.pack(wait=True)
         os.remove(os.path.join(settings.DATA_ROOT, 'db.fs.old'))
@@ -257,6 +261,7 @@ class Photobooth(persistent.Persistent):
 
     def __init__(self):
         self.id = None
+        self.counter = 0
         self.ticket_template = None
         self.place = None
         self.event = None
