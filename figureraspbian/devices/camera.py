@@ -4,10 +4,7 @@ import os
 import io
 
 from PIL import Image
-try:
-    import gphoto2 as gp
-except ImportError:
-    print "Could not import gphoto2"
+import gphoto2 as gp
 
 from .. import settings
 from ..utils import timeit

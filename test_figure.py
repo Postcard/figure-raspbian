@@ -1,103 +1,26 @@
 # -*- coding: utf8 -*-
 
 import pytest
-import urllib2
-from datetime import datetime
-import pytz
 import time
-from usb.core import USBError
-from copy import deepcopy
+from threading import Lock, Event as ThreadEvent
+import pytz
+from datetime import datetime
+from os.path import join
 
-from mock import Mock, patch, create_autospec
-import os
-from ZODB.POSException import ConflictError
-import transaction
-from PIL import Image
-import figure
+from mock import Mock, patch, create_autospec, call
+from figure.error import BadRequestError, APIConnectionError
+from PIL import Image as PILImage
 
 from figureraspbian import utils, settings
-from figureraspbian.db import Database, transaction_decorate, Photobooth
 from figureraspbian.utils import timeit
-from figureraspbian.app import App
+from figureraspbian.devices.button import Button, PiFaceDigitalButton, EventThread, HoldThread
+from figureraspbian.db import Photobooth, TicketTemplate, Place, Event, Code, Portrait, Text, Image, TextVariable, ImageVariable
+from figureraspbian import db
+from figureraspbian.photobooth import update, upload_portrait, upload_portraits, TriggerThread
+from figureraspbian.decorators import execute_if_not_busy
 
 
-@pytest.fixture
-def mock_ticket_template(request):
-
-    return {
-        "id": 1,
-        "modified": "2015-01-01T00:00:00Z",
-        "html": "<div></div>",
-        "title": "title",
-        "description": "description",
-        "text_variables": [
-            {
-                "id": 1,
-                "name": "sentiment",
-                "items": [{
-                    "id": 4,
-                    "text": "Un peu",
-                    "variable": 1
-                }, {
-                    "id": 5,
-                    "text": "Beaucoup",
-                    "variable": 1
-                }]
-            }
-        ],
-        "image_variables": [
-            {
-                "id": "2",
-                "name": "landscape",
-                "items": [
-                    {
-                        "id": 2,
-                        "image": "http://image2.png",
-                        "name": "image2",
-                        "variable": 2
-                    }
-                ]
-            }
-        ],
-        "images": [{
-            "id": 1,
-            "image": "http://image1.png",
-            "name": "image1.png",
-            "variable": None
-        }]
-    }
-
-@pytest.fixture
-def mock_photobooth(request):
-
-    return {
-        "id": 1,
-        "place": {
-            "id": 1,
-            "tz": "Europe/Paris"
-        },
-        "event": {
-            "id": 1
-        },
-        "ticket_template": mock_ticket_template(request)
-    }
-
-@pytest.fixture
-def mock_codes(request):
-    return ['25JHU', '54KJI', 'KJ589', 'KJ78I', 'JIKO5']
-
-@pytest.fixture
-def db(request):
-    # factory will only be invoked once per session -
-    db = Database()
-    def fin():
-        db.clear()
-        db.close()
-    request.addfinalizer(fin)  # destroy when session is finished
-    return db
-
-
-class TestUtilityFunction:
+class TestUtils:
 
     def test_url2name(self):
         """
@@ -141,570 +64,1055 @@ class TestUtilityFunction:
         """
         it should convert PIL Image to '1' and return the path and the ticket length
         """
-        im = Image.open('test_ticket.jpg')
-        mock_image_open = mocker.patch.object(Image, 'open')
+        im = PILImage.open('test_ticket.jpg')
+        mock_image_open = mocker.patch.object(PILImage, 'open')
         mock_image_open.return_value = im
         ticket_path, length = utils.get_pure_black_and_white_ticket('')
         assert ticket_path == '/Users/benoit/git/figure-raspbian/media/ticket.png'
         assert length == 958
 
+    def test_execute_if_not_busy(self):
+        """
+        it should execute function only if the lock is released
+        """
+        lock = Lock()
+        mock_trigger = Mock()
+
+        @execute_if_not_busy(lock)
+        def trigger():
+            mock_trigger()
+
+        trigger()
+        assert mock_trigger.call_count == 1
+        assert not lock.locked()
+
+        lock.acquire()
+        trigger()
+        assert mock_trigger.call_count == 1
+
+
+@pytest.fixture
+def db_fixture(request):
+    db.erase()
+    db.init()
+
+    def fin():
+        db.close()
+    request.addfinalizer(fin)  # destroy when session is finished
+    return db
+
 
 class TestDatabase:
 
-    def test_transaction_decorator(self, mocker):
-        """
-        Transaction decorator should try a database write until there is no ConflictError
-        """
-        mock_transaction = mocker.patch('figureraspbian.db.transaction', autospec=True)
-        func = Mock(return_value=1)
-        @transaction_decorate(retry_delay=0.1)
-        def should_be_commited(self):
-            func()
-        mock_transaction.commit.side_effect = [ConflictError, ConflictError, transaction.commit]
-        should_be_commited('self')
-        assert func.call_count == 3
+    def test_get_photobooth(self, db_fixture):
+        """ it should return the photobooth corresponding to RESIN_UUID"""
 
-    def test_set_ticket_template(self, mocker, db, mock_ticket_template):
-        """
-        Ticket Template should be set correctly
-        """
-        api_download_mock = mocker.patch('figureraspbian.db.api.download', autospec=True)
-        db.set_ticket_template(mock_ticket_template)
-        assert db.data.photobooth.ticket_template == mock_ticket_template
-        api_download_mock.call_count == 2
-        api_download_mock.assert_any_call("http://image1.png", os.path.join(settings.MEDIA_ROOT, 'images'))
-        api_download_mock.assert_any_call("http://image2.png", os.path.join(settings.MEDIA_ROOT, 'images'))
-        # check it only download images if necessary
-        db.set_ticket_template(mock_ticket_template)
-        api_download_mock.call_count == 2
+        ticket_template = TicketTemplate.create(html='<html></html>', title='title', description='description', modified='2015-01-01T00:00:00Z')
+        sentiment = TextVariable.create(id='1', name='sentiment', ticket_template=ticket_template, mode='random')
+        Text.create(value="Un peu", variable=sentiment)
+        Text.create(value="beaucoup", variable=sentiment)
+        Text.create(value="à la folie", variable=sentiment)
+        logo = ImageVariable.create(id='2', name='logo', ticket_template=ticket_template, mode='random')
+        Image.create(path='/path/to/image1', variable=logo)
+        Image.create(path='/path/to/image2', variable=logo)
+        Image.create(path='/path/to/image3', ticket_template=ticket_template)
+        place = Place.create(id='1', name='Somewhere', timezone='Europe/Paris',  modified='2015-01-01T00:00:00Z')
+        event = Event.create(id='1', name='Party',  modified='2015-01-01T00:00:00Z')
+        db.update_photobooth(uuid='resin_uuid', id=1, place=place, event=event, ticket_template=ticket_template,
+                                       paper_level=100)
 
-    def test_set_ticket_template_download_raise_exception(self, mocker, db, mock_ticket_template):
-        """
-        Ticket template should not be set if download raise exception
-        """
-        api_download_mock = mocker.patch('figureraspbian.db.api.download', autospec=True)
-        api_download_mock.side_effect = urllib2.HTTPError('', '', '', '', None)
-        mock_transaction = mocker.patch('figureraspbian.db.transaction', autospec=True)
-        db.set_ticket_template(mock_ticket_template)
-        assert mock_transaction.abort.called
-        assert not db.data.photobooth.ticket_template
+        photobooth = db.get_photobooth()
+        assert photobooth.uuid == 'resin_uuid'
+        assert photobooth.place.name == 'Somewhere'
+        assert photobooth.event.name == 'Party'
+        ticket_template = photobooth.ticket_template
+        assert ticket_template.html == '<html></html>'
+        assert ticket_template.title == 'title'
+        assert ticket_template.description == 'description'
+        assert len(ticket_template.text_variables) == 1
+        assert ticket_template.text_variables[0].name == 'sentiment'
+        assert len(ticket_template.text_variables[0].items) == 3
+        assert len(ticket_template.image_variables) == 1
+        assert ticket_template.image_variables[0].name == 'logo'
+        assert len(ticket_template.image_variables[0].items) == 2
+        assert len(ticket_template.images) == 1
 
-    def test_update_photobooth(self, mocker, db, mock_photobooth):
-        """
-        update_photobooth should set place, event and ticket template the first time
-        """
-        set_ticket_template_mock = mocker.patch.object(Database, 'set_ticket_template', autospec=True)
-        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
-        api_photobooth_mock.get.return_value = mock_photobooth
-        db.update_photobooth()
-        api_photobooth_mock.get.call_count == 1
-        args, kwargs = set_ticket_template_mock.call_args
-        assert mock_photobooth['ticket_template'] in args
-        assert db.data.photobooth.id == 1
-        assert db.data.photobooth.place['id'] == 1
-        assert db.data.photobooth.place['tz'] == 'Europe/Paris'
-        assert db.data.photobooth.event['id'] == 1
+    def test_ticket_template_serializer(self, db_fixture):
+        ticket_template = TicketTemplate.create(id=1, html='<html></html>', title='title', description='description', modified='2015-01-01T00:00:00Z')
+        sentiment = TextVariable.create(id='1', name='sentiment', ticket_template=ticket_template, mode='random')
+        Text.create(value="Un peu", variable=sentiment)
+        Text.create(value="beaucoup", variable=sentiment)
+        Text.create(value="à la folie", variable=sentiment)
+        logo = ImageVariable.create(id='2', name='logo', ticket_template=ticket_template, mode='random')
+        Image.create(path='/path/to/image1', variable=logo)
+        Image.create(path='/path/to/image2', variable=logo)
+        Image.create(path='/path/to/image3', ticket_template=ticket_template)
+        expected = {
+            'description': 'description',
+            'title': 'title',
+            'image_variables': [
+                {
+                    'items': [
+                        {'id': 1, 'name': u'image1'},
+                        {'id': 2, 'name': u'image2'}
+                    ],
+                    'mode': u'random',
+                    'id': 2,
+                    'name': u'logo'
+                }
+            ],
+            'modified': '2015-01-01T00:00:00Z',
+            'html': '<html></html>',
+            'images': [
+                {'id': 3, 'name': u'image3'}
+            ],
+            'id': 1,
+            'text_variables': [
+                {
+                    'items': [
+                        {'text': u'Un peu', 'id': 1},
+                        {'text': u'beaucoup', 'id': 2},
+                        {'text': u'\xe0 la folie', 'id': 3}
+                    ],
+                    'mode': u'random',
+                    'id': 1,
+                    'name': u'sentiment'}
+            ]
+        }
+        assert ticket_template.serialize() == expected
 
 
-    def test_update_photobooth_no_place_no_event(self, mocker, db, mock_photobooth):
-        db.data.photobooth.place = 1
-        db.data.photobooth.event = 1
-        mocker.patch.object(Database, 'set_ticket_template', autospec=True)
-        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
-        photobooth = mock_photobooth
-        photobooth['place'] = None
-        photobooth['event'] = None
-        api_photobooth_mock.get.return_value = photobooth
-        db.update_photobooth()
-        assert db.data.photobooth.place == None
-        assert db.data.photobooth.event == None
-
-    def test_update_photobooth_ticket_template_not_modified(self, mocker, db, mock_photobooth):
-        """
-        update_photobooth should not set ticket_template if it was not modified
-        """
-        db.data.photobooth.ticket_template = mock_photobooth['ticket_template']
-        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
-        api_photobooth_mock.get.return_value = mock_photobooth
-        set_ticket_template_mock = mocker.patch.object(Database, 'set_ticket_template', autospec=True)
-        db.update_photobooth()
-        assert not set_ticket_template_mock.called
-
-    def test_update_photobooth_ticket_template_has_been_replaced(self, mocker, db, mock_photobooth):
-        """
-        update_photobooth should set ticket template if id has changed
-        """
-        db.data.photobooth.ticket_template = mock_photobooth['ticket_template']
-        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
-        photobooth = deepcopy(mock_photobooth)
-        photobooth['ticket_template']['id'] = 2
-        api_photobooth_mock.get.return_value = photobooth
-        set_ticket_template_mock = mocker.patch.object(Database, 'set_ticket_template', autospec=True)
-        db.update_photobooth()
-        assert set_ticket_template_mock.called
-
-    def test_update_photobooth_modified(self, mocker, db, mock_photobooth):
-        """
-        update_photobooth should set ticket template if it has been modified
-        """
-        import copy
-        db.data.photobooth.ticket_template = copy.deepcopy(mock_photobooth['ticket_template'])
-        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
-        mock_photobooth['ticket_template']['modified'] = "2015-01-02T00:00:00Z"
-        api_photobooth_mock.get.return_value = mock_photobooth
-        set_ticket_template_mock = mocker.patch.object(Database, 'set_ticket_template', autospec=True)
-        db.update_photobooth()
-        assert set_ticket_template_mock.call_count == 1
-
-    def test_get_photobooth_raise_exception(self, mocker, db):
-        """
-        Photobooth should catch exception and do nothing if api raises exception
-        """
-        api_photobooth_mock = mocker.patch('figureraspbian.db.figure.Photobooth', autospec=True)
-        api_photobooth_mock.get.side_effect = figure.FigureError()
-        db.update_photobooth()
-        assert db.data.photobooth.ticket_template == None
-
-    def test_add_codes(self, db):
-        db.add_codes(['AAAAA'])
-        assert len(db.data.photobooth.codes) == 1
-        db = Database()
-        assert db.data.photobooth.codes == ['AAAAA']
-        db.clear()
-        db.close()
-
-    def test_claim_codes_if_necessary(self, mocker, db):
-        """
-        it should claim new codes from the api if less than 1000 codes left
-        """
-        db.data.photobooth.codes = ["AAAAA"] * 999
-        api_codelist_mock = mocker.patch('figureraspbian.db.figure.CodeList', autospec=True)
-        api_codelist_mock.claim.return_value = {'codes': ["BBBB"] * 1000}
-        mocker.patch.object(Database, 'add_codes', autospec=True)
-        db.claim_new_codes_if_necessary()
-        assert api_codelist_mock.claim.called
-        args, kwargs = db.add_codes.call_args
-        assert ["BBBB"] * 1000 in args
-
-    def test_do_not_claim_codes_if_not_necessary(self, mocker, db):
-        """
-        it should not claim new codes from the api if more than 1000 codes left
-        """
-        db.data.photobooth.codes = ["AAAAA"] * 1001
-        api_codelist_mock = mocker.patch('figureraspbian.db.figure.CodeList', autospec=True)
-        mocker.patch.object(Database, 'add_codes', autospec=True)
-        db.claim_new_codes_if_necessary()
-        assert not api_codelist_mock.claim.called
-
-    def test_get_code(self, db):
-        """
-        db.get_code should get a code and remove it from code list
-        """
-        db.data.photobooth.codes = ['00000', '00001']
+    def test_get_code(self, db_fixture):
+        """ it should return a code and delete it from the database """
+        codes = ['AAAAA', 'BBBBB', 'CCCCC', 'DDDDD']
+        for code in codes:
+            Code.create(value=code)
         code = db.get_code()
-        assert code == '00001'
-        assert db.data.photobooth.codes == ['00000']
+        assert code == 'AAAAA'
+        assert Code.select() == ['BBBBB', 'CCCCC', 'DDDDD']
 
-    def test_add_portrait(self, db):
+    def test_get_portraits_to_be_uploaded(self, db_fixture):
+        """ it should return the list of portraits that have not been marked as uploaded"""
+        data_source = [
+            {
+                'code': 'AAAAA',
+                'taken': datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE)),
+                'place_id': '1',
+                'event_id': '1',
+                'photobooth_id': '1',
+                'ticket': '/path/to/ticket',
+                'picture': '/path/to/picture',
+                'uploaded': False
+            },
+            {
+                'code': 'BBBBB',
+                'taken': datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE)),
+                'place_id': '1',
+                'event_id': '1',
+                'photobooth_id': '1',
+                'ticket': '/path/to/ticket',
+                'picture': '/path/to/picture',
+                'uploaded': True
+            }
+        ]
+
+        for data_dict in data_source:
+            Portrait.create(**data_dict)
+
+        portraits_to_be_uploaded = db.get_portraits_to_be_uploaded()
+        assert len(portraits_to_be_uploaded) == 1
+        assert portraits_to_be_uploaded[0].code == 'AAAAA'
+
+    def test_get_portrait_to_be_uploaded(self, db_fixture):
+        """ it should return first portrait to be uploaded or None """
+        data_source = [
+            {
+                'code': 'AAAAA',
+                'taken': datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE)),
+                'place_id': '1',
+                'event_id': '1',
+                'photobooth_id': '1',
+                'ticket': '/path/to/ticket',
+                'picture': '/path/to/picture',
+                'uploaded': False
+            },
+            {
+                'code': 'BBBBB',
+                'taken': datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE)),
+                'place_id': '1',
+                'event_id': '1',
+                'photobooth_id': '1',
+                'ticket': '/path/to/ticket',
+                'picture': '/path/to/picture',
+                'uploaded': False
+            }
+        ]
+
+        for data_dict in data_source:
+            Portrait.create(**data_dict)
+
+        p1 = db.get_portrait_to_be_uploaded()
+        assert p1.code == 'AAAAA'
+        p1.uploaded = True
+        p1.save()
+        p2 = db.get_portrait_to_be_uploaded()
+        assert p2.code == 'BBBBB'
+        p2.uploaded = True
+        p2.save()
+        assert not db.get_portrait_to_be_uploaded()
+
+    def test_update_or_create_text(self, db_fixture):
         """
-        db.add_portrait should add a portrait in local cache
+        it should create or update a text instance
         """
-        assert len(db.data.photobooth.portraits) == 0
-        now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
+        assert Text.select().count() == 0
+        text = {'id': 1, 'text': 'some text'}
+        db.update_or_create_text(text)
+        instance = Text.get(Text.id == 1)
+        assert Text.select().count() == 1
+        assert instance.value == 'some text'
+        text = {'id': 1, 'text': 'some longer text'}
+        db.update_or_create_text(text)
+        instance = Text.get(Text.id == 1)
+        assert Text.select().count() == 1
+        assert instance.value == 'some longer text'
+
+    def test_update_or_create_text_variable(self, db_fixture):
+        """
+        it should update or create a text variable instance
+        """
+        assert TextVariable.select().count() == 0
+        data = {
+            "mode": "random",
+            "id": 1,
+            "name": "sentiment",
+            "items": [{
+                "id": 1,
+                "text": "Un peu",
+                "variable": 1
+            }, {
+                "id": 2,
+                "text": "Beaucoup",
+                "variable": 1
+            }]
+        }
+        db.update_or_create_text_variable(data)
+        assert TextVariable.select().count() == 1
+        text_variable = TextVariable.get(TextVariable.id == 1)
+        assert text_variable.name == 'sentiment'
+        text_variable.items.count() == 2
+        data['name'] = "towns"
+        data['mode'] = "sequential"
+        data['items'] = [{
+            "id": 3,
+            "text": "Paris",
+            "variable": 1
+        }, {
+            "id": 4,
+            "text": "Londres",
+            "variable": 1
+        }]
+        Text.create(id=5, value='some other text')
+        db.update_or_create_text_variable(data)
+        text_variable = TextVariable.get(TextVariable.id == 1)
+        assert text_variable.name == 'towns'
+        assert text_variable.mode == 'sequential'
+        assert text_variable.items.count() == 2
+        items = text_variable.items
+        assert len(items) == 2
+        assert items[0].id == 3
+        assert items[1].id == 4
+
+    def test_update_or_create_image(self, mocker, db_fixture):
+        """ it should update or create an image """
+        assert Image.select().count() == 0
+        data = {
+            'id': 1,
+            'image': 'https://path/to/image.jpg',
+            'name': 'image.jpg'
+        }
+        download_mock = mocker.patch('figureraspbian.db.download')
+        download_mock.return_value = '/path/to/image.jpg'
+        db.update_or_create_image(data)
+        image = Image.get(Image.id == 1)
+        assert download_mock.call_count == 1
+        assert image.path == '/path/to/image.jpg'
+        db.update_or_create_image(data)
+        assert download_mock.call_count == 1
+        data = {
+            'id': 1,
+            'image': 'https://path/to/image2.jpg',
+            'name': 'image2.jpg'
+        }
+        download_mock.return_value = '/path/to/image2.jpg'
+        db.update_or_create_image(data)
+        assert download_mock.call_count == 2
+        image = Image.get(Image.id == 1)
+        assert image.path == '/path/to/image2.jpg'
+
+    def test_update_or_create_image_variable(self, mocker, db_fixture):
+        assert ImageVariable.select().count() == 0
+        data = {
+            "mode": "random",
+            "id": 1,
+            "name": "landscape",
+            "items": [
+                {
+                    "id": 1,
+                    "image": "https://path/to/image.jpg",
+                    "name": "image.jpg",
+                }
+            ]
+        }
+        download_mock = mocker.patch('figureraspbian.db.download')
+        download_mock.return_value = '/path/to/image.jpg'
+        db.update_or_create_image_variable(data)
+        image_variable = ImageVariable.get(ImageVariable.id == 1)
+        assert image_variable.name == 'landscape'
+        assert len(image_variable.items) == 1
+        assert download_mock.call_count == 1
+        assert(image_variable.items[0].id == 1)
+        data['mode'] = 'sequential'
+        data['name'] = 'planets'
+        data['items'] = [
+            {
+                "id": 2,
+                "image": "https://path/to/image2.jpg",
+                "name": "image2.jpg"
+            }
+        ]
+        Image.create(id=3, path='/path/to/image3.jpg')
+        db.update_or_create_image_variable(data)
+        download_mock.return_value = '/path/to/image2.jpg'
+        image_variable = ImageVariable.get(ImageVariable.id == 1)
+        assert Image.select().count() == 2
+        assert image_variable.mode == 'sequential'
+        assert image_variable.name == 'planets'
+        assert len(image_variable.items)
+        assert image_variable.items[0].id == 2
+        assert download_mock.call_count == 2
+
+    def test_update_or_create_ticket_template(self, mocker, db_fixture):
+
+        data = {
+            "id": 1,
+            "modified": "2015-01-01T00:00:00Z",
+            "html": "<div></div>",
+            "title": "title",
+            "description": "description",
+            "text_variables": [
+                {
+                    "mode": "random",
+                    "id": 1,
+                    "name": "sentiment",
+                    "items": [{
+                        "id": 1,
+                        "text": "Un peu",
+                        "variable": 1
+                    }, {
+                        "id": 2,
+                        "text": "Beaucoup",
+                        "variable": 1
+                    }]
+                }
+            ],
+            "image_variables": [
+                {
+                    "mode": "random",
+                    "id": 2,
+                    "name": "landscape",
+                    "items": [
+                        {
+                            "id": 2,
+                            "image": "http://image2.png",
+                            "name": "image2",
+                            "variable": 2
+                        }
+                    ]
+                }
+            ],
+            "images": [{
+                "id": 1,
+                "image": "http://image1.png",
+                "name": "image1.png",
+                "variable": None
+            }]
+        }
+        download_mock = mocker.patch('figureraspbian.db.download')
+        download_mock.return_value = '/path/to/image.jpg'
+        db.update_or_create_ticket_template(data)
+        ticket_template = TicketTemplate.get(TicketTemplate.id == 1)
+        assert ticket_template.html == '<div></div>'
+        assert ticket_template.title == 'title'
+        assert ticket_template.description == 'description'
+        assert len(ticket_template.text_variables) == 1
+        assert len(ticket_template.text_variables[0].items) == 2
+        assert len(ticket_template.images) == 1
+        assert len(ticket_template.image_variables) == 1
+        assert len(ticket_template.image_variables[0].items) == 1
+        data['modified'] = '2015-01-02T00:00:00Z'
+        data['html'] = '<div>some text</div>'
+        data['title'] = 'title2'
+        data['description'] = 'description2'
+        db.update_or_create_ticket_template(data)
+        ticket_template = TicketTemplate.get(TicketTemplate.id == 1)
+        assert ticket_template.modified == '2015-01-02T00:00:00Z'
+        assert ticket_template.html == '<div>some text</div>'
+        assert ticket_template.title == 'title2'
+        assert ticket_template.description == 'description2'
+
+    def test_update_photobooth(self, db_fixture):
+        place = Place.create(name='somewhere', tz='Europe/Paris', modified='2015-01-02T00:00:00Z')
+        event = Event.create(name='party', modified='2015-01-02T00:00:00Z')
+        db.update_photobooth(place=place, event=event, id=2, counter=1)
+        photobooth = db.get_photobooth()
+        assert photobooth.counter == 1
+        assert photobooth.place == place
+        assert photobooth.event == event
+        assert photobooth.id == 2
+
+    def test_increment_counter(self, db_fixture):
+        """
+        it should increment the photobooth photo counter
+        """
+        photobooth = db.get_photobooth()
+        assert photobooth.counter == 0
+        db.increment_counter()
+        photobooth = db.get_photobooth()
+        assert photobooth.counter == 1
+
+    def test_bulk_insert_codes(self, db_fixture):
+        """
+        it should create codes from an array of codes
+        """
+        codes = ['AAAAA'] * 1001
+        db.bulk_insert_codes(codes)
+        assert Code.select().count() == 1001
+
+    def test_should_claim_codes(self, db_fixture):
+        """
+        it should return True if and only if number of codes is below 1000
+        """
+        codes = ['AAAAA'] * 1001
+        db.bulk_insert_codes(codes)
+        assert db.should_claim_code() == False
+        db.get_code()
+        db.get_code()
+        assert db.should_claim_code() == True
+
+    def test_delete_ticket_template(self, db_fixture):
+        """
+        it should not cascade deletion to Photobooth instance
+        """
+        tt = TicketTemplate.create(html='html', title='title', description='description', modified='2015-01-02T00:00:00Z')
+        photobooth = db.get_photobooth()
+        photobooth.ticket_template = tt
+        photobooth.save()
+        db.delete(photobooth.ticket_template)
+        db.update_photobooth(ticket_template=None)
+        photobooth = db.get_photobooth()
+        assert photobooth is not None
+        assert photobooth.ticket_template is None
+        assert TicketTemplate.select().count() == 0
+
+    def test_delete_place(self, db_fixture):
+        """
+        it should not cascade deletion to Photobooth instance
+        """
+        place = Place.create(name='Le Pop Up du Label', modified='2015-01-02T00:00:00Z')
+        photobooth = db.get_photobooth()
+        photobooth.place = place
+        photobooth.save()
+        db.delete(photobooth.place)
+        db.update_photobooth(place=None)
+        photobooth = db.get_photobooth()
+        assert photobooth is not None
+        assert photobooth.place is None
+        assert Place.select().count() == 0
+
+    def test_delete_event(self, db_fixture):
+        """
+        it should not cascade deletion to Photobooth instance
+        """
+        event = Event.create(name='La wedding #5', modified='2015-01-02T00:00:00Z')
+        photobooth = db.get_photobooth()
+        photobooth.event = event
+        photobooth.save()
+        db.delete(photobooth.event)
+        db.update_photobooth(event=None)
+        photobooth = db.get_photobooth()
+        assert photobooth is not None
+        assert photobooth.event is None
+        assert Event.select().count() == 0
+
+    def test_update_paper_level(self, db_fixture):
+        pass
+
+
+class TestPhotobooth:
+
+    def test_update_on_the_first_time(self, mocker):
+        """ it should create place, event and ticket template and associate it to the photobooth instance """
+        mock_db = mocker.patch('figureraspbian.photobooth.db')
+        mock_photobooth = create_autospec(Photobooth)
+        mock_photobooth.place = None
+        mock_photobooth.event = None
+        mock_photobooth.ticket_template = None
+        mock_db.get_photobooth.return_value = mock_photobooth
+
+        mock_api = mocker.patch('figureraspbian.photobooth.figure.Photobooth')
+        mock_api.get.return_value = {
+            'id': 2,
+            'uuid': settings.RESIN_UUID,
+            'place': {
+                'id': 1,
+                'modified': '2016-06-07T07:50:41Z',
+                'name': 'Le Pop up du Label',
+                'tz': 'Europe/Paris',
+            },
+            'event': {
+                'id': 1,
+                'modified': '2016-06-07T07:50:41Z',
+                'name': 'La wedding #5'
+            },
+            'ticket_template': {
+                'id': 1,
+                'modified': '2016-06-07T07:50:41Z',
+                'html': 'html',
+                'title': 'title',
+                'description': 'description',
+                'text_variables': [
+                    {
+                        'id': '1',
+                        'mode': 'random',
+                        'name': 'textvariable',
+                        'items': [
+                            {'id': '1', 'text': 'text'}
+                        ]
+                    }
+                ],
+                'image_variables': [
+                    {
+                        'id': '2',
+                        'mode': 'random',
+                        'name': 'imagevariable',
+                        'items': [
+                            {
+                                'id': '1',
+                                'image': 'image'
+                            }
+                        ]
+                    }
+                ],
+                'images': [
+                    {
+                        'id': '2',
+                        'image': 'image2'
+                    }
+                ]
+            }
+        }
+        update()
+        assert mock_db.create_place.called
+        assert mock_db.create_event.called
+        assert mock_db.update_or_create_ticket_template.called
+        assert mock_db.update_photobooth.call_count == 3
+
+    def test_update_reset(self, mocker):
+        """ it should delete place, event and ticket template and set corresponding value to None on photobooth """
+        mock_db = mocker.patch('figureraspbian.photobooth.db')
+        mock_photobooth = create_autospec(Photobooth)
+        mock_place = create_autospec(Place)
+        mock_event = create_autospec(Event)
+        mock_ticket_template = create_autospec(TicketTemplate)
+        mock_photobooth.place = mock_place
+        mock_photobooth.event = mock_event
+        mock_photobooth.ticket_template = mock_ticket_template
+        mock_db.get_photobooth.return_value = mock_photobooth
+        mock_api = mocker.patch('figureraspbian.photobooth.figure.Photobooth')
+        mock_api.get.return_value = {
+            'id': 2,
+            'uuid': settings.RESIN_UUID,
+            'place': None,
+            'event': None,
+            'ticket_template': None
+        }
+        update()
+        assert mock_db.delete.call_args_list == [call(mock_place), call(mock_event), call(mock_ticket_template)]
+        assert mock_db.update_photobooth.call_args_list == [call(place=None), call(event=None), call(ticket_template=None)]
+
+    def test_different_id(self, mocker):
+        """
+        it should create new instances of place, event and ticket_template, associate it to the photobooth instance
+        and delete previous instances of placce, event and ticket_template
+        """
+        mock_db = mocker.patch('figureraspbian.photobooth.db')
+        mock_photobooth = create_autospec(Photobooth)
+        mock_place = create_autospec(Place)
+        mock_place.id = 1
+        mock_event = create_autospec(Event)
+        mock_event.id = 1
+        mock_ticket_template = create_autospec(TicketTemplate)
+        mock_ticket_template.id = 1
+        mock_photobooth.place = mock_place
+        mock_photobooth.event = mock_event
+        mock_photobooth.ticket_template = mock_ticket_template
+        mock_db.get_photobooth.return_value = mock_photobooth
+
+        mock_api = mocker.patch('figureraspbian.photobooth.figure.Photobooth')
+        mock_api.get.return_value = {
+            'id': 2,
+            'uuid': settings.RESIN_UUID,
+            'place': {
+                'id': 2,
+            },
+            'event': {
+                'id': 2,
+            },
+            'ticket_template': {
+                'id': 2,
+            }
+        }
+        update()
+        assert mock_db.delete.call_args_list == [call(mock_place), call(mock_event), call(mock_ticket_template)]
+        assert mock_db.create_place.call_args_list == [call({'id': 2})]
+        assert mock_db.create_event.call_args_list == [call({'id': 2})]
+        assert mock_db.update_or_create_ticket_template.call_args_list == [call({'id': 2})]
+        assert mock_db.update_photobooth.call_count == 3
+
+    def test_same_id_but_modified(self, mocker):
+        """
+        it should update place, event, and ticket template
+        """
+        mock_db = mocker.patch('figureraspbian.photobooth.db')
+        mock_photobooth = create_autospec(Photobooth)
+        mock_place = create_autospec(Place)
+        mock_place.id = 1
+        mock_place.modified = '2016-06-01T00:00:00Z'
+        mock_event = create_autospec(Event)
+        mock_event.id = 1
+        mock_event.modified = '2016-06-01T00:00:00Z'
+        mock_ticket_template = create_autospec(TicketTemplate)
+        mock_ticket_template.id = 1
+        mock_ticket_template.modified = '2016-06-01T00:00:00Z'
+        mock_photobooth.place = mock_place
+        mock_photobooth.event = mock_event
+        mock_photobooth.ticket_template = mock_ticket_template
+        mock_db.get_photobooth.return_value = mock_photobooth
+
+        mock_api = mocker.patch('figureraspbian.photobooth.figure.Photobooth')
+        mock_api.get.return_value = {
+            'id': 1,
+            'uuid': settings.RESIN_UUID,
+            'place': {
+                'id': 1,
+                'modified': '2016-06-02T00:00:00Z'
+            },
+            'event': {
+                'id': 1,
+                'modified': '2016-06-02T00:00:00Z'
+            },
+            'ticket_template': {
+                'id': 1,
+                'modified': '2016-06-02T00:00:00Z'
+            }
+        }
+        update()
+        assert mock_db.update_place.callled
+        assert mock_db.update_event.called
+        assert mock_db.update_or_create_ticket_template.called
+
+    def test_upload_portrait_raise_exception(self, mocker):
+        """ it should save portrait to local db and filesystem if any error occurs during the upload"""
+        mock_api = mocker.patch('figureraspbian.photobooth.figure.Portrait')
+        mock_api.create.side_effect = Exception
+        mock_db = mocker.patch('figureraspbian.photobooth.db')
+        mock_write_file = mocker.patch('figureraspbian.photobooth.write_file')
         portrait = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': now,
-            'place': None,
-            'event': None,
-            'code': "JHUYG",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
+            'picture': 'base64encodedfile',
+            'ticket': 'base64encodedfile',
+            'taken': 'somedate',
+            'place': '1',
+            'event': '1',
+            'photobooth': '1',
+            'code': 'AAAAA',
+            'filename': 'Figure_dqidqid.jpg'
         }
-        db.add_portrait(portrait)
-        assert len(db.data.photobooth.portraits) == 1
+        upload_portrait(portrait)
+        assert mock_write_file.call_args_list == [
+            call('base64encodedfile', join(settings.PICTURE_ROOT,  'Figure_dqidqid.jpg')),
+            call('base64encodedfile', join(settings.TICKET_ROOT,  'Figure_dqidqid.jpg'))]
+        assert mock_db.create_portrait.call_args_list == [call({
+            'picture': join(settings.PICTURE_ROOT,  'Figure_dqidqid.jpg'),
+            'code': 'AAAAA',
+            'place': '1',
+            'photobooth': '1',
+            'taken': 'somedate',
+            'ticket': join(settings.TICKET_ROOT,  'Figure_dqidqid.jpg'),
+            'event': '1'})]
+        assert mock_api.create.call_args_list == [call(
+            files={'ticket': ('Figure_dqidqid.jpg', 'base64encodedfile'), 'picture_color': ('Figure_dqidqid.jpg', 'base64encodedfile')},
+            data={'taken': 'somedate', 'code': 'AAAAA', 'place': '1', 'event': '1', 'photobooth': '1'})]
 
-    def test_upload_portraits(self, mocker, db):
-        """
-        upload_portraits should upload all non uploaded portrait
-        """
-        api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
+    def test_upload_portraits(self, mocker):
+        """ it should upload all non uploaded portraits and set uploaded to False"""
+        mock_db = mocker.patch('figureraspbian.photobooth.db')
+        portrait1 = create_autospec(Portrait)
+        portrait2 = create_autospec(Portrait)
+        portrait3 = create_autospec(Portrait)
 
-        now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
-        portrait1 = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': now,
-            'place': None,
-            'event': None,
-            'code': "TITIS",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
+        portrait1.id = 1
+        portrait1.code = 'AAAAA'
+        portrait1.taken = '2016-06-02T00:00:00Z'
+        portrait1.place_id = '1'
+        portrait1.event_id = '1'
+        portrait1.photobooth_id = '1'
+        portrait1.picture = '/path/to/picture'
+        portrait1.ticket = '/path/to/ticket'
+        portrait1.uploaded = False
+
+        portrait2.id = 2
+        portrait2.code = 'BBBBB'
+        portrait2.taken = '2016-06-02T00:00:00Z'
+        portrait2.place_id = '1'
+        portrait2.event_id = '1'
+        portrait2.photobooth_id = '1'
+        portrait2.picture = '/path/to/picture'
+        portrait2.ticket = '/path/to/ticket'
+        portrait2.uploaded = False
+
+        portrait3.id = 3
+        portrait3.code = 'CCCCC'
+        portrait3.taken = '2016-06-02T00:00:00Z'
+        portrait3.place_id = '1'
+        portrait3.event_id = '1'
+        portrait3.photobooth_id = '1'
+        portrait3.picture = '/path/to/picture'
+        portrait3.ticket = '/path/to/ticket'
+        portrait3.uploaded = False
+
+        mock_db.get_portrait_to_be_uploaded.side_effect = [portrait1, portrait2, portrait3, None]
+
+        mock_api = mocker.patch('figureraspbian.photobooth.figure.Portrait')
+
+        mock_read_file = mocker.patch('figureraspbian.photobooth.read_file')
+        mock_read_file.return_value = 'file content'
+
+        upload_portraits()
+
+        assert mock_api.create.call_args_list == [
+            call(files={'ticket': 'file content', 'picture_color': 'file content'},
+                 data={'taken': '2016-06-02T00:00:00Z', 'code': 'AAAAA', 'place': '1', 'event': '1', 'photobooth': '1'}),
+            call(files={'ticket': 'file content', 'picture_color': 'file content'},
+                 data={'taken': '2016-06-02T00:00:00Z', 'code': 'BBBBB', 'place': '1', 'event': '1', 'photobooth': '1'}),
+            call(files={'ticket': 'file content', 'picture_color': 'file content'},
+                 data={'taken': '2016-06-02T00:00:00Z', 'code': 'CCCCC', 'place': '1', 'event': '1', 'photobooth': '1'})
+        ]
+
+        assert mock_db.update_portrait.call_args_list == [
+            call(1, uploaded=True),
+            call(2, uploaded=True),
+            call(3, uploaded=True)
+        ]
+
+    def test_upload_portraits_raise_unknown_exception(self, mocker):
+
+        mock_db = mocker.patch('figureraspbian.photobooth.db')
+        portrait1 = create_autospec(Portrait)
+        portrait2 = create_autospec(Portrait)
+        portrait3 = create_autospec(Portrait)
+
+        portrait1.id = 1
+        portrait1.code = 'AAAAA'
+        portrait1.taken = '2016-06-02T00:00:00Z'
+        portrait1.place_id = '1'
+        portrait1.event_id = '1'
+        portrait1.photobooth_id = '1'
+        portrait1.picture = '/path/to/picture'
+        portrait1.ticket = '/path/to/ticket'
+        portrait1.uploaded = False
+
+        portrait2.id = 2
+        portrait2.code = 'BBBBB'
+        portrait2.taken = '2016-06-02T00:00:00Z'
+        portrait2.place_id = '1'
+        portrait2.event_id = '1'
+        portrait2.photobooth_id = '1'
+        portrait2.picture = '/path/to/picture'
+        portrait2.ticket = '/path/to/ticket'
+        portrait2.uploaded = False
+
+        portrait3.id = 3
+        portrait3.code = 'CCCCC'
+        portrait3.taken = '2016-06-02T00:00:00Z'
+        portrait3.place_id = '1'
+        portrait3.event_id = '1'
+        portrait3.photobooth_id = '1'
+        portrait3.picture = '/path/to/picture'
+        portrait3.ticket = '/path/to/ticket'
+        portrait3.uploaded = False
+
+        mock_db.get_portrait_to_be_uploaded.side_effect = [portrait1, portrait2, portrait3, None]
+
+        mock_api = mocker.patch('figureraspbian.photobooth.figure.Portrait')
+        mock_api.create.side_effect = Exception
+
+        mock_read_file = mocker.patch('figureraspbian.photobooth.read_file')
+        mock_read_file.return_value = 'file content'
+
+        upload_portraits()
+
+        assert mock_db.get_portrait_to_be_uploaded.call_count == 1
+        assert mock_api.create.call_count == 1
+        assert mock_db.delete.call_count == 0
+
+    def test_upload_portrait_raise_BadRequest(self, mocker):
+
+        mock_db = mocker.patch('figureraspbian.photobooth.db')
+        portrait1 = create_autospec(Portrait)
+        portrait2 = create_autospec(Portrait)
+        portrait3 = create_autospec(Portrait)
+
+        portrait1.id = 1
+        portrait1.code = 'AAAAA'
+        portrait1.taken = '2016-06-02T00:00:00Z'
+        portrait1.place_id = '1'
+        portrait1.event_id = '1'
+        portrait1.photobooth_id = '1'
+        portrait1.picture = '/path/to/picture'
+        portrait1.ticket = '/path/to/ticket'
+        portrait1.uploaded = False
+
+        portrait2.id = 2
+        portrait2.code = 'BBBBB'
+        portrait2.taken = '2016-06-02T00:00:00Z'
+        portrait2.place_id = '1'
+        portrait2.event_id = '1'
+        portrait2.photobooth_id = '1'
+        portrait2.picture = '/path/to/picture'
+        portrait2.ticket = '/path/to/ticket'
+        portrait2.uploaded = False
+
+        portrait3.id = 3
+        portrait3.code = 'CCCCC'
+        portrait3.taken = '2016-06-02T00:00:00Z'
+        portrait3.place_id = '1'
+        portrait3.event_id = '1'
+        portrait3.photobooth_id = '1'
+        portrait3.picture = '/path/to/picture'
+        portrait3.ticket = '/path/to/ticket'
+        portrait3.uploaded = False
+
+        mock_db.get_portrait_to_be_uploaded.side_effect = [portrait1, portrait2, portrait3, None]
+
+        mock_api = mocker.patch('figureraspbian.photobooth.figure.Portrait')
+        mock_api.create.side_effect = BadRequestError
+
+        mock_read_file = mocker.patch('figureraspbian.photobooth.read_file')
+        mock_read_file.return_value = 'file content'
+
+        upload_portraits()
+
+        assert mock_db.get_portrait_to_be_uploaded.call_count == 4
+        assert mock_api.create.call_count == 3
+        assert mock_db.delete.call_count == 3
+
+    def test_upload_portraits_raise_ConnectionError(self, mocker):
+
+        mock_db = mocker.patch('figureraspbian.photobooth.db')
+        portrait1 = create_autospec(Portrait)
+        portrait2 = create_autospec(Portrait)
+        portrait3 = create_autospec(Portrait)
+
+        portrait1.id = 1
+        portrait1.code = 'AAAAA'
+        portrait1.taken = '2016-06-02T00:00:00Z'
+        portrait1.place_id = '1'
+        portrait1.event_id = '1'
+        portrait1.photobooth_id = '1'
+        portrait1.picture = '/path/to/picture'
+        portrait1.ticket = '/path/to/ticket'
+        portrait1.uploaded = False
+
+        portrait2.id = 2
+        portrait2.code = 'BBBBB'
+        portrait2.taken = '2016-06-02T00:00:00Z'
+        portrait2.place_id = '1'
+        portrait2.event_id = '1'
+        portrait2.photobooth_id = '1'
+        portrait2.picture = '/path/to/picture'
+        portrait2.ticket = '/path/to/ticket'
+        portrait2.uploaded = False
+
+        portrait3.id = 3
+        portrait3.code = 'CCCCC'
+        portrait3.taken = '2016-06-02T00:00:00Z'
+        portrait3.place_id = '1'
+        portrait3.event_id = '1'
+        portrait3.photobooth_id = '1'
+        portrait3.picture = '/path/to/picture'
+        portrait3.ticket = '/path/to/ticket'
+        portrait3.uploaded = False
+
+        mock_db.get_portrait_to_be_uploaded.side_effect = [portrait1, portrait2, portrait3, None]
+
+        mock_api = mocker.patch('figureraspbian.photobooth.figure.Portrait')
+        mock_api.create.side_effect = APIConnectionError
+
+        mock_read_file = mocker.patch('figureraspbian.photobooth.read_file')
+        mock_read_file.return_value = 'file content'
+
+        upload_portraits()
+
+        assert mock_db.get_portrait_to_be_uploaded.call_count == 1
+        assert mock_api.create.call_count == 1
+        assert mock_db.delete.call_count == 0
+
+
+class TestTriggerThread:
+
+    def test_trigger(self, mocker):
+        """it should take a picture, print a ticket and send data to the server"""
+
+        mock_camera = mocker.patch('figureraspbian.photobooth.camera')
+        mock_camera.capture.return_value = PILImage.open('test_snapshot.jpg')
+        mock_printer = mocker.patch('figureraspbian.photobooth.printer')
+
+        mock_db = mocker.patch('figureraspbian.photobooth.db')
+
+        mock_ticket_template = create_autospec(TicketTemplate)
+        serialized = {
+            'description': 'description',
+            'title': 'title',
+            'image_variables': [],
+            'modified': '2015-01-01T00:00:00Z',
+            'html': '<html></html>',
+            'images': [],
+            'id': 1,
+            'text_variables': []
         }
-        portrait2 = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': now,
-            'place': None,
-            'event': None,
-            'code': "TOTOS",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
-        }
+        mock_ticket_template.serialize.return_value = serialized
 
-        db.add_portrait(portrait1)
-        db.add_portrait(portrait2)
-        db.upload_portraits()
-        assert api_create_portrait_mock.call_count == 2
-        assert db.data.photobooth.portraits == []
+        mock_place = create_autospec(Place)
+        mock_place.tz = 'Europe/Paris'
+        mock_place.id = 1
 
-    def test_upload_portraits_raise_error(self, mocker, db):
-        """
-        upload_portraits should stop while loop if it throws an error
-        """
-        api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
-        api_create_portrait_mock.side_effect = Exception()
-
-        now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
-        portrait1 = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': now,
-            'place': None,
-            'event': None,
-            'code': "TITIS",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
-        }
-        portrait2 = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': now,
-            'place': None,
-            'event': None,
-            'code': "TOTOS",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
-        }
-        db.add_portrait(portrait1)
-        db.add_portrait(portrait2)
-        db.upload_portraits()
-        assert api_create_portrait_mock.call_count == 1
-        assert len(db.data.photobooth.portraits) == 2
-
-
-    def test_upload_portraits_raise_ConnectionError(self, mocker, db):
-        """
-        upload_tickets should stop while loop if it throws a ConnectionError
-        """
-        api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
-        api_create_portrait_mock.side_effect = figure.APIConnectionError
-
-        now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
-        portrait1 = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': now,
-            'place': None,
-            'event': None,
-            'code': "TITIS",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
-        }
-        portrait2 = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': now,
-            'place': None,
-            'event': None,
-            'code': "TOTOS",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
-        }
-        db.add_portrait(portrait1)
-        db.add_portrait(portrait2)
-        db.upload_portraits()
-        assert api_create_portrait_mock.call_count == 1
-        assert len(db.data.photobooth.portraits) == 2
-
-    def test_upload_portraits_raise_Bad_Request(self, mocker, db):
-        """
-        it should pop portrait that raised error
-        """
-        api_create_portrait_mock = mocker.patch('figureraspbian.db.api.create_portrait', autospec=True)
-        api_create_portrait_mock.side_effect = figure.BadRequestError
-        now = datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE))
-        portrait1 = {
-            'picture': '/path/to/picture',
-            'ticket': 'path/to/ticket',
-            'taken': now,
-            'place': None,
-            'event': None,
-            'code': "TITIS",
-            'filename': 'Figure.jpg',
-            'is_door_open': False
-        }
-        db.add_portrait(portrait1)
-        db.upload_portraits()
-        assert api_create_portrait_mock.call_count == 1
-        assert len(db.data.photobooth.portraits) == 0
-
-    def test_get_new_paper_level(self, mocker, db):
-        """
-        it should decrease level of paper after a successful print
-        """
-        db.data.photobooth.paper_level = 50.0
-        mock_pixels_to_cm = mocker.patch('figureraspbian.db.pixels2cm')
-        mock_pixels_to_cm.return_value = 20
-        new_paper_level = db.get_new_paper_level(1086)
-        mock_pixels_to_cm.assert_called_with(1086)
-        assert new_paper_level == 49.75
-        assert db.get_paper_level() == 49.75
-
-    def test_get_new_paper_level_paper_empty(self, db):
-        """
-        it should force paper level to 0 if we no ticket were printed
-        """
-        db.data.photobooth.paper_level = 10.0
-        new_paper_level = db.get_new_paper_level(0)
-        assert new_paper_level == 0.0
-        assert db.get_paper_level() == 0.0
-
-    def test_get_new_paper_level_paper_was_empty(self, db):
-        """
-        it should set paper level to 100 after a paper refill
-        """
-        db.data.photobooth.paper_level = 0.0
-        new_paper_level = db.get_new_paper_level(1084)
-        assert new_paper_level == 100.0
-        assert db.get_paper_level() == 100.0
-
-    def test_get_new_paper_level_inconsistant_guess(self, mocker, db):
-        """
-        it should set paper level to 10 if we reached 0 and there is still paper
-        """
-        db.data.photobooth.paper_level = 0.10
-        mock_pixels_to_cm = mocker.patch('figureraspbian.db.pixels2cm')
-        mock_pixels_to_cm.return_value = 20
-        new_paper_level = db.get_new_paper_level(1086)
-        mock_pixels_to_cm.assert_called_with(1086)
-        assert new_paper_level == 10.0
-        assert db.get_paper_level() == 10.0
-
-    def test_pack_db(self, db):
-        """
-        packing db should reduce the size of the db
-        """
-        # increase size of db
-        for i in range(0, 1000):
-            db.dbroot['counter'] = i
-            transaction.commit()
-        assert os.path.getsize(os.path.join(settings.DATA_ROOT, 'db.fs')) > 100000
-        db.pack()
-        assert os.path.getsize(os.path.join(settings.DATA_ROOT, 'db.fs')) < 1000
-
-
-class TestApp:
-
-    def test_trigger(self, mocker, mock_ticket_template):
-        """
-        app.run() should take a picture, print it and send data to the server
-        """
-
-        camera_mock = Mock()
-        printer_mock = Mock()
-        input_mock = Mock()
-        output_mock = Mock()
-
-        upload_portrait_mock = mocker.patch('figureraspbian.app.upload_portrait')
-        upload_portrait_mock.delay.return_value = None
-
-        set_paper_level_mock = mocker.patch('figureraspbian.app.set_paper_level')
-        set_paper_level_mock.delay.return_value = None
-
-        camera_mock.capture.return_value = Image.open('test_snapshot.jpg')
-        printer_mock.print_ticket.return_value = None
+        mock_event = create_autospec(Event)
+        mock_event.id = 1
 
         mock_photobooth = create_autospec(Photobooth)
-        mock_photobooth.place = {"id": "1", "tz": "Europe/Paris"}
-        mock_photobooth.event = {"id": "1"}
+        mock_photobooth.id = 1
         mock_photobooth.ticket_template = mock_ticket_template
+        mock_photobooth.counter = 0
+        mock_photobooth.place = mock_place
+        mock_photobooth.event = mock_event
 
-        mock_get_photobooth = mocker.patch.object(Database, 'get_photobooth', autospec=True)
-        mock_get_photobooth.return_value = mock_photobooth
+        mock_db.get_photobooth.return_value = mock_photobooth
 
-        mock_get_code = mocker.patch.object(Database, 'get_code', autospec=True)
-        mock_get_code.return_value = 'AAAAA'
+        mock_db.get_code.return_value = 'AAAAA'
 
-        mock_claim_new_codes_if_necessary = mocker.patch.object(Database, 'claim_new_codes_if_necessary', autospec=True)
-        mock_claim_new_codes_if_necessary.return_value = None
+        mock_update_paper_level = mocker.patch('figureraspbian.photobooth.update_paper_level_async')
+        mock_claim_new_codes = mocker.patch('figureraspbian.photobooth.claim_new_codes_async')
+        mock_upload_portrait = mocker.patch('figureraspbian.photobooth.upload_portrait_async')
 
-        mock_get_new_paper_level = mocker.patch.object(Database, 'get_new_paper_level', autospec=True)
-        mock_get_new_paper_level.return_value = 50
+        thr = TriggerThread()
+        thr.trigger()
 
-        input_mock.get_value.side_effect = [1, 0, -1]
-
-        app = App(camera_mock, printer_mock, input_mock, output_mock)
-
-        app.run()
-
-        assert camera_mock.capture.call_count == 1
-        assert printer_mock.print_ticket.call_count == 1
-        assert upload_portrait_mock.delay.call_count == 1
-        args, _ = upload_portrait_mock.delay.call_args
-        portrait = args[0]
-        assert portrait['code'] == 'AAAAA'
-        assert portrait['place'] == '1'
-        assert portrait['event'] == '1'
-        args1, _ = set_paper_level_mock.delay.call_args
-        assert args1[0] == 50
-
-    def test_open_door(self, mocker, mock_ticket_template):
-
-        camera_mock = Mock()
-        printer_mock = Mock()
-        input_mock = Mock()
-        output_mock = Mock()
-
-        upload_portrait_mock = mocker.patch('figureraspbian.app.upload_portrait')
-        upload_portrait_mock.delay.return_value = None
-
-        set_paper_level_mock = mocker.patch('figureraspbian.app.set_paper_level')
-        set_paper_level_mock.delay.return_value = None
-
-        camera_mock.capture.return_value = Image.open('test_snapshot.jpg')
-        printer_mock.print_ticket.return_value = None
-        output_mock.turn_on.return_value = None
-        output_mock.turn_off.return_value = None
-
-        mock_photobooth = create_autospec(Photobooth)
-        mock_photobooth.place = {"id": "1", "tz": "Europe/Paris"}
-        mock_photobooth.event = {"id": "1"}
-        mock_photobooth.ticket_template = mock_ticket_template
-
-        mock_get_photobooth = mocker.patch.object(Database, 'get_photobooth', autospec=True)
-        mock_get_photobooth.return_value = mock_photobooth
-
-        mock_get_code = mocker.patch.object(Database, 'get_code', autospec=True)
-        mock_get_code.return_value = 'AAAAA'
-
-        mock_claim_new_codes_if_necessary = mocker.patch.object(Database, 'claim_new_codes_if_necessary', autospec=True)
-        mock_claim_new_codes_if_necessary.return_value = None
-
-        n = int(17.0 / 0.05)
-        input_sequence = [1] * n
-        input_sequence.extend([0, -1])
-        input_mock.get_value.side_effect = input_sequence
-
-        app = App(camera_mock, printer_mock, input_mock, output_mock)
-
-        app.run()
-
-        assert output_mock.turn_on.call_count == 1
-        assert output_mock.turn_off.call_count == 1
-        assert camera_mock.capture.call_count == 1
-        assert printer_mock.print_ticket.call_count == 1
-        assert upload_portrait_mock.delay.call_count == 1
-        args, _ = upload_portrait_mock.delay.call_args
-        portrait = args[0]
-        assert portrait['is_door_open']
-
-    def test_paper_empty(self, mocker, mock_ticket_template):
-
-        camera_mock = Mock()
-        printer_mock = Mock()
-        input_mock = Mock()
-        output_mock = Mock()
-
-        upload_portrait_mock = mocker.patch('figureraspbian.app.upload_portrait')
-        upload_portrait_mock.delay.return_value = None
-
-        set_paper_level_mock = mocker.patch('figureraspbian.app.set_paper_level')
-        set_paper_level_mock.delay.return_value = None
-
-        camera_mock.capture.return_value = Image.open('test_snapshot.jpg')
-        printer_mock.print_ticket.side_effect = USBError("oups")
-        output_mock.turn_on.return_value = None
-        output_mock.turn_off.return_value = None
-
-        mock_photobooth = create_autospec(Photobooth)
-        mock_photobooth.place = {"id": "1", "tz": "Europe/Paris"}
-        mock_photobooth.event = {"id": "1"}
-        mock_photobooth.ticket_template = mock_ticket_template
-
-        mock_get_photobooth = mocker.patch.object(Database, 'get_photobooth', autospec=True)
-        mock_get_photobooth.return_value = mock_photobooth
-
-        mock_get_code = mocker.patch.object(Database, 'get_code', autospec=True)
-        mock_get_code.return_value = 'AAAAA'
-
-        mock_claim_new_codes_if_necessary = mocker.patch.object(Database, 'claim_new_codes_if_necessary', autospec=True)
-        mock_claim_new_codes_if_necessary.return_value = None
-
-        mock_get_new_paper_level = mocker.patch.object(Database, 'get_new_paper_level', autospec=True)
-        mock_get_new_paper_level.return_value = 0
-
-        input_mock.get_value.side_effect = [1, 0, -1]
-
-        app = App(camera_mock, printer_mock, input_mock, output_mock)
-        app.run()
-
-        assert camera_mock.capture.call_count == 1
-        assert printer_mock.print_ticket.call_count == 1
-        args, _ = mock_get_new_paper_level.call_args
-        assert args[1] == 0
-        assert upload_portrait_mock.delay.call_count == 1
+        assert mock_camera.capture.called
+        assert mock_printer.print_ticket.called
+        assert mock_update_paper_level.called
+        assert mock_claim_new_codes.called
+        assert mock_upload_portrait.called
 
 
-    def test_open_door_paper_empty(self, mocker, mock_ticket_template):
+class TestButtton:
 
-        camera_mock = Mock()
-        printer_mock = Mock()
-        input_mock = Mock()
-        output_mock = Mock()
+    def test_register_when_pressed(self):
+        """ it should register when_pressed callback"""
+        mock_function = Mock()
+        def when_pressed():
+            mock_function()
+        button = Button(1, 0.05, 2)
+        button.when_pressed = when_pressed
+        button._fire_activated()
+        assert mock_function.called
 
-        upload_portrait_mock = mocker.patch('figureraspbian.app.upload_portrait')
-        upload_portrait_mock.delay.return_value = None
+    def test_register_when_held(self):
+        """ it should register when_held callback """
+        mock_function = Mock()
+        def when_held():
+            mock_function()
+        button = Button(1, 0.05, 2)
+        button.when_held = when_held
+        button._fire_held()
+        assert mock_function.called
 
-        set_paper_level_mock = mocker.patch('figureraspbian.app.set_paper_level')
-        set_paper_level_mock.delay.return_value = None
 
-        camera_mock.capture.return_value = Image.open('test_snapshot.jpg')
-        printer_mock.print_ticket.side_effect = USBError("oups")
-        output_mock.turn_on.return_value = None
-        output_mock.turn_off.return_value = None
+class TestEventThread:
 
-        mock_photobooth = create_autospec(Photobooth)
-        mock_photobooth.place = {"id": "1", "tz": "Europe/Paris"}
-        mock_photobooth.event = {"id": "1"}
-        mock_photobooth.ticket_template = mock_ticket_template
+    def test_fire_events(self):
+        """
+        it set active and inactive events based on parent button value
+        """
+        mock_button = create_autospec(Button)
+        mock_button._last_state = None
+        mock_button._inactive_event = ThreadEvent()
+        mock_button._active_event = ThreadEvent()
+        mock_button._holding = ThreadEvent()
 
-        mock_get_photobooth = mocker.patch.object(Database, 'get_photobooth', autospec=True)
-        mock_get_photobooth.return_value = mock_photobooth
+        event_thread = EventThread(mock_button)
+        mock_button.value.return_value = 0
+        event_thread._fire_events(mock_button)
 
-        mock_get_code = mocker.patch.object(Database, 'get_code', autospec=True)
-        mock_get_code.return_value = 'AAAAA'
+        assert mock_button._inactive_event.is_set()
 
-        mock_claim_new_codes_if_necessary = mocker.patch.object(Database, 'claim_new_codes_if_necessary', autospec=True)
-        mock_claim_new_codes_if_necessary.return_value = None
+        mock_button.value.return_value = 1
+        event_thread._fire_events(mock_button)
 
-        n = int(17.0 / 0.05)
-        input_sequence = [1] * n
-        input_sequence.extend([0, -1])
-        input_mock.get_value.side_effect = input_sequence
+        assert mock_button._active_event.is_set()
+        assert mock_button._fire_activated.called
 
-        app = App(camera_mock, printer_mock, input_mock, output_mock)
 
-        app.run()
 
-        assert output_mock.turn_on.call_count == 1
-        assert output_mock.turn_off.call_count == 1
-        assert camera_mock.capture.call_count == 1
-        assert printer_mock.print_ticket.call_count == 1
-        assert upload_portrait_mock.delay.call_count == 1
-        args, _ = upload_portrait_mock.delay.call_args
-        ticket = args[0]
-        assert ticket['is_door_open']
+class TestHoldThread:
+
+    def test_hold(self):
+        """ it should fire held callback if the button is held enough time"""
+
+        mock_button = create_autospec(Button)
+        mock_button.hold_time = 0.1
+        mock_button._fire_held = Mock()
+        mock_button._inactive_event = ThreadEvent()
+        mock_button._holding = ThreadEvent()
+
+        hold_thread = HoldThread(mock_button)
+        mock_button._holding.set()
+        hold_thread.start()
+        time.sleep(0.2)
+        mock_button._inactive_event.set()
+        time.sleep(0.1)
+        hold_thread.stop()
+        assert mock_button._fire_held.called
+
+    def test_not_hold(self):
+        """ it should not fire heled callback if the button is not held enough time"""
+
+        mock_button = create_autospec(PiFaceDigitalButton)
+        mock_button.hold_time = 0.2
+        mock_button._fire_held = Mock()
+        mock_button._inactive_event = ThreadEvent()
+        mock_button._holding = ThreadEvent()
+
+        hold_thread = HoldThread(mock_button)
+        mock_button._holding.set()
+        hold_thread.start()
+        time.sleep(0.1)
+        mock_button._inactive_event.set()
+        time.sleep(0.1)
+        hold_thread.stop()
+        assert not mock_button._fire_held.called
+
+
 
 
 

@@ -1,21 +1,26 @@
 # -*- coding: utf8 -*-
 
 import os
-from os.path import basename, join
+from os.path import basename, exists
 import urllib
+import logging
 import time
+
 from urlparse import urlsplit
 import cStringIO
 import base64
 import subprocess
-import logging
-logging.basicConfig(level='INFO')
-logger = logging.getLogger(__name__)
+import urllib2
+from os.path import join
 
 from PIL import Image
 from hashids import Hashids
 
-import settings
+from figureraspbian import settings
+
+
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
 
 def url2name(url):
@@ -24,6 +29,40 @@ def url2name(url):
     http://api.figuredevices.com/static/css/ticket.css => ticket.css
     """
     return basename(urllib.unquote(urlsplit(url)[2]))
+
+
+def download(url, path):
+    """
+    Download a file from a remote url and copy it to the local path
+    """
+    local_name = url2name(url)
+    path_to_file = join(path, local_name)
+    if not exists(path_to_file):
+        req = urllib2.Request(url)
+        r = urllib2.urlopen(req, timeout=10)
+        if r.url != url:
+            # if we were redirected, the real file name we take from the final URL
+            local_name = url2name(r.url)
+        with open(path_to_file, 'wb+') as f:
+            f.write(r.read())
+        return path_to_file
+
+
+def write_file(file, path):
+    """
+    Write a file to a specific path
+    """
+    with open(path, "wb") as f:
+        f.write(file)
+
+
+def read_file(path):
+    """
+    Open a file and return its content
+    """
+    with open(path, 'rb') as content_file:
+        content = content_file.read()
+    return content
 
 
 def timeit(func):
@@ -35,6 +74,7 @@ def timeit(func):
         logger.info('%r %2.2f sec' % (func.__name__, te-ts))
         return result
     return timed
+
 
 @timeit
 def get_base64_snapshot_thumbnail(snapshot):
@@ -79,3 +119,8 @@ def get_file_name(code):
 
 def pixels2cm(pixels):
     return float(pixels) / settings.PIXEL_CM_RATIO
+
+
+
+
+

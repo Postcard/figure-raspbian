@@ -1,224 +1,341 @@
-# -*- coding: utf8 -*-
+from peewee import *
+from os.path import join, basename
 
-from contextlib import contextmanager
-import logging
-import time
-import os
-import errno
-import figure
-
-from ZEO import ClientStorage
-from ZODB import DB
-from ZODB.POSException import ConflictError
-import transaction
-import persistent
-import urllib2
-
-from . import settings, api
-from .utils import timeit, pixels2cm
-
-logging.basicConfig(level='INFO')
-logger = logging.getLogger(__name__)
+from figureraspbian import settings
+from figureraspbian.utils import pixels2cm, download
 
 
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-
-figure.api_base = settings.API_HOST
-figure.token = settings.TOKEN
+database = SqliteDatabase(join(settings.DATA_ROOT, 'local.db'))
 
 
-@contextmanager
-def managed(database):
-    database.open()
-    yield database
+def get_tables():
+    return [
+        Place,
+        Event,
+        TicketTemplate,
+        TextVariable,
+        Text,
+        ImageVariable,
+        Image,
+        Photobooth,
+        Code,
+        Portrait]
+
+
+def init():
+    database.connect()
+    # creates tables if not exist
+    database.create_tables(get_tables(), True)
+    # always create a record for photobooth
+    Photobooth.get_or_create(uuid=settings.RESIN_UUID)
     database.close()
 
 
-def transaction_decorate(retry_delay=1):
-    def wrap(func):
-        def wrapped_f(self, *args, **kwargs):
-            while True:
-                try:
-                    result = func(self, *args, **kwargs)
-                    transaction.commit()
-                except ConflictError:
-                    # Conflict occurred; this process should abort,
-                    # wait for a little bit, then try again.
-                    transaction.abort()
-                    time.sleep(retry_delay)
-                else:
-                    # No ConflictError exception raised, so break
-                    # out of the enclosing while loop.
-                    return result
-        return wrapped_f
-    return wrap
+def erase():
+    database.drop_tables(get_tables(), True)
 
 
-IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, 'images')
-DATABASE_VERSION = 12
+def close():
+    database.close()
 
 
-class Database(object):
-    """ Handle retrieving and updating data"""
+class BaseModel(Model):
 
-    def __init__(self):
-        self.storage = ClientStorage.ClientStorage(settings.ZEO_SOCKET)
-        self.db = DB(self.storage)
-        self.dbroot = self.db.open().root()
-        if 'data' not in self.dbroot:
-            self.dbroot['data'] = Data()
-            transaction.commit()
-        # If local database is outdated, create a brand new one
-        if not hasattr(self.dbroot['data'], 'version') or self.dbroot['data'].version < DATABASE_VERSION:
-            self.clear()
-        self.data = self.dbroot['data']
-
-    def open(self):
-        pass
-
-    def close(self):
-        self.db.close()
-
-    @transaction_decorate(5)
-    def clear(self):
-        self.dbroot['data'] = Data()
-
-    def get_photobooth(self):
-        return self.data.photobooth
-
-    def set_ticket_template(self, ticket_template):
-        try:
-            local_items = self.get_images_from_ticket_template(self.data.photobooth.ticket_template)
-            items = self.get_images_from_ticket_template(ticket_template)
-            # Download all images that have not been previously downloaded
-            images_to_download = list(set(items) - set(local_items))
-            for image in images_to_download:
-                api.download(image, IMAGE_DIR)
-            self.data.photobooth.ticket_template = ticket_template
-            self.data.photobooth._p_changed = True
-            transaction.commit()
-        except (ConflictError, urllib2.HTTPError) as e:
-            # Log and do nothing, we can wait for next update
-            logger.exception(e)
-            transaction.abort()
-
-    def get_images_from_ticket_template(self, ticket_template):
-        items = []
-        if ticket_template:
-            for image_variable in ticket_template['image_variables']:
-                items.append(image_variable['items'])
-            items.append(ticket_template['images'])
-            items = [item for sub_items in items for item in sub_items]
-            items = map(lambda x: x['image'], items)
-            return items
-        return items
-
-    @transaction_decorate(retry_delay=1)
-    def set_place(self, place):
-        self.data.photobooth.place = place
-
-    @transaction_decorate(retry_delay=1)
-    def set_event(self, event):
-        self.data.photobooth.event = event
-
-    @transaction_decorate(retry_delay=1)
-    def set_photobooth_id(self, id):
-        self.data.photobooth.id = id
-
-    def update_photobooth(self):
-        try:
-            photobooth = figure.Photobooth.get(settings.RESIN_UUID)
-            if photobooth:
-                # check if place has changed
-                id = photobooth.get('id')
-                id_is_the_same = (id and self.data.photobooth.id and
-                                  id == self.data.photobooth.id)
-                if not id_is_the_same:
-                    self.set_photobooth_id(id)
-                place = photobooth.get('place')
-                place_is_the_same = (place and self.data.photobooth.place and
-                                     place['id'] == self.data.photobooth.place['id'])
-                if not place_is_the_same:
-                    self.set_place(place)
-                # check if event has changed
-                event = photobooth.get('event')
-                event_is_the_same = (event and self.data.photobooth.event and
-                                     event['id'] == self.data.photobooth.event['id'])
-                if not event_is_the_same:
-                    self.set_event(event)
-                # check if ticket_template has changed
-                ticket_template = photobooth['ticket_template']
-                is_null = not self.data.photobooth.ticket_template
-                has_been_modified = self.data.photobooth.ticket_template and \
-                                    ticket_template['modified'] > self.data.photobooth.ticket_template['modified']
-                has_changed = self.data.photobooth.ticket_template and \
-                    ticket_template['id'] != self.data.photobooth.ticket_template['id']
-                if is_null or has_changed or has_been_modified:
-                    self.set_ticket_template(ticket_template)
-        except figure.FigureError as e:
-            # Log and do nothing, we can wait for next update
-            logger.exception(e)
+    class Meta:
+        database = database
 
 
-    @transaction_decorate(retry_delay=0.1)
-    @timeit
-    def get_code(self):
-        # claim a code
-        code = self.data.photobooth.codes.pop()
-        self.data.photobooth._p_changed = True
-        return code
+class Place(BaseModel):
 
-    @transaction_decorate(retry_delay=5)
-    def add_codes(self, codes):
-        self.data.photobooth.codes.extend(codes)
-        self.data.photobooth._p_changed = True
+    name = CharField()
+    tz = CharField(default='Europe/Paris')
+    modified = CharField()
 
-    def claim_new_codes_if_necessary(self):
-        """ Claim new codes from api if there are less than 1000 codes left """
-        if len(self.data.photobooth.codes) < 1000:
-            try:
-                new_codes = figure.CodeList.claim()['codes']
-                self.add_codes(new_codes)
-            except figure.FigureError as e:
-                logger.exception(e)
 
-    def upload_portraits(self):
-        while self.data.photobooth.portraits:
-            portrait = self.data.photobooth.portraits[0]
-            try:
-                api.create_portrait(portrait)
-                self.pop_portrait()
-            except figure.BadRequestError:
-                # Duplicate code or files empty
-                self.pop_portrait()
-            except IOError as e:
-                logger.exception(e)
-                if e.errno == errno.ENOENT:
-                    # snapshot or ticket file may be corrupted, proceed with remaining tickets
-                    self.pop_portrait()
-                else:
-                    break
-            except Exception as e:
-                logger.exception(e)
-                break
+class Event(BaseModel):
 
-    @transaction_decorate(3)
-    def pop_portrait(self):
-        portrait = self.data.photobooth.portraits.pop(0)
-        self.data.photobooth._p_changed = True
-        return portrait
+    name = CharField()
+    modified = CharField()
 
-    @transaction_decorate(0.5)
-    def add_portrait(self, portrait):
-        self.data.photobooth.portraits.append(portrait)
-        self.data.photobooth._p_changed = True
 
-    def get_new_paper_level(self, pixels):
+class TicketTemplate(BaseModel):
+
+    html = TextField()
+    title = TextField()
+    description = TextField()
+    modified = CharField()
+
+    def serialize(self):
+        data = self.__dict__['_data']
+        data['images'] = [image.serialize() for image in self.images]
+        data['text_variables'] = [text_variable.serialize() for text_variable in self.text_variables]
+        data['image_variables'] = [image_variable.serialize() for image_variable in self.image_variables]
+        return data
+
+
+class TextVariable(BaseModel):
+
+    name = CharField()
+    ticket_template = ForeignKeyField(TicketTemplate, null=True, related_name='text_variables')
+    mode = CharField()
+
+    def serialize(self):
+        data = {
+            'id': self.id,
+            'name': self.name,
+            'mode': self.mode,
+            'items': [text.serialize() for text in self.items]
+        }
+        return data
+
+
+class Text(BaseModel):
+
+    value = TextField()
+    variable = ForeignKeyField(TextVariable, related_name='items', null=True)
+
+    def serialize(self):
+        return {'id': self.id, 'text': self.value}
+
+
+class ImageVariable(BaseModel):
+
+    name = CharField()
+    ticket_template = ForeignKeyField(TicketTemplate, null=True, related_name='image_variables')
+    mode = CharField()
+
+    def serialize(self):
+        data = {
+            'id': self.id,
+            'name': self.name,
+            'mode': self.mode,
+            'items': [image.serialize() for image in self.items]
+        }
+        return data
+
+
+class Image(BaseModel):
+
+    path = TextField()
+    variable = ForeignKeyField(ImageVariable, related_name='items', null=True)
+    ticket_template = ForeignKeyField(TicketTemplate, related_name='images', null=True)
+
+    def serialize(self):
+        return {'id': self.id, 'name': basename(self.path)}
+
+
+class Photobooth(BaseModel):
+
+    uuid = CharField(unique=True)
+    place = ForeignKeyField(Place, null=True)
+    event = ForeignKeyField(Event, null=True)
+    ticket_template = ForeignKeyField(TicketTemplate, null=True)
+    paper_level = FloatField(default=100.0)
+    counter = IntegerField(default=0)
+
+
+class Code(BaseModel):
+
+    value = CharField()
+
+
+class Portrait(BaseModel):
+
+    code = CharField()
+    taken = DateTimeField()
+    place_id = CharField()
+    event_id = CharField()
+    photobooth_id = CharField()
+    ticket = CharField()
+    picture = CharField()
+    uploaded = BooleanField(default=False)
+
+
+def get_photobooth():
+    return Photobooth.get(Photobooth.uuid == settings.RESIN_UUID)
+
+
+def get_code():
+    code = Code.select().limit(1)[0]
+    value = code.value
+    code.delete_instance()
+    return value
+
+
+def get_portrait_to_be_uploaded():
+    """ return first portrait to be uploaded """
+    try:
+        return Portrait.select().where(~ Portrait.uploaded).get()
+    except Portrait.DoesNotExist:
+        return None
+
+
+def get_portraits_to_be_uploaded():
+    return Portrait.select().filter(uploaded=False)
+
+
+def create_portrait(portrait):
+    return Portrait.create(
+        code=portrait['code'],
+        taken=portrait['taken'],
+        place_id=portrait['place'],
+        event_id=portrait['event'],
+        photobooth_id=portrait['photobooth'],
+        ticket=portrait['ticket'],
+        picture=portrait['picture']
+    )
+
+
+def create_place(place):
+    return Place.create(
+        id=place['id'],
+        name=place.get('name'),
+        tz=place.get('tz'),
+        modified=place.get('modified')
+    )
+
+
+def create_event(event):
+    return Event.create(
+        id=event['id'],
+        name=event.get('name'),
+        modified=event.get('modified')
+    )
+
+
+def update_or_create_text(text, variable=None):
+    try:
+        txt = Text.get(Text.id == text['id'])
+        if txt.value != text['text']:
+            txt.value = text['text']
+            txt.save()
+        return txt
+    except Text.DoesNotExist:
+        return Text.create(id=text['id'], value=text['text'], variable=variable)
+
+
+def update_or_create_text_variable(text_variable, ticket_template=None):
+    try:
+        tv = TextVariable.get(TextVariable.id == text_variable['id'])
+        if tv.name != text_variable.get('name') or tv.mode != text_variable.get('mode'):
+            tv.name = text_variable.get('name')
+            tv.mode = text_variable.get('mode')
+            tv.save()
+        text_ids = [item['id'] for item in text_variable['items']]
+        query = Text.select().where(~(Text.id << text_ids)).join(TextVariable).where(TextVariable.id == text_variable['id'])
+        for text in query:
+            text.delete_instance()
+    except TextVariable.DoesNotExist:
+        tv = TextVariable.create(
+            id=text_variable['id'],
+            name=text_variable.get('name'),
+            mode=text_variable.get('mode'),
+            ticket_template=ticket_template)
+    for text in text_variable['items']:
+        update_or_create_text(text, tv)
+    return tv
+
+
+def update_or_create_image(image, variable=None, ticket_template=None):
+    try:
+        img = Image.get(Image.id == image['id'])
+        if basename(img.path) != image['name']:
+            path = download(image['image'], settings.IMAGE_ROOT)
+            img.path = path
+            img.save()
+        return img
+    except Image.DoesNotExist:
+        path = download(image['image'], settings.IMAGE_ROOT)
+        return Image.create(id=image['id'], path=path, variable=variable, ticket_template=ticket_template)
+
+
+def update_or_create_image_variable(image_variable, ticket_template=None):
+    try:
+        iv = ImageVariable.get(ImageVariable.id == image_variable['id'])
+        if iv.name != image_variable.get('name') or iv.mode != image_variable.get('mode'):
+            iv.name = image_variable.get('name')
+            iv.mode = image_variable.get('mode')
+            iv.save()
+        image_ids = [item['id'] for item in image_variable['items']]
+        query = Image.select().where(~(Image.id << image_ids)).join(ImageVariable).where(ImageVariable.id == image_variable['id'])
+        for image in query:
+            image.delete_instance()
+    except ImageVariable.DoesNotExist:
+        iv = ImageVariable.create(
+            id=image_variable['id'],
+            name=image_variable.get('name'),
+            mode=image_variable.get('mode'),
+            ticket_template=ticket_template)
+    for image in image_variable['items']:
+        update_or_create_image(image, variable=iv)
+    return iv
+
+
+def update_or_create_ticket_template(ticket_template):
+
+    try:
+        tt = TicketTemplate.get(TicketTemplate.id == ticket_template['id'])
+        tt.html = ticket_template['html']
+        tt.title = ticket_template['title']
+        tt.description = ticket_template['description']
+        tt.modified = ticket_template['modified']
+        tt.save()
+    except TicketTemplate.DoesNotExist:
+        tt = TicketTemplate.create(
+            id=ticket_template['id'],
+            html=ticket_template['html'],
+            title=ticket_template['title'],
+            description=ticket_template['description'],
+            modified=ticket_template['modified']
+        )
+
+    for text_variable in ticket_template['text_variables']:
+        update_or_create_text_variable(text_variable, tt)
+
+    for image_variable in ticket_template['image_variables']:
+        update_or_create_image_variable(image_variable, tt)
+
+    for image in ticket_template['images']:
+        update_or_create_image(image, ticket_template=tt)
+
+    return tt
+
+
+def update_photobooth(**kwargs):
+    query = Photobooth.update(**kwargs).where(Photobooth.uuid == settings.RESIN_UUID)
+    query.execute()
+
+
+def update_place(id, **kwargs):
+    query = Place.update(**kwargs).where(Place.id == id)
+    query.execute()
+
+
+def update_event(id, **kwargs):
+    query = Event.update(**kwargs).where(Event.id == id)
+    query.execute()
+
+
+def update_portrait(id, **kwargs):
+    query = Portrait.update(**kwargs).where(Portrait.id == id)
+    query.execute()
+
+
+def increment_counter():
+    photobooth = get_photobooth()
+    photobooth.counter += 1
+    photobooth.save()
+
+
+def update_paper_level(pixels):
+
+    with database.transaction():
+        photobooth = Photobooth.get(Photobooth.uuid == settings.RESIN_UUID)
         if pixels == 0:
             # we are out of paper
             new_paper_level = 0
         else:
-            old_paper_level = self.get_paper_level()
+            old_paper_level = photobooth.paper_level
             if old_paper_level == 0:
                 # Someone just refill the paper
                 new_paper_level = 100
@@ -228,43 +345,20 @@ class Database(object):
                 if new_paper_level <= 1:
                     # estimate is wrong, guess it's 10%
                     new_paper_level = 10
-        self.set_paper_level(new_paper_level)
+        photobooth.paper_level = new_paper_level
+        photobooth.save()
         return new_paper_level
 
 
-    @transaction_decorate(0.5)
-    def set_paper_level(self, paper_level):
-        self.data.photobooth.paper_level = paper_level
-        self.data.photobooth._p_changed = True
-
-    def get_paper_level(self):
-        return self.data.photobooth.paper_level
-
-    @transaction_decorate(0.5)
-    def increment_counter(self):
-        self.data.photobooth.counter += 1
-
-    def pack(self):
-        self.storage.pack(wait=True)
-        os.remove(os.path.join(settings.DATA_ROOT, 'db.fs.old'))
+def delete(instance):
+    return instance.delete_instance()
 
 
-class Data(persistent.Persistent):
-    """ OO data storage """
-
-    def __init__(self):
-        self.photobooth = Photobooth()
-        self.version = DATABASE_VERSION
+def should_claim_code():
+    return Code.select().count() < 1000
 
 
-class Photobooth(persistent.Persistent):
-
-    def __init__(self):
-        self.id = None
-        self.counter = 0
-        self.ticket_template = None
-        self.place = None
-        self.event = None
-        self.paper_level = 100
-        self.codes = []
-        self.portraits = []
+def bulk_insert_codes(codes):
+    with database.atomic():
+        for code in codes:
+            Code.create(value=code)

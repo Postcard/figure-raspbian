@@ -40,7 +40,7 @@ if [[ $RTC ]]; then
 fi
 
 # create data directories
-mkdir -p /data/static /data/media/tickets /data/media/images /data/media/snapshots
+mkdir -p /data/static /data/media/tickets /data/media/images /data/media/pictures
 
 # Make sure $HOSTNAME is present in /etc/hosts
 grep -q "$HOSTNAME" /etc/hosts || echo "127.0.0.1 $HOSTNAME" >> /etc/hosts

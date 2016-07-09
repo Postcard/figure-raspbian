@@ -16,6 +16,7 @@ db.fs
 db.fs.index
 db.fs.lock
 db.fs.tmp
+local.db
 db.index
 db.json
 db.lock
