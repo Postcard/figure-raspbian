@@ -38,8 +38,8 @@ BUTTON_PIN = int(get_env_setting('BUTTON_PIN', 2))
 LINE_FEED_COUNT = int(get_env_setting('LINE_FEED_COUNT', 5))
 
 # Ticket template configuration
-TICKET_TEMPLATE_TITLE = get_env_setting('TICKET_TEMPLATE_TITLE', '')
-TICKET_TEMPLATE_DESCRIPTION = get_env_setting('TICKET_TEMPLATE_DESCRIPTION', '')
+TICKET_TEMPLATE_TITLE = u'Émilie et Patrick'
+TICKET_TEMPLATE_DESCRIPTION = u'16 juillet 2016'
 
 
 
