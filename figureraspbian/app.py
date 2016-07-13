@@ -4,7 +4,6 @@
 import base64
 import logging
 import codecs
-from signal import pause
 from os import path
 import time
 
@@ -40,6 +39,7 @@ class App(object):
             "images": []
         }
         self.prev_input = 0
+        self.count = 0
 
     def trigger(self):
         """
@@ -73,9 +73,10 @@ class App(object):
 
         filename = get_file_name(self.count)
 
-        # TODO save to USB stick
-        # filepath = path.join(settings.MEDIA_ROOT, 'snapshots', filename)
-        # snapshot.save()
+        filepath = path.join('/mnt', filename)
+        snapshot.save(filepath)
+
+        self.count += 1
 
     def run(self):
         """ Main execution loop polling for push button inputs """
