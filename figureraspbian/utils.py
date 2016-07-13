@@ -31,7 +31,7 @@ def timeit(func):
 @timeit
 def get_base64_snapshot_thumbnail(snapshot):
     buf = cStringIO.StringIO()
-    snapshot.resize((576, 576)).save(buf, "JPEG")
+    snapshot.resize((512, 512)).save(buf, "JPEG")
     content = base64.b64encode(buf.getvalue())
     buf.close()
     return content
@@ -50,7 +50,7 @@ def png2pos(path):
     # TODO make png2pos support passing base64 file argument
     args = ['png2pos', '-r', '-s2', '-aC', path]
     my_env = os.environ.copy()
-    my_env['PNG2POS_PRINTER_MAX_WIDTH'] = '576'
+    my_env['PNG2POS_PRINTER_MAX_WIDTH'] = '512'
 
     p = subprocess.Popen(args, stdout=subprocess.PIPE, env=my_env)
     pos_data, err = p.communicate()

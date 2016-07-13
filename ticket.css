@@ -31,7 +31,7 @@ body.figure-ticket-container {
 ***********************/
 .figure-ticket-container {
   margin: 0px;
-  width: 576px;
+  width: 512px;
   overflow-x:hidden;
   font-family: 'ASM\-Regular', sans-serif;
   line-height: 1.7em;
