@@ -6,6 +6,7 @@ import logging
 import codecs
 from signal import pause
 from os import path
+import time
 
 from gpiozero import Button
 from usb.core import USBError
@@ -38,7 +39,7 @@ class App(object):
             "image_variables": [],
             "images": []
         }
-        self.count = 0
+        self.prev_input = 0
 
     def trigger(self):
         """
@@ -76,9 +77,16 @@ class App(object):
         # filepath = path.join(settings.MEDIA_ROOT, 'snapshots', filename)
         # snapshot.save()
 
-        self.count += 1
-
     def run(self):
         """ Main execution loop polling for push button inputs """
-        self.button.when_pressed = self.trigger
-        pause()
+
+        while True:
+            curr_input = self.button.value
+
+            if curr_input == 1 and self.prev_input == 0:
+                logger.info("A trigger occured")
+                self.trigger()
+
+            time.sleep(0.05)
+            self.prev_input = curr_input
+
