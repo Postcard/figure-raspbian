@@ -27,9 +27,9 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/archive/2.5.9.zip && \
-    unzip 2.5.9.zip && \
-    cd gphoto2-updater-2.5.9 && \
+RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/archive/2.5.10.zip && \
+    unzip 2.5.10.zip && \
+    cd gphoto2-updater-2.5.10 && \
     chmod +x gphoto2-updater.sh && \
     ./gphoto2-updater.sh
 
