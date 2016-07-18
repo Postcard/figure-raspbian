@@ -51,9 +51,15 @@ RUN wget http://download.redis.io/releases/redis-stable.tar.gz && \
     cd utils && \
     ./install_server.sh 
 
-RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/archive/2.5.9.zip && \
-    unzip 2.5.9.zip && \
-    cd gphoto2-updater-2.5.9 && \
+RUN wget --no-check-certificate https://github.com/Postcard/python-epson-printer/archive/v1.9.0.zip && \
+    unzip v1.9.0.zip && \
+    rm v1.9.0.zip && \
+    cd python-epson-printer-1.9.0 && \
+    python setup.py install
+
+RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/archive/2.5.10.zip && \
+    unzip 2.5.10.zip && \
+    cd gphoto2-updater-2.5.10 && \
     chmod +x gphoto2-updater.sh && \
     ./gphoto2-updater.sh
 
@@ -87,8 +93,7 @@ RUN pip install gphoto2==1.2.1 \
     Django==1.8 \
     hashids==1.1.0 \
     ticketrenderer==0.2.0 \
-    figure-sdk==0.1.6 \
-    python-epson-printer==1.8.0
+    figure-sdk==0.1.6
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
