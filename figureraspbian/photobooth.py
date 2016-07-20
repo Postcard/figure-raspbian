@@ -28,7 +28,7 @@ from figureraspbian.threads import Interval
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
-
+figure.api_base = settings.API_HOST
 figure.token = settings.TOKEN
 
 camera = None
