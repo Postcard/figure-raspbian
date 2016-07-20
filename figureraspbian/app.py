@@ -31,6 +31,7 @@ class App(object):
 
     def start(self):
         self.button.start()
+        logger.info("Ready...")
 
     def stop(self):
         db.close()

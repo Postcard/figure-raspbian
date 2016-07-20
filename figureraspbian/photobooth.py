@@ -57,6 +57,12 @@ def initialize():
     except Exception as e:
         logger.exception(e)
 
+    # grab new codes if necessary
+    try:
+        claim_new_codes()
+    except Exception as e:
+        logger.exception(e)
+
 
 def set_intervals():
     """
