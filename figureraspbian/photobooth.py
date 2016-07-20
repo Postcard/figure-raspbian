@@ -321,8 +321,8 @@ class TriggerThread(Thread):
             'picture': picture_io,
             'ticket': ticket_io,
             'taken': date,
-            'place': photobooth.place.id,
-            'event': photobooth.event.id,
+            'place': photobooth.place.id if photobooth.place else None,
+            'event': photobooth.event.id if photobooth.event else None,
             'photobooth': photobooth.id,
             'code': code,
             'filename': filename
