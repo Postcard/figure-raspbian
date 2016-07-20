@@ -36,6 +36,8 @@ printer = None
 button = None
 door_lock = None
 
+lock = Lock()
+
 
 def initialize():
     """
@@ -94,15 +96,85 @@ def download_stylesheet():
     download(settings.TICKET_CSS_URL, settings.STATIC_ROOT)
 
 
-def trigger():
-    trigger_thread = TriggerThread()
-    trigger_thread.start()
-
-
 def unlock():
     door_lock.open()
     time.sleep(settings.DOOR_OPENING_TIME)
     door_lock.close()
+
+
+@execute_if_not_busy(lock)
+def trigger():
+    """
+    execute a sequence of actions on devices after a trigger occurs
+    Eg:
+    - take a photo
+    - render a ticket
+    - print a ticket
+    - upload files
+    - etc
+    :return:
+    """
+    picture = camera.capture()
+
+    photobooth = db.get_photobooth()
+
+    ticket_renderer = TicketRenderer(
+        photobooth.ticket_template.serialize(), settings.MEDIA_URL, settings.LOCAL_TICKET_CSS_URL)
+
+    code = db.get_code()
+    date = datetime.now(pytz.timezone(photobooth.place.tz))
+    base64_picture_thumb = get_base64_picture_thumbnail(picture)
+
+    rendered = ticket_renderer.render(
+        picture="data:image/jpeg;base64,%s" % base64_picture_thumb,
+        code=code,
+        date=date,
+        counter=photobooth.counter
+    )
+
+    del base64_picture_thumb
+
+    ticket_base64 = get_screenshot(rendered)
+    ticket_io = base64.b64decode(ticket_base64)
+    ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
+
+    pos_data = png2pos(ticket_path)
+
+    try:
+        printer.print_ticket(pos_data)
+        update_paper_level_async(ticket_length)
+    except USBError:
+        # Oups, it seems we are out of paper
+        update_paper_level_async(0)
+    buf = cStringIO.StringIO()
+    picture.save(buf, "JPEG")
+    picture_io = buf.getvalue()
+    buf.close()
+
+    filename = get_file_name(code)
+
+    portrait = {
+        'picture': picture_io,
+        'ticket': ticket_io,
+        'taken': date,
+        'place': photobooth.place.id if photobooth.place else None,
+        'event': photobooth.event.id if photobooth.event else None,
+        'photobooth': photobooth.id,
+        'code': code,
+        'filename': filename
+    }
+
+    db.increment_counter()
+    claim_new_codes_async()
+    upload_portrait_async(portrait)
+
+    return code
+
+
+def trigger_async():
+    thr = Thread(target=trigger, args=(), kwargs={})
+    thr.start()
+    return thr
 
 
 def update():
@@ -279,80 +351,3 @@ def claim_new_codes():
 def claim_new_codes_async():
     thr = Thread(target=claim_new_codes, args=(), kwargs={})
     thr.start()
-
-
-lock = Lock()
-
-
-class TriggerThread(Thread):
-    """
-    This class is responsible for triggering a sequence of actions on devices after a trigger occurs
-    Eg:
-    - take a photo
-    - render a ticket
-    - print a ticket
-    - upload files
-    - etc
-    The execution is done asynchronously but we ensure that devices cannot be accessed from different threads
-    at the same time by using a lock
-    """
-
-    def __init__(self):
-        super(TriggerThread, self).__init__(target=self.trigger, args=())
-
-    @execute_if_not_busy(lock)
-    def trigger(self):
-
-        picture = camera.capture()
-
-        photobooth = db.get_photobooth()
-
-        ticket_renderer = TicketRenderer(
-            photobooth.ticket_template.serialize(), settings.MEDIA_URL, settings.LOCAL_TICKET_CSS_URL)
-
-        code = db.get_code()
-        date = datetime.now(pytz.timezone(photobooth.place.tz))
-        base64_picture_thumb = get_base64_picture_thumbnail(picture)
-
-        rendered = ticket_renderer.render(
-            picture="data:image/jpeg;base64,%s" % base64_picture_thumb,
-            code=code,
-            date=date,
-            counter=photobooth.counter
-        )
-
-        del base64_picture_thumb
-
-        ticket_base64 = get_screenshot(rendered)
-        ticket_io = base64.b64decode(ticket_base64)
-        ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
-
-        pos_data = png2pos(ticket_path)
-
-        try:
-            printer.print_ticket(pos_data)
-            update_paper_level_async(ticket_length)
-        except USBError:
-            # Oups, it seems we are out of paper
-            update_paper_level_async(0)
-        buf = cStringIO.StringIO()
-        picture.save(buf, "JPEG")
-        picture_io = buf.getvalue()
-        buf.close()
-
-        filename = get_file_name(code)
-
-        portrait = {
-            'picture': picture_io,
-            'ticket': ticket_io,
-            'taken': date,
-            'place': photobooth.place.id if photobooth.place else None,
-            'event': photobooth.event.id if photobooth.event else None,
-            'photobooth': photobooth.id,
-            'code': code,
-            'filename': filename
-        }
-
-        db.increment_counter()
-        claim_new_codes_async()
-        upload_portrait_async(portrait)

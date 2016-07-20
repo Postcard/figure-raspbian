@@ -16,7 +16,7 @@ from figureraspbian.utils import timeit, download
 from figureraspbian.devices.button import Button, PiFaceDigitalButton, EventThread, HoldThread
 from figureraspbian.db import Photobooth, TicketTemplate, Place, Event, Code, Portrait, Text, Image, TextVariable, ImageVariable
 from figureraspbian import db
-from figureraspbian.photobooth import update, upload_portrait, upload_portraits, TriggerThread
+from figureraspbian.photobooth import update, upload_portrait, upload_portraits, trigger
 from figureraspbian.decorators import execute_if_not_busy
 
 
@@ -1025,8 +1025,6 @@ class TestPhotobooth:
         upload_portrait(portrait)
 
 
-class TestTriggerThread:
-
     def test_trigger(self, mocker):
         """it should take a picture, print a ticket and send data to the server"""
 
@@ -1071,14 +1069,14 @@ class TestTriggerThread:
         mock_claim_new_codes = mocker.patch('figureraspbian.photobooth.claim_new_codes_async')
         mock_upload_portrait = mocker.patch('figureraspbian.photobooth.upload_portrait_async')
 
-        thr = TriggerThread()
-        thr.trigger()
+        trigger()
 
         assert mock_camera.capture.called
         assert mock_printer.print_ticket.called
         assert mock_update_paper_level.called
         assert mock_claim_new_codes.called
         assert mock_upload_portrait.called
+
 
 
 class TestButtton:

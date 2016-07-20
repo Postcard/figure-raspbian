@@ -5,6 +5,7 @@ from figureraspbian import photobooth
 from figureraspbian import settings
 from figureraspbian.devices.button import PiFaceDigitalButton
 from figureraspbian import db
+from figureraspbian.api import server, shutdown_server
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -24,13 +25,14 @@ class App(object):
         self.intervals = photobooth.set_intervals()
 
     def when_pressed(self):
-        photobooth.trigger()
+        photobooth.trigger_async()
 
     def when_held(self):
         photobooth.unlock()
 
     def start(self):
         self.button.start()
+        server.run()
         logger.info("Ready...")
 
     def stop(self):
@@ -38,6 +40,7 @@ class App(object):
         for interval in self.intervals:
             interval.stop()
         self.button.close()
+        shutdown_server()
         # wait for a trigger to complete before exiting
         photobooth.lock.acquire()
         logger.info("Bye Bye")

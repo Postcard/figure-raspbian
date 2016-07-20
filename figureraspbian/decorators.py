@@ -12,6 +12,8 @@ def execute_if_not_busy(lock):
                     return f(*args, **kwargs)
                 finally:
                     lock.release()
+            else:
+                return "Photobooth busy"
         return newFunction
     return wrap
 
