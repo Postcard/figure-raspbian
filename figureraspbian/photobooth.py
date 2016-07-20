@@ -71,7 +71,7 @@ def set_intervals():
 
     intervals = [
         Interval(update, settings.UPDATE_POLL_INTERVAL),
-        Interval(upload_portrait, settings.UPLOAD_PORTRAITS_INTERVAL)
+        Interval(upload_portraits, settings.UPLOAD_PORTRAITS_INTERVAL)
     ]
 
     for interval in intervals:
