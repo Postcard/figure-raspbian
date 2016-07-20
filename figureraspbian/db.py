@@ -329,25 +329,24 @@ def increment_counter():
 
 def update_paper_level(pixels):
 
-    with database.transaction():
-        photobooth = Photobooth.get(Photobooth.uuid == settings.RESIN_UUID)
-        if pixels == 0:
-            # we are out of paper
-            new_paper_level = 0
+    photobooth = Photobooth.get(Photobooth.uuid == settings.RESIN_UUID)
+    if pixels == 0:
+        # we are out of paper
+        new_paper_level = 0
+    else:
+        old_paper_level = photobooth.paper_level
+        if old_paper_level == 0:
+            # Someone just refill the paper
+            new_paper_level = 100
         else:
-            old_paper_level = photobooth.paper_level
-            if old_paper_level == 0:
-                # Someone just refill the paper
-                new_paper_level = 100
-            else:
-                cm = pixels2cm(pixels)
-                new_paper_level = old_paper_level - (cm / float(settings.PAPER_ROLL_LENGTH)) * 100
-                if new_paper_level <= 1:
-                    # estimate is wrong, guess it's 10%
-                    new_paper_level = 10
-        photobooth.paper_level = new_paper_level
-        photobooth.save()
-        return new_paper_level
+            cm = pixels2cm(pixels)
+            new_paper_level = old_paper_level - (cm / float(settings.PAPER_ROLL_LENGTH)) * 100
+            if new_paper_level <= 1:
+                # estimate is wrong, guess it's 10%
+                new_paper_level = 10
+    photobooth.paper_level = new_paper_level
+    photobooth.save()
+    return new_paper_level
 
 
 def delete(instance):
