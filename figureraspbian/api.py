@@ -1,14 +1,17 @@
 # -*- coding: utf8 -*-
-
 from flask import Flask, request
-server = Flask(__name__, host='0.0.0.0', port=80)
-
 from figureraspbian import photobooth
 
+app = Flask(__name__)
 
-@server.route('/trigger')
+
+@app.route('/trigger')
 def trigger():
     return photobooth.trigger()
+
+
+def start_server():
+    app.run(host='0.0.0.0', port=80)
 
 
 def shutdown_server():

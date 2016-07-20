@@ -5,7 +5,7 @@ from figureraspbian import photobooth
 from figureraspbian import settings
 from figureraspbian.devices.button import PiFaceDigitalButton
 from figureraspbian import db
-from figureraspbian.api import server, shutdown_server
+from figureraspbian.api import start_server, shutdown_server
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class App(object):
 
     def start(self):
         self.button.start()
-        server.run()
+        start_server()
         logger.info("Ready...")
 
     def stop(self):
