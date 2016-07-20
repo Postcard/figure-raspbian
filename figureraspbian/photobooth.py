@@ -110,6 +110,9 @@ def update():
 
     next = figure.Photobooth.get(settings.RESIN_UUID)
 
+    if current.id != next['id']:
+        db.update_photobooth(id=next['id'])
+
     # check if we need to update the place
     place = next.get('place')
 
@@ -278,7 +281,7 @@ class TriggerThread(Thread):
     @execute_if_not_busy(lock)
     def trigger(self):
 
-        snapshot = camera.capture()
+        picture = camera.capture()
 
         photobooth = db.get_photobooth()
 
@@ -311,7 +314,7 @@ class TriggerThread(Thread):
             # Oups, it seems we are out of paper
             update_paper_level_async(0)
         buf = cStringIO.StringIO()
-        snapshot.save(buf, "JPEG")
+        picture.save(buf, "JPEG")
         picture_io = buf.getvalue()
         buf.close()
 

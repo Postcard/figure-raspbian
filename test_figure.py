@@ -641,7 +641,10 @@ class TestPhotobooth:
         assert mock_db.create_place.called
         assert mock_db.create_event.called
         assert mock_db.update_or_create_ticket_template.called
-        assert mock_db.update_photobooth.call_count == 3
+        assert mock_db.update_photobooth.call_count == 4
+        assert mock_db.update_photobooth.call_args_list[0] == call(id=2)
+
+
 
     def test_update_reset(self, mocker):
         """ it should delete place, event and ticket template and set corresponding value to None on photobooth """
@@ -992,6 +995,34 @@ class TestPhotobooth:
         assert mock_db.get_portrait_to_be_uploaded.call_count == 1
         assert mock_api.create.call_count == 1
         assert mock_db.delete.call_count == 0
+
+    @pytest.mark.skip(reason="need an API server running on localhost")
+    def test_upload_portrait_no_mock(self):
+
+        picture = PILImage.open('test_snapshot.jpg')
+        ticket = PILImage.open('test_ticket.jpg')
+
+        import cStringIO
+        buf1 = cStringIO.StringIO()
+        picture.save(buf1, "JPEG")
+        picture_io = buf1.getvalue()
+
+        buf2 = cStringIO.StringIO()
+        ticket.save(buf2, "JPEG")
+        ticket_io = buf2.getvalue()
+
+        portrait = {
+            'picture': picture_io,
+            'ticket': ticket_io,
+            'taken': datetime.now(pytz.timezone('Europe/Paris')),
+            'place': 1,
+            'event': None,
+            'photobooth': 1,
+            'code': 'JUFD0',
+            'filename': 'Figure_JHUGTTX.jpg'
+        }
+
+        upload_portrait(portrait)
 
 
 class TestTriggerThread:
