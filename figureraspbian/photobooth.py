@@ -332,7 +332,7 @@ def update_paper_level(pixels):
     logger.info('Paper level is now %s percent, updating API...' % paper_level)
     figure.Photobooth.edit(
         settings.RESIN_UUID, data={'paper_level': paper_level})
-    logger.info('API updated with new paper level!' % paper_level)
+    logger.info('API updated with new paper level!')
 
 
 def update_paper_level_async(pixels):
