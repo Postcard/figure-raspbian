@@ -73,9 +73,9 @@ def timeit(func):
 
 
 @timeit
-def get_base64_snapshot_thumbnail(snapshot):
+def get_base64_picture_thumbnail(picture):
     buf = cStringIO.StringIO()
-    snapshot.resize((576, 576)).save(buf, "JPEG")
+    picture.resize((576, 576)).save(buf, "JPEG")
     content = base64.b64encode(buf.getvalue())
     buf.close()
     return content

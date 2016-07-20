@@ -17,7 +17,7 @@ from figureraspbian import settings
 from figureraspbian.devices.camera import DSLRCamera
 from figureraspbian.devices.printer import EpsonPrinter
 from figureraspbian.devices.door_lock import PiFaceDigitalDoorLock
-from figureraspbian.utils import get_base64_snapshot_thumbnail, get_pure_black_and_white_ticket, \
+from figureraspbian.utils import get_base64_picture_thumbnail, get_pure_black_and_white_ticket, \
     png2pos, get_file_name, download, write_file, read_file
 from figureraspbian.decorators import execute_if_not_busy
 from figureraspbian.phantomjs import get_screenshot
@@ -290,16 +290,16 @@ class TriggerThread(Thread):
 
         code = db.get_code()
         date = datetime.now(pytz.timezone(photobooth.place.tz))
-        base64_snapshot_thumb = get_base64_snapshot_thumbnail(snapshot)
+        base64_picture_thumb = get_base64_picture_thumbnail(picture)
 
         rendered = ticket_renderer.render(
-            picture="data:image/jpeg;base64,%s" % base64_snapshot_thumb,
+            picture="data:image/jpeg;base64,%s" % base64_picture_thumb,
             code=code,
             date=date,
             counter=photobooth.counter
         )
 
-        del base64_snapshot_thumb
+        del base64_picture_thumb
 
         ticket_base64 = get_screenshot(rendered)
         ticket_io = base64.b64decode(ticket_base64)
