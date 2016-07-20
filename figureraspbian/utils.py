@@ -40,12 +40,8 @@ def download(url, path):
     if not exists(path_to_file):
         req = urllib2.Request(url)
         r = urllib2.urlopen(req, timeout=10)
-        if r.url != url:
-            # if we were redirected, the real file name we take from the final URL
-            local_name = url2name(r.url)
-        with open(path_to_file, 'wb+') as f:
-            f.write(r.read())
-        return path_to_file
+        write_file(r.read(), path_to_file)
+    return path_to_file
 
 
 def write_file(file, path):

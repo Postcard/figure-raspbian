@@ -101,70 +101,64 @@ def update():
     This will update the data in case it has been changed in the API
     """
     current = db.get_photobooth()
-    try:
-        next = figure.Photobooth.get(settings.RESIN_UUID)
 
-        # check if we need to update the place
-        place = next.get('place')
+    next = figure.Photobooth.get(settings.RESIN_UUID)
 
-        if place and not current.place:
-            p = db.create_place(place)
-            db.update_photobooth(place=p)
+    # check if we need to update the place
+    place = next.get('place')
 
-        elif not place and current.place:
-            db.delete(current.place)
-            db.update_photobooth(place=None)
+    if place and not current.place:
+        p = db.create_place(place)
+        db.update_photobooth(place=p)
 
-        elif place and current.place and place.get('id') != current.place.id:
-            db.delete(current.place)
-            p = db.create_place(place)
-            db.update_photobooth(place=p)
+    elif not place and current.place:
+        db.delete(current.place)
+        db.update_photobooth(place=None)
 
-        elif place and current.place and place.get('modified') > current.place.modified:
-            db.update_place(current.place.id, name=place.get('name'), tz=place.get('tz'), modified=place.get('modified'))
+    elif place and current.place and place.get('id') != current.place.id:
+        db.delete(current.place)
+        p = db.create_place(place)
+        db.update_photobooth(place=p)
 
-        # check if we need to update the event
-        event = next.get('event')
-        if event and not current.event:
-            e = db.create_event(event)
-            db.update_photobooth(event=e)
+    elif place and current.place and place.get('modified') > current.place.modified:
+        db.update_place(current.place.id, name=place.get('name'), tz=place.get('tz'), modified=place.get('modified'))
 
-        elif not event and current.event:
-            db.delete(current.event)
-            db.update_photobooth(event=None)
+    # check if we need to update the event
+    event = next.get('event')
+    if event and not current.event:
+        e = db.create_event(event)
+        db.update_photobooth(event=e)
 
-        elif event and current.event and event.get('id') != current.event.id:
-            db.delete(current.event)
-            e = db.create_event(event)
-            db.update_photobooth(event=e)
+    elif not event and current.event:
+        db.delete(current.event)
+        db.update_photobooth(event=None)
 
-        elif event and current.event and event.get('modified') > current.event.modified:
-            print "HERE"
-            db.update_event(current.event.id, name=event.get('name'), modified=event.get('modified'))
+    elif event and current.event and event.get('id') != current.event.id:
+        db.delete(current.event)
+        e = db.create_event(event)
+        db.update_photobooth(event=e)
 
-        # check if we need to update the ticket template
-        ticket_template = next.get('ticket_template')
+    elif event and current.event and event.get('modified') > current.event.modified:
+        db.update_event(current.event.id, name=event.get('name'), modified=event.get('modified'))
 
-        if ticket_template and not current.ticket_template:
-            t = db.update_or_create_ticket_template(ticket_template)
-            db.update_photobooth(ticket_template=t)
+    # check if we need to update the ticket template
+    ticket_template = next.get('ticket_template')
 
-        elif not ticket_template and current.ticket_template:
-            db.delete(current.ticket_template)
-            db.update_photobooth(ticket_template=None)
+    if ticket_template and not current.ticket_template:
+        t = db.update_or_create_ticket_template(ticket_template)
+        db.update_photobooth(ticket_template=t)
 
-        elif ticket_template and current.ticket_template and ticket_template.get('id') != current.ticket_template.id:
-            db.delete(current.ticket_template)
-            t = db.update_or_create_ticket_template(ticket_template)
-            db.update_photobooth(ticket_template=t)
+    elif not ticket_template and current.ticket_template:
+        db.delete(current.ticket_template)
+        db.update_photobooth(ticket_template=None)
 
-        elif ticket_template and current.ticket_template and ticket_template.get('modified') > current.ticket_template.modified:
-            print "THERE"
-            db.update_or_create_ticket_template(ticket_template)
+    elif ticket_template and current.ticket_template and ticket_template.get('id') != current.ticket_template.id:
+        db.delete(current.ticket_template)
+        t = db.update_or_create_ticket_template(ticket_template)
+        db.update_photobooth(ticket_template=t)
 
-    except figure.FigureError as e:
-        # Log and do nothing, we can wait for next update
-        logger.exception(e)
+    elif ticket_template and current.ticket_template and ticket_template.get('modified') > current.ticket_template.modified:
+        db.update_or_create_ticket_template(ticket_template)
 
 
 def upload_portrait(portrait):

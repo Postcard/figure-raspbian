@@ -12,7 +12,7 @@ from figure.error import BadRequestError, APIConnectionError
 from PIL import Image as PILImage
 
 from figureraspbian import utils, settings
-from figureraspbian.utils import timeit
+from figureraspbian.utils import timeit, download
 from figureraspbian.devices.button import Button, PiFaceDigitalButton, EventThread, HoldThread
 from figureraspbian.db import Photobooth, TicketTemplate, Place, Event, Code, Portrait, Text, Image, TextVariable, ImageVariable
 from figureraspbian import db
@@ -89,6 +89,31 @@ class TestUtils:
         lock.acquire()
         trigger()
         assert mock_trigger.call_count == 1
+
+    def test_download(self, mocker):
+        """ it should download file if not present in local file system and return file path """
+        mock_exists = mocker.patch('figureraspbian.utils.exists')
+        mock_exists.return_value = False
+
+        mock_urllib = mocker.patch('figureraspbian.utils.urllib2')
+        mock_response = Mock()
+        mock_urllib.urlopen.return_value = mock_response
+
+        mock_write_file = mocker.patch('figureraspbian.utils.write_file')
+
+        path = download('https://figure-integration.s3.amazonaws.com/media/images/1467986947463.jpg', settings.IMAGE_ROOT)
+
+        assert path == join(settings.IMAGE_ROOT, '1467986947463.jpg')
+        assert mock_urllib.urlopen.called
+        assert mock_response.read.called
+        assert mock_write_file.called
+
+    def test_download_file_already_exists(self, mocker):
+        """ it should not download file if it already exists in the file system """
+        mock_exists = mocker.patch('figureraspbian.utils.exists')
+        mock_exists.return_value = True
+        path = download('https://figure-integration.s3.amazonaws.com/media/images/1467986947463.jpg', settings.IMAGE_ROOT)
+        assert path == join(settings.IMAGE_ROOT, '1467986947463.jpg')
 
 
 @pytest.fixture
