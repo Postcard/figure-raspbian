@@ -143,8 +143,8 @@ class Portrait(BaseModel):
 
     code = CharField()
     taken = DateTimeField()
-    place_id = CharField()
-    event_id = CharField()
+    place_id = CharField(null=True)
+    event_id = CharField(null=True)
     photobooth_id = CharField()
     ticket = CharField()
     picture = CharField()
