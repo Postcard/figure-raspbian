@@ -41,6 +41,9 @@ def initialize():
     """
     Initialize devices, data and stylesheets
     """
+    # Disable logs for request library
+    logging.getLogger("requests").setLevel(logging.WARNING)
+
     try:
         initialize_devices()
     except Exception as e:
@@ -106,6 +109,8 @@ def update():
     """
     This will update the data in case it has been changed in the API
     """
+    logger.info("Updating data...")
+
     current = db.get_photobooth()
 
     next = figure.Photobooth.get(settings.RESIN_UUID)
@@ -169,6 +174,8 @@ def update():
     elif ticket_template and current.ticket_template and ticket_template.get('modified') > current.ticket_template.modified:
         db.update_or_create_ticket_template(ticket_template)
 
+    logger.info("Data updated !")
+
 
 def upload_portrait(portrait):
     """ Upload a portrait to Figure API or save it to local file system """
@@ -181,7 +188,9 @@ def upload_portrait(portrait):
     data = {key: portrait[key] for key in ['code', 'taken', 'place', 'event', 'photobooth']}
 
     try:
+        logger.info('Uploading portrait %s' % portrait['code'])
         figure.Portrait.create(data=data, files=files)
+        logger.info('Portrait %s uploaded !' % portrait['code'])
     except Exception as e:
         logger.error(e)
         # Couldn't upload the portrait, save picture and ticket
@@ -206,9 +215,16 @@ def upload_portrait_async(portrait):
 
 def upload_portraits():
 
+    number_of_portraits = db.get_number_of_portraits_to_be_uploaded()
+    if number_of_portraits == 0:
+        logger.info('No portrait to be uploaded by worker')
+    else:
+        logger.info('There are %s to be uploaded...' % number_of_portraits)
+
     while True:
         portrait = db.get_portrait_to_be_uploaded()
         if portrait:
+            logger.info('Uploading portrait %s...' % portrait.code)
             try:
                 files = {'picture_color': read_file(portrait.picture), 'ticket': read_file(portrait.ticket)}
                 data = {
@@ -220,8 +236,10 @@ def upload_portraits():
                 }
                 figure.Portrait.create(data=data, files=files)
                 db.update_portrait(portrait.id, uploaded=True)
-            except figure.BadRequestError:
+                logger.info('Portrait %s uploaded !' % portrait.code)
+            except figure.BadRequestError as e:
                 # Duplicate code or files empty
+                logger.exception(e)
                 db.delete(portrait)
             except IOError as e:
                 logger.exception(e)
@@ -239,8 +257,10 @@ def upload_portraits():
 
 def update_paper_level(pixels):
     paper_level = db.update_paper_level(pixels)
+    logger.info('Paper level is now %s percent, updating API...' % paper_level)
     figure.Photobooth.edit(
         settings.RESIN_UUID, data={'paper_level': paper_level})
+    logger.info('API updated with new paper level!' % paper_level)
 
 
 def update_paper_level_async(pixels):
@@ -250,8 +270,10 @@ def update_paper_level_async(pixels):
 
 def claim_new_codes():
     if db.should_claim_code():
+        logger.info('We are running out of codes, fetching new ones from API...')
         new_codes = figure.CodeList.claim()['codes']
         db.bulk_insert_codes(new_codes)
+        logger.info('New codes fetched and saved !')
 
 
 def claim_new_codes_async():

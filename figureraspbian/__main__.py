@@ -1,12 +1,8 @@
 # -*- coding: utf8 -*-
 
-import logging
 import signal
 
 from figureraspbian.app import App
-
-logging.basicConfig(level='INFO')
-logger = logging.getLogger(__name__)
 
 
 class GracefulKiller:

@@ -162,6 +162,11 @@ def get_code():
     return value
 
 
+def get_number_of_portraits_to_be_uploaded():
+    """ Retrieves the number of portraits to be uploaded """
+    return Portrait.select().where(~ Portrait.uploaded).count()
+
+
 def get_portrait_to_be_uploaded():
     """ return first portrait to be uploaded """
     try:
