@@ -127,6 +127,7 @@ class Image(BaseModel):
 class Photobooth(BaseModel):
 
     uuid = CharField(unique=True)
+    serial_number = CharField(null=True)
     place = ForeignKeyField(Place, null=True)
     event = ForeignKeyField(Event, null=True)
     ticket_template = ForeignKeyField(TicketTemplate, null=True)

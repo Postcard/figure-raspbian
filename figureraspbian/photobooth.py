@@ -168,7 +168,7 @@ def trigger():
     claim_new_codes_async()
     upload_portrait_async(portrait)
 
-    return code
+    return rendered
 
 
 def trigger_async():
@@ -188,7 +188,7 @@ def update():
     next = figure.Photobooth.get(settings.RESIN_UUID)
 
     if current.id != next['id']:
-        db.update_photobooth(id=next['id'])
+        db.update_photobooth(id=next['id'], serial_number=next.get('serial_number'))
 
     # check if we need to update the place
     place = next.get('place')

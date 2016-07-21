@@ -588,6 +588,7 @@ class TestPhotobooth:
         mock_api = mocker.patch('figureraspbian.photobooth.figure.Photobooth')
         mock_api.get.return_value = {
             'id': 2,
+            'serial_number': 'FIG 00001',
             'uuid': settings.RESIN_UUID,
             'place': {
                 'id': 1,
@@ -642,7 +643,7 @@ class TestPhotobooth:
         assert mock_db.create_event.called
         assert mock_db.update_or_create_ticket_template.called
         assert mock_db.update_photobooth.call_count == 4
-        assert mock_db.update_photobooth.call_args_list[0] == call(id=2)
+        assert mock_db.update_photobooth.call_args_list[0] == call(id=2, serial_number='FIG 00001')
 
 
 
@@ -660,6 +661,7 @@ class TestPhotobooth:
         mock_api = mocker.patch('figureraspbian.photobooth.figure.Photobooth')
         mock_api.get.return_value = {
             'id': 2,
+            'serial_number': 'FIG 00002',
             'uuid': settings.RESIN_UUID,
             'place': None,
             'event': None,
@@ -667,7 +669,11 @@ class TestPhotobooth:
         }
         update()
         assert mock_db.delete.call_args_list == [call(mock_place), call(mock_event), call(mock_ticket_template)]
-        assert mock_db.update_photobooth.call_args_list == [call(place=None), call(event=None), call(ticket_template=None)]
+        assert mock_db.update_photobooth.call_args_list == [
+            call(id=2, serial_number='FIG 00002'),
+            call(place=None),
+            call(event=None),
+            call(ticket_template=None)]
 
     def test_different_id(self, mocker):
         """
@@ -691,6 +697,7 @@ class TestPhotobooth:
         mock_api.get.return_value = {
             'id': 2,
             'uuid': settings.RESIN_UUID,
+            'serial_number': 'FIG 00002',
             'place': {
                 'id': 2,
             },
@@ -706,7 +713,7 @@ class TestPhotobooth:
         assert mock_db.create_place.call_args_list == [call({'id': 2})]
         assert mock_db.create_event.call_args_list == [call({'id': 2})]
         assert mock_db.update_or_create_ticket_template.call_args_list == [call({'id': 2})]
-        assert mock_db.update_photobooth.call_count == 3
+        assert mock_db.update_photobooth.call_count == 4
 
     def test_same_id_but_modified(self, mocker):
         """
