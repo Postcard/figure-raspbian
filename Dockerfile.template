@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install -y \
     net-tools \
     wireless-tools \
     sysstat \
+    procmail \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -82,7 +83,8 @@ RUN pip install gphoto2==1.4.1 \
     figure-sdk==0.1.7 \
     peewee==2.8.1 \
     Flask==0.11.1 \
-    psutil==4.3.0
+    psutil==4.3.0 \
+    netifaces==0.10.4
 
 ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true

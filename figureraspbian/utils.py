@@ -5,6 +5,7 @@ from os.path import basename, exists
 import urllib
 import logging
 import time
+import netifaces
 
 from urlparse import urlsplit
 import cStringIO
@@ -115,6 +116,21 @@ def get_file_name(code):
 
 def pixels2cm(pixels):
     return float(pixels) / settings.PIXEL_CM_RATIO
+
+
+def get_mac_addresses():
+    mac_addresses = []
+    interfaces = netifaces.interfaces()
+    for interface in interfaces:
+        af_link = netifaces.ifaddresses(interface).get(netifaces.AF_LINK)
+        if af_link and len(af_link)>0:
+            addr = af_link[0].get('addr')
+            if addr:
+                mac_address = '%s=%s' % (interface, addr)
+                mac_addresses.append(mac_address)
+    return ','.join(mac_addresses)
+
+
 
 
 

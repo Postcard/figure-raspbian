@@ -1,12 +1,10 @@
 # -*- coding: utf8 -*-
-import time
 import inspect
 from functools import wraps
 from threading import Event
 import logging
 
 from pifacedigitalio import PiFaceDigital
-from figureraspbian import settings
 from figureraspbian.threads import StoppableThread
 
 logging.basicConfig(level='INFO')
@@ -100,7 +98,7 @@ class Button(object):
         pass
 
     def _fire_held(self):
-        logger.info("Button hold")
+        logger.info("Button held")
         if self.when_held:
             self.when_held()
 
@@ -111,7 +109,7 @@ class Button(object):
 
 class PiFaceDigitalButton(Button):
     """
-    Represents a button that is connected the GPIO pins of the Raspberry Pi with a PiFaceDigital IO board
+    Represents a button that is connected to the GPIO pins of the Raspberry Pi with a PiFaceDigital IO board
     See http://www.piface.org.uk/products/piface_digital/ for more information
     """
 
@@ -125,16 +123,15 @@ class PiFaceDigitalButton(Button):
 
 class EventThread(StoppableThread):
     """
-    Provides a background thread that repeatedly check for button edges event (activated or deactivated)
+    Provides a background thread that repeatedly check for button edges events (activated or deactivated)
     """
 
     def __init__(self, parent):
         super(EventThread, self).__init__(target=self.event, args=(parent,))
 
     def event(self, parent):
-        while not self.stopping.is_set():
+        while not self.stopping.wait(parent.bounce_time):
             self._fire_events(parent)
-            time.sleep(parent.bounce_time)
 
     def _fire_events(self, parent):
         old_state = parent._last_state
@@ -164,7 +161,6 @@ class HoldThread(StoppableThread):
     """
     def __init__(self, parent):
         super(HoldThread, self).__init__(target=self.held, args=(parent,))
-
 
     def held(self, parent):
         while not self.stopping.is_set():

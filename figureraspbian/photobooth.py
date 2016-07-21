@@ -10,15 +10,14 @@ from os.path import join
 import errno
 
 from ticketrenderer import TicketRenderer
-from usb.core import USBError
 import figure
 
 from figureraspbian import settings
 from figureraspbian.devices.camera import DSLRCamera
-from figureraspbian.devices.printer import EpsonPrinter
+from figureraspbian.devices.printer import EpsonPrinter, OutOfPaperError
 from figureraspbian.devices.door_lock import PiFaceDigitalDoorLock
 from figureraspbian.utils import get_base64_picture_thumbnail, get_pure_black_and_white_ticket, \
-    png2pos, get_file_name, download, write_file, read_file
+    png2pos, get_file_name, download, write_file, read_file, get_mac_addresses
 from figureraspbian.decorators import execute_if_not_busy
 from figureraspbian.phantomjs import get_screenshot
 from figureraspbian import db
@@ -68,6 +67,9 @@ def initialize():
     except Exception as e:
         logger.exception(e)
 
+    # update mac addresses
+    update_mac_addresses_async()
+
 
 def set_intervals():
     """
@@ -114,6 +116,7 @@ def trigger():
     - etc
     :return:
     """
+
     picture = camera.capture()
 
     photobooth = db.get_photobooth()
@@ -122,7 +125,8 @@ def trigger():
         photobooth.ticket_template.serialize(), settings.MEDIA_URL, settings.LOCAL_TICKET_CSS_URL)
 
     code = db.get_code()
-    date = datetime.now(pytz.timezone(photobooth.place.tz))
+    tz = photobooth.place.tz if photobooth.place else settings.DEFAULT_TIMEZONE
+    date = datetime.now(pytz.timezone(tz))
     base64_picture_thumb = get_base64_picture_thumbnail(picture)
 
     rendered = ticket_renderer.render(
@@ -143,8 +147,7 @@ def trigger():
     try:
         printer.print_ticket(pos_data)
         update_paper_level_async(ticket_length)
-    except USBError:
-        # Oups, it seems we are out of paper
+    except OutOfPaperError:
         update_paper_level_async(0)
     buf = cStringIO.StringIO()
     picture.save(buf, "JPEG")
@@ -250,7 +253,7 @@ def update():
 
 
 def upload_portrait(portrait):
-    """ Upload a portrait to Figure API or save it to local file system """
+    """ Upload a portrait to Figure API or save it to local file system if an error occurs"""
 
     files = {
         'picture_color': (portrait['filename'], portrait['picture']),
@@ -337,6 +340,17 @@ def update_paper_level(pixels):
 
 def update_paper_level_async(pixels):
     thr = Thread(target=update_paper_level, args=(pixels,), kwargs={})
+    thr.start()
+
+
+def update_mac_addresses():
+    mac_addresses = get_mac_addresses()
+    figure.Photobooth.edit(
+        settings.RESIN_UUID, data={'mac_addresses': mac_addresses})
+
+
+def update_mac_addresses_async():
+    thr = Thread(target=update_mac_addresses, args=(), kwargs={})
     thr.start()
 
 

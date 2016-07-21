@@ -56,6 +56,9 @@ then
     unlink /var/run/supervisor.sock
 fi
 
+# lock supervisor update by default
+lockfile /data/resin-updates.lock
+
 # Launch supervisor in the foreground
 echo 'Starting supervisor'
 supervisord --nodaemon --configuration /etc/supervisord.conf
