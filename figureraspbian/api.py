@@ -55,6 +55,21 @@ def system():
     return html
 
 
+@app.route('/acquire_lock')
+def acquire_lock():
+    return photobooth.lock.acquire(False)
+
+
+@app.route('/release_lock')
+def release_lock():
+    try:
+        photobooth.lock.release()
+    except Exception:
+        pass
+    finally:
+        return "Lock released"
+
+
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
     def __init__(self, app, options=None):
