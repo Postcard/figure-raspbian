@@ -7,7 +7,7 @@ from usb.core import USBError
 
 from figureraspbian import settings
 from figureraspbian.utils import timeit
-
+from figureraspbian.exceptions import OutOfPaperError
 
 from epson_printer import epsonprinter
 
@@ -34,10 +34,6 @@ def get_product_id(vendor_id):
     if not printer:
         raise Exception("No EPSON Printer detected")
     return printer['product_id']
-
-
-class OutOfPaperError(Exception):
-    pass
 
 
 class EpsonPrinter(object):

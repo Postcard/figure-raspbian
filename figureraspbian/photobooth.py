@@ -15,7 +15,7 @@ from gpiozero import PingServer
 
 from figureraspbian import settings
 from figureraspbian.devices.camera import DSLRCamera
-from figureraspbian.devices.printer import EpsonPrinter, OutOfPaperError
+from figureraspbian.devices.printer import EpsonPrinter
 from figureraspbian.devices.door_lock import PiFaceDigitalDoorLock
 from figureraspbian.utils import get_base64_picture_thumbnail, get_pure_black_and_white_ticket, \
     png2pos, get_file_name, download, write_file, read_file, get_mac_addresses, render_jinja_template
@@ -23,7 +23,7 @@ from figureraspbian.decorators import execute_if_not_busy
 from figureraspbian.phantomjs import get_screenshot
 from figureraspbian import db
 from figureraspbian.threads import Interval
-from figureraspbian.exceptions import DevicesBusy
+from figureraspbian.exceptions import DevicesBusy, OutOfPaperError
 
 
 logging.basicConfig(level='INFO')
@@ -109,7 +109,7 @@ def download_booting_ticket_template():
     download(settings.BOOTING_TICKET_TEMPLATE_URL, settings.STATIC_ROOT, force=True)
 
 
-def unlock():
+def door_open():
     door_lock.open()
     time.sleep(settings.DOOR_OPENING_TIME)
     door_lock.close()

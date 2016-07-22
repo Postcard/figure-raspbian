@@ -21,6 +21,12 @@ def trigger():
         return message
 
 
+@app.route('/door_open')
+def door_open():
+    photobooth.door_open()
+    return u'Door opened'
+
+
 @app.route('/info')
 def info():
     photobooth = db.get_photobooth()

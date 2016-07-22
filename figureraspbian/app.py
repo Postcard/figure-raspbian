@@ -28,7 +28,7 @@ class App(object):
         photobooth.trigger_async()
 
     def when_held(self):
-        photobooth.unlock()
+        photobooth.door_open()
 
     def start(self):
         self.button.start()
