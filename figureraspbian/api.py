@@ -31,11 +31,12 @@ def info():
     <h1>Figure photobooth {identifier}</h1>
     </br>
     <p>Place: {place}</p>
-    <p>Photo counter: </p>
+    <p>Photo counter: {counter}</p>
     <p>Number of portraits to be uploaded: {number_of_portraits_to_be_uploaded}<p>
     """.format(
         identifier=identifier,
         place=place,
+        counter=photobooth.counter,
         number_of_portraits_to_be_uploaded=number_of_portraits_to_be_uploaded
     )
     return html
