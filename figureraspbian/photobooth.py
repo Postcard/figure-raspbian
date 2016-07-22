@@ -405,7 +405,8 @@ def claim_new_codes_async():
 
 def is_online():
     # check if the device is online
-    server = PingServer(settings.API_HOST)
+    ping_host = '8.8.8.8'
+    server = PingServer(ping_host)
     b = server.is_active
     server.close()
     return b
