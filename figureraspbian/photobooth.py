@@ -22,6 +22,7 @@ from figureraspbian.decorators import execute_if_not_busy
 from figureraspbian.phantomjs import get_screenshot
 from figureraspbian import db
 from figureraspbian.threads import Interval
+from figureraspbian.exceptions import DevicesBusy
 
 
 logging.basicConfig(level='INFO')
@@ -104,8 +105,14 @@ def unlock():
     door_lock.close()
 
 
-@execute_if_not_busy(lock)
 def trigger():
+    try:
+        _trigger()
+    except DevicesBusy:
+        pass
+
+@execute_if_not_busy(lock)
+def _trigger():
     """
     execute a sequence of actions on devices after a trigger occurs
     Eg:
@@ -171,7 +178,7 @@ def trigger():
     claim_new_codes_async()
     upload_portrait_async(portrait)
 
-    return rendered
+    return ticket_path
 
 
 def trigger_async():

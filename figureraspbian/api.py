@@ -1,18 +1,24 @@
 # -*- coding: utf8 -*-
-from flask import Flask
+from os.path import basename, dirname
+
+from flask import Flask, send_from_directory
 import psutil
-import gunicorn.app.base
-from gunicorn.six import iteritems
 
 from figureraspbian import photobooth
 from figureraspbian import db, settings
+from figureraspbian.exceptions import DevicesBusy
 
 app = Flask(__name__)
 
 
 @app.route('/trigger')
 def trigger():
-    return photobooth.trigger()
+    try:
+        ticket_path = photobooth._trigger()
+        return send_from_directory(dirname(ticket_path), basename(ticket_path))
+    except DevicesBusy:
+        message = u'Someone else just triggered the photobooth, try again later'
+        return message
 
 
 @app.route('/info')
@@ -57,7 +63,11 @@ def system():
 
 @app.route('/acquire_lock')
 def acquire_lock():
-    return photobooth.lock.acquire(False)
+    acquired = photobooth.lock.acquire(False)
+    if acquired:
+        return 'Lock acquired'
+    else:
+        return 'Could not acquire the lock'
 
 
 @app.route('/release_lock')
@@ -67,32 +77,12 @@ def release_lock():
     except Exception:
         pass
     finally:
-        return "Lock released"
-
-
-class StandaloneApplication(gunicorn.app.base.BaseApplication):
-
-    def __init__(self, app, options=None):
-        self.options = options or {}
-        self.application = app
-        super(StandaloneApplication, self).__init__()
-
-    def load_config(self):
-        config = dict([(key, value) for key, value in iteritems(self.options)
-                       if key in self.cfg.settings and value is not None])
-        for key, value in iteritems(config):
-            self.cfg.set(key.lower(), value)
-
-    def load(self):
-        return self.application
+        return 'Lock released'
 
 
 def start_server():
-    options = {
-        'bind': '%s:%s' % ('0.0.0.0', '80'),
-        'workers': 4,
-    }
-    StandaloneApplication(app, options).run()
+    app.run(host='0.0.0.0', port=80)
+
 
 
 

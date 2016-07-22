@@ -1,0 +1,4 @@
+
+
+class DevicesBusy(Exception):
+    pass

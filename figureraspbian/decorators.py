@@ -1,5 +1,7 @@
-from figureraspbian.db import database
+# -*- coding: utf8 -*-
 
+from figureraspbian.db import database
+from figureraspbian.exceptions import DevicesBusy
 
 def execute_if_not_busy(lock):
     """
@@ -13,7 +15,7 @@ def execute_if_not_busy(lock):
                 finally:
                     lock.release()
             else:
-                return u'Oups we are busy, try again later'
+                raise DevicesBusy()
         return decorated
     return wrap
 
