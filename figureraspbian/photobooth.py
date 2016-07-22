@@ -11,13 +11,14 @@ import errno
 
 from ticketrenderer import TicketRenderer
 import figure
+from gpiozero import PingServer
 
 from figureraspbian import settings
 from figureraspbian.devices.camera import DSLRCamera
 from figureraspbian.devices.printer import EpsonPrinter, OutOfPaperError
 from figureraspbian.devices.door_lock import PiFaceDigitalDoorLock
 from figureraspbian.utils import get_base64_picture_thumbnail, get_pure_black_and_white_ticket, \
-    png2pos, get_file_name, download, write_file, read_file, get_mac_addresses
+    png2pos, get_file_name, download, write_file, read_file, get_mac_addresses, render_jinja_template
 from figureraspbian.decorators import execute_if_not_busy
 from figureraspbian.phantomjs import get_screenshot
 from figureraspbian import db
@@ -52,9 +53,14 @@ def initialize():
         logger.exception(e)
 
     try:
-        download_stylesheet()
+        download_ticket_stylesheet()
     except Exception as e:
         logger.exception(e)
+
+    try:
+        download_booting_ticket_template()
+    except Exception as e:
+        logger.exception()
 
     # update photobooth
     try:
@@ -95,8 +101,12 @@ def initialize_devices():
     door_lock = PiFaceDigitalDoorLock()
 
 
-def download_stylesheet():
-    download(settings.TICKET_CSS_URL, settings.STATIC_ROOT)
+def download_ticket_stylesheet():
+    download(settings.TICKET_CSS_URL, settings.STATIC_ROOT, force=True)
+
+
+def download_booting_ticket_template():
+    download(settings.BOOTING_TICKET_TEMPLATE_URL, settings.STATIC_ROOT, force=True)
 
 
 def unlock():
@@ -179,6 +189,25 @@ def _trigger():
     upload_portrait_async(portrait)
 
     return ticket_path
+
+
+@execute_if_not_busy(lock)
+def print_booting_ticket():
+    booting_template_path = join(settings.STATIC_ROOT, 'booting.html')
+    _photobooth = db.get_photobooth()
+    rendered = render_jinja_template(
+        booting_template_path,
+        serial_number=_photobooth.serial_number,
+        place=_photobooth.place.name if _photobooth.place else None,
+        event=_photobooth.event.name if _photobooth.event else None,
+        connexion_status='Online' if is_online() else 'Offline',
+        css_url=settings.LOCAL_TICKET_CSS_URL
+    )
+    ticket_base64 = get_screenshot(rendered)
+    ticket_io = base64.b64decode(ticket_base64)
+    ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
+    pos_data = png2pos(ticket_path)
+    printer.print_ticket(pos_data)
 
 
 def trigger_async():
@@ -372,3 +401,12 @@ def claim_new_codes():
 def claim_new_codes_async():
     thr = Thread(target=claim_new_codes, args=(), kwargs={})
     thr.start()
+
+
+def is_online():
+    # check if the device is online
+    server = PingServer(settings.API_HOST)
+    b = server.is_active
+    server.close()
+    return b
+

@@ -32,8 +32,10 @@ class App(object):
 
     def start(self):
         self.button.start()
-        logger.info("Ready...")
         start_server()
+        logger.info("Ready...")
+        # print booting ticket
+        photobooth.print_booting_ticket()
 
     def stop(self):
         db.close()

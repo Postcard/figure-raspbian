@@ -51,6 +51,8 @@ MEDIA_URL = 'file://%s' % MEDIA_ROOT
 TICKET_CSS_URL = "%s/%s" % (STATIC_HOST, 'static/css/ticket.css')
 LOCAL_TICKET_CSS_URL = 'file://%s/ticket.css' % STATIC_ROOT
 
+BOOTING_TICKET_TEMPLATE_URL = "%s/%s" % (STATIC_HOST, 'static/ticket_templates/booting.html')
+
 # Path to PhantomJS executable
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 

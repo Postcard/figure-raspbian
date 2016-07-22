@@ -5,8 +5,6 @@ from os.path import basename, exists
 import urllib
 import logging
 import time
-import netifaces
-
 from urlparse import urlsplit
 import cStringIO
 import base64
@@ -16,8 +14,11 @@ from os.path import join
 
 from PIL import Image
 from hashids import Hashids
+from jinja2 import Environment
+import netifaces
 
 from figureraspbian import settings
+
 
 
 logging.basicConfig(level='INFO')
@@ -32,13 +33,13 @@ def url2name(url):
     return basename(urllib.unquote(urlsplit(url)[2]))
 
 
-def download(url, path):
+def download(url, path, force=False):
     """
     Download a file from a remote url and copy it to the local path
     """
     local_name = url2name(url)
     path_to_file = join(path, local_name)
-    if not exists(path_to_file):
+    if not exists(path_to_file) or force:
         req = urllib2.Request(url)
         r = urllib2.urlopen(req, timeout=10)
         write_file(r.read(), path_to_file)
@@ -129,6 +130,14 @@ def get_mac_addresses():
                 mac_address = '%s=%s' % (interface, addr)
                 mac_addresses.append(mac_address)
     return ','.join(mac_addresses)
+
+
+def render_jinja_template(path, **kwargs):
+    env = Environment()
+    with open(path, 'rb') as content_file:
+        template = env.from_string(content_file.read())
+        return template.render(kwargs)
+
 
 
 
