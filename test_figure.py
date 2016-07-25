@@ -18,6 +18,7 @@ from figureraspbian.db import Photobooth, TicketTemplate, Place, Event, Code, Po
 from figureraspbian import db
 from figureraspbian.photobooth import update, upload_portrait, upload_portraits, trigger
 from figureraspbian.decorators import execute_if_not_busy
+from figureraspbian.exceptions import DevicesBusy
 
 
 class TestUtils:
@@ -87,7 +88,9 @@ class TestUtils:
         assert not lock.locked()
 
         lock.acquire()
-        trigger()
+        with pytest.raises(DevicesBusy):
+            trigger()
+
         assert mock_trigger.call_count == 1
 
     def test_download(self, mocker):
