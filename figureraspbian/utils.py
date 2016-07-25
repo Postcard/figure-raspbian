@@ -11,6 +11,7 @@ import base64
 import subprocess
 import urllib2
 from os.path import join
+import codecs
 
 from PIL import Image
 from hashids import Hashids
@@ -134,10 +135,9 @@ def get_mac_addresses():
 
 def render_jinja_template(path, **kwargs):
     env = Environment()
-    with open(path, 'rb') as content_file:
+    with codecs.open(path, 'rb', encoding='utf-8') as content_file:
         template = env.from_string(content_file.read())
         return template.render(kwargs)
-
 
 
 
