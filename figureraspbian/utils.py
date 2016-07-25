@@ -59,9 +59,7 @@ def read_file(path):
     """
     Open a file and return its content
     """
-    with open(path, 'rb') as content_file:
-        content = content_file.read()
-    return content
+    return open(path, 'rb')
 
 
 def timeit(func):

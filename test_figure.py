@@ -225,8 +225,8 @@ class TestDatabase:
                 'place_id': '1',
                 'event_id': '1',
                 'photobooth_id': '1',
-                'ticket': '/path/to/ticket',
-                'picture': '/path/to/picture',
+                'ticket': '/path/to/ticket1',
+                'picture': '/path/to/picture1',
                 'uploaded': False
             },
             {
@@ -235,8 +235,8 @@ class TestDatabase:
                 'place_id': '1',
                 'event_id': '1',
                 'photobooth_id': '1',
-                'ticket': '/path/to/ticket',
-                'picture': '/path/to/picture',
+                'ticket': '/path/to/ticket2',
+                'picture': '/path/to/picture2',
                 'uploaded': True
             }
         ]
@@ -257,8 +257,8 @@ class TestDatabase:
                 'place_id': '1',
                 'event_id': '1',
                 'photobooth_id': '1',
-                'ticket': '/path/to/ticket',
-                'picture': '/path/to/picture',
+                'ticket': '/path/to/ticket1',
+                'picture': '/path/to/picture1',
                 'uploaded': False
             },
             {
@@ -267,8 +267,8 @@ class TestDatabase:
                 'place_id': '1',
                 'event_id': '1',
                 'photobooth_id': '1',
-                'ticket': '/path/to/ticket',
-                'picture': '/path/to/picture',
+                'ticket': '/path/to/ticket2',
+                'picture': '/path/to/picture2',
                 'uploaded': False
             }
         ]
@@ -278,13 +278,56 @@ class TestDatabase:
 
         p1 = db.get_portrait_to_be_uploaded()
         assert p1.code == 'AAAAA'
+        assert p1.ticket == '/path/to/ticket1'
+        assert p1.picture == '/path/to/picture1'
         p1.uploaded = True
         p1.save()
         p2 = db.get_portrait_to_be_uploaded()
         assert p2.code == 'BBBBB'
+        assert p2.ticket == '/path/to/ticket2'
+        assert p2.picture == '/path/to/picture2'
         p2.uploaded = True
         p2.save()
         assert not db.get_portrait_to_be_uploaded()
+
+    def test_upload_portraits(self, db_fixture, mocker):
+
+        data_source = [
+            {
+                'code': 'AAAAA',
+                'taken': datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE)),
+                'place_id': '1',
+                'event_id': '1',
+                'photobooth_id': '1',
+                'ticket': '/path/to/ticket1',
+                'picture': '/path/to/picture1',
+                'uploaded': False
+            },
+            {
+                'code': 'BBBBB',
+                'taken': datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE)),
+                'place_id': '1',
+                'event_id': '1',
+                'photobooth_id': '1',
+                'ticket': '/path/to/ticket2',
+                'picture': '/path/to/picture2',
+                'uploaded': False
+            }
+        ]
+
+        for data_dict in data_source:
+            Portrait.create(**data_dict)
+
+        mock_figure = mocker.patch('figureraspbian.photobooth.figure')
+        mock_read_file = mocker.patch('figureraspbian.photobooth.read_file')
+        upload_portraits()
+
+        assert mock_read_file.call_args_list == [
+            call(u'/path/to/picture1'),
+            call(u'/path/to/ticket1'),
+            call(u'/path/to/picture2'),
+            call(u'/path/to/ticket2')]
+
 
     def test_update_or_create_text(self, db_fixture):
         """
