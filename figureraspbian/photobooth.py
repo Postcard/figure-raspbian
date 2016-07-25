@@ -342,7 +342,7 @@ def upload_portraits():
         if portrait:
             logger.info('Uploading portrait %s...' % portrait.code)
             try:
-                files = {'picture_color': read_file(portrait.picture), 'ticket': read_file(portrait.ticket)}
+                files = {'picture_color': open(portrait.picture, 'rb'), 'ticket': open(portrait.ticket, 'rb')}
                 data = {
                     'code': portrait.code,
                     'taken': portrait.taken,
