@@ -24,6 +24,7 @@ if __name__ == '__main__':
     app = App()
     killer = GracefulKiller(app)
     app.start()
+    signal.pause()
 
 
 
