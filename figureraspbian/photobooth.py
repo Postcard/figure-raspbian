@@ -202,7 +202,7 @@ def print_booting_ticket():
         booting_template_path,
         css_url=settings.LOCAL_TICKET_CSS_URL,
         logo_url=settings.LOCAL_LOGO_FIGURE_URL,
-        date=datetime.now(pytz.timezone(tz)).strftime('%d/%m/%Y'),
+        date=datetime.now(pytz.timezone(tz)).strftime('%d/%m/%Y %H:%M'),
         serial_number=_photobooth.serial_number,
         place=_photobooth.place.name if _photobooth.place else None,
         event=_photobooth.event.name if _photobooth.event else None,
