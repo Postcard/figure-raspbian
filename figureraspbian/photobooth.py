@@ -52,30 +52,31 @@ def initialize():
     except Exception as e:
         logger.exception(e)
 
-    try:
-        download_ticket_stylesheet()
-    except Exception as e:
-        logger.exception(e)
+    if is_online():
+        try:
+            download_ticket_stylesheet()
+        except Exception as e:
+            logger.exception(e)
 
-    try:
-        download_booting_ticket_template()
-    except Exception as e:
-        logger.exception()
+        try:
+            download_booting_ticket_template()
+        except Exception as e:
+            logger.exception(e)
 
-    # update photobooth
-    try:
-        update()
-    except Exception as e:
-        logger.exception(e)
+        # update photobooth
+        try:
+            update()
+        except Exception as e:
+            logger.exception(e)
 
-    # grab new codes if necessary
-    try:
-        claim_new_codes()
-    except Exception as e:
-        logger.exception(e)
+        # grab new codes if necessary
+        try:
+            claim_new_codes()
+        except Exception as e:
+            logger.exception(e)
 
-    # update mac addresses
-    update_mac_addresses_async()
+        # update mac addresses
+        update_mac_addresses_async()
 
 
 def set_intervals():
