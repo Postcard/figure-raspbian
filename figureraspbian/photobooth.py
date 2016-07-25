@@ -196,11 +196,12 @@ def _trigger():
 def print_booting_ticket():
     booting_template_path = join(settings.STATIC_ROOT, 'booting.html')
     _photobooth = db.get_photobooth()
+    tz = _photobooth.place.tz if _photobooth.place else settings.DEFAULT_TIMEZONE
     rendered = render_jinja_template(
         booting_template_path,
         css_url=settings.LOCAL_TICKET_CSS_URL,
         logo_url=settings.LOCAL_LOGO_FIGURE_URL,
-        date=datetime.now(),
+        date=datetime.now(pytz.timezone(tz)).strftime('%d/%m/%Y'),
         serial_number=_photobooth.serial_number,
         place=_photobooth.place.name if _photobooth.place else None,
         event=_photobooth.event.name if _photobooth.event else None,
