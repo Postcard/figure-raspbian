@@ -106,6 +106,7 @@ def download_ticket_stylesheet():
 
 
 def download_booting_ticket_template():
+    download(settings.LOGO_FIGURE_URL, settings.STATIC_ROOT)
     download(settings.BOOTING_TICKET_TEMPLATE_URL, settings.STATIC_ROOT, force=True)
 
 
@@ -197,11 +198,13 @@ def print_booting_ticket():
     _photobooth = db.get_photobooth()
     rendered = render_jinja_template(
         booting_template_path,
+        css_url=settings.LOCAL_TICKET_CSS_URL,
+        logo_url=settings.LOCAL_LOGO_FIGURE_URL,
+        date=datetime.now(),
         serial_number=_photobooth.serial_number,
         place=_photobooth.place.name if _photobooth.place else None,
         event=_photobooth.event.name if _photobooth.event else None,
-        connexion_status='Online' if is_online() else 'Offline',
-        css_url=settings.LOCAL_TICKET_CSS_URL
+        is_online=is_online()
     )
     ticket_base64 = get_screenshot(rendered)
     ticket_io = base64.b64decode(ticket_base64)

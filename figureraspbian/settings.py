@@ -52,6 +52,8 @@ TICKET_CSS_URL = "%s/%s" % (STATIC_HOST, 'static/css/ticket.css')
 LOCAL_TICKET_CSS_URL = 'file://%s/ticket.css' % STATIC_ROOT
 
 BOOTING_TICKET_TEMPLATE_URL = "%s/%s" % (STATIC_HOST, 'static/ticket_templates/booting.html')
+LOGO_FIGURE_URL = "%s/%s" % (STATIC_HOST, 'static/images/logo_figure.jpg')
+LOCAL_LOGO_FIGURE_URL = 'file://%s/logo_figure.jpg' % STATIC_ROOT
 
 # Path to PhantomJS executable
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
@@ -78,8 +80,8 @@ LINE_FEED_COUNT = int(get_env_setting('LINE_FEED_COUNT', 5))
 
 WIFI_ON = int(get_env_setting('WIFI_ON', 0))
 
-DOOR_OPENING_DELAY = int(get_env_setting('DOOR_OPENING_DELAY', 15))
-DOOR_OPENING_TIME = int(get_env_setting('DOOR_OPENING_TIME', 5))
+DOOR_OPENING_DELAY = int(get_env_setting('DOOR_OPENING_DELAY', 5))
+DOOR_OPENING_TIME = int(get_env_setting('DOOR_OPENING_TIME', 10))
 
 
 UPDATE_POLL_INTERVAL = int(get_env_setting('UPDATE_POLL_INTERVAL', 90))
