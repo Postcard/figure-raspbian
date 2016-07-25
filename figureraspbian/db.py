@@ -61,8 +61,8 @@ class Event(BaseModel):
 class TicketTemplate(BaseModel):
 
     html = TextField()
-    title = TextField()
-    description = TextField()
+    title = TextField(null=True)
+    description = TextField(null=True)
     modified = CharField()
 
     def serialize(self):
