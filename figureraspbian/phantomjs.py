@@ -2,12 +2,8 @@
 
 import subprocess
 
-import logging
-logging.basicConfig(level='INFO')
-logger = logging.getLogger(__name__)
-
-from . import settings
-from .utils import timeit
+from figureraspbian import settings
+from figureraspbian.utils import timeit
 
 
 @timeit

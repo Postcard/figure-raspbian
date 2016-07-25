@@ -4,13 +4,10 @@ import os
 import io
 
 from PIL import Image
-try:
-    import gphoto2 as gp
-except ImportError:
-    print "Could not import gphoto2"
+import gphoto2 as gp
 
-from .. import settings
-from ..utils import timeit
+from figureraspbian import settings
+from figureraspbian.utils import timeit
 
 
 EOS_1200D_CONFIG = {
@@ -55,12 +52,12 @@ class DSLRCamera:
         try:
             context = gp.gp_context_new()
             gp.check_result(gp.gp_camera_init(self.camera, context))
-            # Capture image
+            # Capture picture
             camera_path = gp.check_result(gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, context))
             folder = camera_path.folder
             name = camera_path.name
 
-            # Get snapshot file
+            # Get picture file
             error, camera_file = gp.gp_camera_file_get(
                 self.camera,
                 folder,
@@ -70,7 +67,7 @@ class DSLRCamera:
 
             file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
 
-            # Crop and rotate snapshot
+            # Crop picture to be a square
             snapshot = Image.open(io.BytesIO(file_data))
             w, h = snapshot.size
             left = (w - h) / 2
@@ -120,13 +117,3 @@ class DSLRCamera:
             result.extend(self.list_files(camera, context, os.path.join(path, name)))
         return result
 
-
-class MockCamera:
-    """
-    This class is used to mock the behavior of DSLRCamera in case the device cannot be loaded
-    """
-
-    def capture(self):
-
-        snapshot = Image.open('./resources/snapshot.jpg')
-        return snapshot

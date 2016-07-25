@@ -40,7 +40,7 @@ if [[ $RTC ]]; then
 fi
 
 # create data directories
-mkdir -p /data/static /data/media/tickets /data/media/images /data/media/snapshots
+mkdir -p /data/static /data/media/tickets /data/media/images /data/media/pictures
 
 # Make sure $HOSTNAME is present in /etc/hosts
 grep -q "$HOSTNAME" /etc/hosts || echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
@@ -56,8 +56,8 @@ then
     unlink /var/run/supervisor.sock
 fi
 
-# tune redis configuration file to store data in /data directory
-sed -i -e '/dir / s, /var/lib/redis/6379*, /data,' /etc/redis/6379.conf
+# lock supervisor update by default
+lockfile /data/resin-updates.lock
 
 # Launch supervisor in the foreground
 echo 'Starting supervisor'

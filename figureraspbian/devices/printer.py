@@ -2,13 +2,15 @@
 
 import re
 import subprocess
-from .. import settings
-from ..utils import timeit
 
-try:
-    from epson_printer import epsonprinter
-except ImportError:
-    print("Could not import epsonprinter")
+from usb.core import USBError
+
+from figureraspbian import settings
+from figureraspbian.utils import timeit
+from figureraspbian.exceptions import OutOfPaperError
+
+from epson_printer import epsonprinter
+
 
 DEVICE_RE = re.compile("Bus\s+(?P<bus>\d+)\s+Device\s+(?P<device>\d+).+ID\s(?P<vendor_id>\w+):(?P<product_id>\w+)\s(?P<tag>.+)$", re.I)
 
@@ -44,6 +46,10 @@ class EpsonPrinter(object):
 
     @timeit
     def print_ticket(self, ticket_data):
-        self.printer.write(ticket_data)
-        self.printer.linefeed(settings.LINE_FEED_COUNT)
-        self.printer.cut()
+        try:
+            self.printer.write(ticket_data)
+            self.printer.linefeed(settings.LINE_FEED_COUNT)
+            self.printer.cut()
+        except USBError:
+            # best guess is that we are out out of paper
+            raise OutOfPaperError()

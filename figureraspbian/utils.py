@@ -1,21 +1,29 @@
 # -*- coding: utf8 -*-
 
 import os
-from os.path import basename, join
+from os.path import basename, exists
 import urllib
+import logging
 import time
 from urlparse import urlsplit
 import cStringIO
 import base64
 import subprocess
-import logging
-logging.basicConfig(level='INFO')
-logger = logging.getLogger(__name__)
+import urllib2
+from os.path import join
+import codecs
 
 from PIL import Image
 from hashids import Hashids
+from jinja2 import Environment
+import netifaces
 
-import settings
+from figureraspbian import settings
+
+
+
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
 
 def url2name(url):
@@ -24,6 +32,34 @@ def url2name(url):
     http://api.figuredevices.com/static/css/ticket.css => ticket.css
     """
     return basename(urllib.unquote(urlsplit(url)[2]))
+
+
+def download(url, path, force=False):
+    """
+    Download a file from a remote url and copy it to the local path
+    """
+    local_name = url2name(url)
+    path_to_file = join(path, local_name)
+    if not exists(path_to_file) or force:
+        req = urllib2.Request(url)
+        r = urllib2.urlopen(req, timeout=10)
+        write_file(r.read(), path_to_file)
+    return path_to_file
+
+
+def write_file(file, path):
+    """
+    Write a file to a specific path
+    """
+    with open(path, "wb") as f:
+        f.write(file)
+
+
+def read_file(path):
+    """
+    Open a file and return its content
+    """
+    return open(path, 'rb')
 
 
 def timeit(func):
@@ -36,10 +72,11 @@ def timeit(func):
         return result
     return timed
 
+
 @timeit
-def get_base64_snapshot_thumbnail(snapshot):
+def get_base64_picture_thumbnail(picture):
     buf = cStringIO.StringIO()
-    snapshot.resize((576, 576)).save(buf, "JPEG")
+    picture.resize((576, 576)).save(buf, "JPEG")
     content = base64.b64encode(buf.getvalue())
     buf.close()
     return content
@@ -79,3 +116,30 @@ def get_file_name(code):
 
 def pixels2cm(pixels):
     return float(pixels) / settings.PIXEL_CM_RATIO
+
+
+def get_mac_addresses():
+    mac_addresses = []
+    interfaces = netifaces.interfaces()
+    for interface in interfaces:
+        af_link = netifaces.ifaddresses(interface).get(netifaces.AF_LINK)
+        if af_link and len(af_link)>0:
+            addr = af_link[0].get('addr')
+            if addr:
+                mac_address = '%s=%s' % (interface, addr)
+                mac_addresses.append(mac_address)
+    return ','.join(mac_addresses)
+
+
+def render_jinja_template(path, **kwargs):
+    env = Environment()
+    with codecs.open(path, 'rb', encoding='utf-8') as content_file:
+        template = env.from_string(content_file.read())
+        return template.render(kwargs)
+
+
+
+
+
+
+
