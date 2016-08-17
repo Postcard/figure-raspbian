@@ -136,7 +136,7 @@ def _trigger():
     :return:
     """
 
-    picture = camera.capture()
+    picture, exif = camera.capture()
 
     photobooth = db.get_photobooth()
 
@@ -169,7 +169,7 @@ def _trigger():
     except OutOfPaperError:
         update_paper_level_async(0)
     buf = cStringIO.StringIO()
-    picture.save(buf, "JPEG")
+    picture.save(buf, "JPEG", exif=exif)
     picture_io = buf.getvalue()
     buf.close()
 

@@ -68,14 +68,15 @@ class DSLRCamera:
             file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
 
             # Crop picture to be a square
-            snapshot = Image.open(io.BytesIO(file_data))
-            w, h = snapshot.size
+            picture = Image.open(io.BytesIO(file_data))
+            exif = picture.info['exif']
+            w, h = picture.size
             left = (w - h) / 2
             top = 0
             right = w - left
             bottom = h
-            snapshot = snapshot.crop((left, top, right, bottom))
-            return snapshot
+            picture = picture.crop((left, top, right, bottom))
+            return picture, exif
 
         finally:
             if 'camera_file' in locals():
