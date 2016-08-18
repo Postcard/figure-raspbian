@@ -5,6 +5,7 @@ import io
 
 from PIL import Image
 import gphoto2 as gp
+import piexif
 
 from figureraspbian import settings
 from figureraspbian.utils import timeit
@@ -68,14 +69,18 @@ class DSLRCamera:
             file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
 
             # Crop picture to be a square
-            snapshot = Image.open(io.BytesIO(file_data))
-            w, h = snapshot.size
+            picture = Image.open(io.BytesIO(file_data))
+            exif_dict = piexif.load(picture.info["exif"])
+            w, h = picture.size
             left = (w - h) / 2
             top = 0
             right = w - left
             bottom = h
-            snapshot = snapshot.crop((left, top, right, bottom))
-            return snapshot
+            picture = picture.crop((left, top, right, bottom))
+            w, h = picture.size
+            exif_dict["Exif"][piexif.ExifIFD.PixelXDimension] = w
+            exif_bytes = piexif.dump(exif_dict)
+            return picture, exif_bytes
 
         finally:
             if 'camera_file' in locals():
