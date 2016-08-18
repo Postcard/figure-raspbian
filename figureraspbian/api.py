@@ -51,7 +51,7 @@ def test_template():
             if w != h:
                 flash('The picture must have a square shape')
                 return redirect(request.url)
-            exif_bytes = picture.info['exif']
+            exif_bytes = picture.info['exif'] if 'exif' in picture.info else None
             photobooth.render_print_and_upload(picture, exif_bytes)
             return u'Ticket successfully printed'
 
