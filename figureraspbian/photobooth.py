@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from threading import Thread, Lock
+from threading import Thread, RLock
 from datetime import datetime
 import pytz
 import cStringIO
@@ -37,7 +37,7 @@ printer = None
 button = None
 door_lock = None
 
-lock = Lock()
+lock = RLock()
 
 
 def initialize():
@@ -139,7 +139,7 @@ def _trigger():
     picture, exif_bytes = camera.capture()
     return render_print_and_upload(picture, exif_bytes)
 
-
+@execute_if_not_busy(lock)
 def render_print_and_upload(picture, exif_bytes):
     """
     The body of this function is not included in the _trigger function above because we want to print tickets
