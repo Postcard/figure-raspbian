@@ -126,7 +126,7 @@ def trigger():
 @execute_if_not_busy(lock)
 def _trigger():
     """
-    execute a sequence of actions on devices after a trigger occurs
+    Execute a sequence of actions on devices after a trigger occurs
     Eg:
     - take a photo
     - render a ticket
@@ -137,7 +137,14 @@ def _trigger():
     """
 
     picture, exif_bytes = camera.capture()
+    return render_print_and_upload(picture, exif_bytes)
 
+
+def render_print_and_upload(picture, exif_bytes):
+    """
+    The body of this function is not included in the _trigger function above because we want to print tickets
+    with user provided picture. See figureraspbian.api.test_template
+    """
     photobooth = db.get_photobooth()
 
     ticket_renderer = TicketRenderer(
@@ -191,7 +198,6 @@ def _trigger():
     upload_portrait_async(portrait)
 
     return ticket_path
-
 
 @execute_if_not_busy(lock)
 def print_booting_ticket():
