@@ -2,7 +2,6 @@
 from os.path import basename, dirname
 
 from flask import Flask, send_from_directory, request, flash, redirect
-from werkzeug.utils import secure_filename
 import psutil
 from PIL import Image
 

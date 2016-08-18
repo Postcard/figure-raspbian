@@ -176,7 +176,10 @@ def render_print_and_upload(picture, exif_bytes):
     except OutOfPaperError:
         update_paper_level_async(0)
     buf = cStringIO.StringIO()
-    picture.save(buf, "JPEG", exif=exif_bytes)
+    if exif_bytes:
+        picture.save(buf, "JPEG", exif=exif_bytes)
+    else:
+        picture.save(buf, "JPEG")
     picture_io = buf.getvalue()
     buf.close()
 
