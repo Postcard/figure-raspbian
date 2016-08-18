@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from threading import Thread, Lock
+from threading import Thread, RLock
 from datetime import datetime
 import pytz
 import cStringIO
@@ -37,7 +37,7 @@ printer = None
 button = None
 door_lock = None
 
-lock = Lock()
+lock = RLock()
 
 
 def initialize():
@@ -126,7 +126,7 @@ def trigger():
 @execute_if_not_busy(lock)
 def _trigger():
     """
-    execute a sequence of actions on devices after a trigger occurs
+    Execute a sequence of actions on devices after a trigger occurs
     Eg:
     - take a photo
     - render a ticket
@@ -137,7 +137,14 @@ def _trigger():
     """
 
     picture, exif_bytes = camera.capture()
+    return render_print_and_upload(picture, exif_bytes)
 
+@execute_if_not_busy(lock)
+def render_print_and_upload(picture, exif_bytes):
+    """
+    The body of this function is not included in the _trigger function above because we want to print tickets
+    with user provided picture. See figureraspbian.api.test_template
+    """
     photobooth = db.get_photobooth()
 
     ticket_renderer = TicketRenderer(
@@ -169,7 +176,10 @@ def _trigger():
     except OutOfPaperError:
         update_paper_level_async(0)
     buf = cStringIO.StringIO()
-    picture.save(buf, "JPEG", exif=exif_bytes)
+    if exif_bytes:
+        picture.save(buf, "JPEG", exif=exif_bytes)
+    else:
+        picture.save(buf, "JPEG")
     picture_io = buf.getvalue()
     buf.close()
 
@@ -191,7 +201,6 @@ def _trigger():
     upload_portrait_async(portrait)
 
     return ticket_path
-
 
 @execute_if_not_busy(lock)
 def print_booting_ticket():

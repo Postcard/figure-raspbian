@@ -1,8 +1,9 @@
 # -*- coding: utf8 -*-
 from os.path import basename, dirname
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request, flash, redirect
 import psutil
+from PIL import Image
 
 from figureraspbian import photobooth
 from figureraspbian import db, settings
@@ -19,6 +20,49 @@ def trigger():
     except DevicesBusy:
         message = u'Someone else just triggered the photobooth, try again later'
         return message
+
+
+ALLOWED_EXTENSIONS = ['jpg', 'JPEG', 'JPG']
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+
+@app.route('/test_template', methods=['GET', 'POST'])
+def test_template():
+    """ Print a ticket with the picture uploaded by the user """
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'picture' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        picture_file = request.files['picture']
+        # if user does not select file, browser also
+        # submit a empty part without filename
+        if picture_file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if picture_file and allowed_file(picture_file.filename):
+            picture = Image.open(picture_file)
+            w, h = picture.size
+            if w != h:
+                flash('The picture must have a square shape')
+                return redirect(request.url)
+            exif_bytes = picture.info['exif'] if 'exif' in picture.info else None
+            photobooth.render_print_and_upload(picture, exif_bytes)
+            return u'Ticket successfully printed'
+
+    return u'''
+    <!doctype html>
+    <title>Upload a Picture</title>
+    <h1>Upload a picture to print a ticket</h1>
+    <form action="" method=post enctype=multipart/form-data>
+      <p><input type=file name=picture>
+         <input type=submit value=Upload>
+    </form>
+    '''
 
 
 @app.route('/door_open')
