@@ -36,17 +36,17 @@ def test_template():
     """ Print a ticket with the picture uploaded by the user """
     if request.method == 'POST':
         # check if the post request has the file part
-        if 'file' not in request.files:
+        if 'picture' not in request.files:
             flash('No file part')
             return redirect(request.url)
-        file = request.files['file']
+        picture_file = request.files['picture']
         # if user does not select file, browser also
         # submit a empty part without filename
-        if file.filename == '':
+        if picture_file.filename == '':
             flash('No selected file')
             return redirect(request.url)
-        if file and allowed_file(file.filename):
-            picture = Image.open(file)
+        if picture_file and allowed_file(picture_file.filename):
+            picture = Image.open(picture_file)
             w, h = picture.size
             if w != h:
                 flash('The picture must have a square shape')
@@ -60,7 +60,7 @@ def test_template():
     <title>Upload a Picture</title>
     <h1>Upload a picture to print a ticket</h1>
     <form action="" method=post enctype=multipart/form-data>
-      <p><input type=file name=file>
+      <p><input type=file name=picture>
          <input type=submit value=Upload>
     </form>
     '''
