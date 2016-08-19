@@ -6,6 +6,7 @@ from figureraspbian import settings
 from figureraspbian.devices.button import PiFaceDigitalButton
 from figureraspbian import db
 from figureraspbian.api import start_server
+from figureraspbian.exceptions import OutOfPaperError
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -32,8 +33,10 @@ class App(object):
 
     def start(self):
         self.button.start()
-        # print booting ticket
-        photobooth.print_booting_ticket()
+        try:
+            photobooth.print_booting_ticket()
+        except OutOfPaperError:
+            pass
         logger.info("Ready...")
         start_server()
 
