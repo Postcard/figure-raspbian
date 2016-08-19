@@ -71,6 +71,11 @@ def door_open():
     return u'Door opened'
 
 
+@app.route('/logs')
+def logs():
+    return send_from_directory('/data/log', 'figure.log')
+
+
 @app.route('/info')
 def info():
     photobooth = db.get_photobooth()
