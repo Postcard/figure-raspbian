@@ -204,24 +204,25 @@ def render_print_and_upload(picture, exif_bytes):
 
 @execute_if_not_busy(lock)
 def print_booting_ticket():
-    booting_template_path = join(settings.STATIC_ROOT, 'booting.html')
-    _photobooth = db.get_photobooth()
-    tz = _photobooth.place.tz if _photobooth.place else settings.DEFAULT_TIMEZONE
-    rendered = render_jinja_template(
-        booting_template_path,
-        css_url=settings.LOCAL_TICKET_CSS_URL,
-        logo_url=settings.LOCAL_LOGO_FIGURE_URL,
-        date=datetime.now(pytz.timezone(tz)).strftime('%d/%m/%Y %H:%M'),
-        serial_number=_photobooth.serial_number,
-        place=_photobooth.place.name if _photobooth.place else None,
-        event=_photobooth.event.name if _photobooth.event else None,
-        is_online=is_online()
-    )
-    ticket_base64 = get_screenshot(rendered)
-    ticket_io = base64.b64decode(ticket_base64)
-    ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
-    pos_data = png2pos(ticket_path)
-    printer.print_ticket(pos_data)
+    if printer:
+        booting_template_path = join(settings.STATIC_ROOT, 'booting.html')
+        _photobooth = db.get_photobooth()
+        tz = _photobooth.place.tz if _photobooth.place else settings.DEFAULT_TIMEZONE
+        rendered = render_jinja_template(
+            booting_template_path,
+            css_url=settings.LOCAL_TICKET_CSS_URL,
+            logo_url=settings.LOCAL_LOGO_FIGURE_URL,
+            date=datetime.now(pytz.timezone(tz)).strftime('%d/%m/%Y %H:%M'),
+            serial_number=_photobooth.serial_number,
+            place=_photobooth.place.name if _photobooth.place else None,
+            event=_photobooth.event.name if _photobooth.event else None,
+            is_online=is_online()
+        )
+        ticket_base64 = get_screenshot(rendered)
+        ticket_io = base64.b64decode(ticket_base64)
+        ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
+        pos_data = png2pos(ticket_path)
+        printer.print_ticket(pos_data)
 
 
 def trigger_async():
