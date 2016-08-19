@@ -20,9 +20,7 @@ import netifaces
 
 from figureraspbian import settings
 
-
-
-logging.basicConfig(level='INFO')
+logging.basicConfig(format=settings.LOG_FORMAT, datefmt='%Y.%m.%d %H:%M:%S', level='INFO')
 logger = logging.getLogger(__name__)
 
 

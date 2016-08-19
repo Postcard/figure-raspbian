@@ -4,7 +4,6 @@ import signal
 
 from figureraspbian.app import App
 
-
 class GracefulKiller:
 
     kill_now = False

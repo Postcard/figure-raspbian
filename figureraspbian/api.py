@@ -71,6 +71,13 @@ def door_open():
     return u'Door opened'
 
 
+@app.route('/logs')
+def logs():
+    resp = send_from_directory('/data/log', 'figure.log')
+    resp.headers['Content-Disposition'] = 'attachment; filename="figure.log"'
+    return resp
+
+
 @app.route('/info')
 def info():
     photobooth = db.get_photobooth()
