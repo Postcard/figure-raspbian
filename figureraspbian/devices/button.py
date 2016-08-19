@@ -7,7 +7,6 @@ import logging
 from pifacedigitalio import PiFaceDigital
 from figureraspbian.threads import StoppableThread
 
-logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 

@@ -3,7 +3,6 @@
 import os
 
 import logging
-logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
@@ -86,3 +85,5 @@ DOOR_OPENING_TIME = int(get_env_setting('DOOR_OPENING_TIME', 10))
 
 UPDATE_POLL_INTERVAL = int(get_env_setting('UPDATE_POLL_INTERVAL', 90))
 UPLOAD_PORTRAITS_INTERVAL = int(get_env_setting('UPLOAD_PORTRAITS_INTERVAL', 90))
+
+LOG_FORMAT = "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s"

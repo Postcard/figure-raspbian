@@ -1,14 +1,12 @@
 # -*- coding: utf8 -*-
 import logging
 
-from figureraspbian import photobooth
-from figureraspbian import settings
+from figureraspbian import photobooth, settings
 from figureraspbian.devices.button import PiFaceDigitalButton
 from figureraspbian import db
 from figureraspbian.api import start_server
 from figureraspbian.exceptions import OutOfPaperError
 
-logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 

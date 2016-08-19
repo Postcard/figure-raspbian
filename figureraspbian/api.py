@@ -73,7 +73,9 @@ def door_open():
 
 @app.route('/logs')
 def logs():
-    return send_from_directory('/data/log', 'figure.log')
+    resp = send_from_directory('/data/log', 'figure.log')
+    resp.headers['Content-Disposition'] = 'attachment; filename="figure.log"'
+    return resp
 
 
 @app.route('/info')

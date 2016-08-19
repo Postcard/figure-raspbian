@@ -18,15 +18,13 @@ from figureraspbian.devices.camera import DSLRCamera
 from figureraspbian.devices.printer import EpsonPrinter
 from figureraspbian.devices.door_lock import PiFaceDigitalDoorLock
 from figureraspbian.utils import get_base64_picture_thumbnail, get_pure_black_and_white_ticket, \
-    png2pos, get_file_name, download, write_file, read_file, get_mac_addresses, render_jinja_template
+    png2pos, get_file_name, download, write_file, get_mac_addresses, render_jinja_template
 from figureraspbian.decorators import execute_if_not_busy
 from figureraspbian.phantomjs import get_screenshot
 from figureraspbian import db
 from figureraspbian.threads import Interval
 from figureraspbian.exceptions import DevicesBusy, OutOfPaperError
 
-
-logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 figure.api_base = settings.API_HOST
@@ -44,6 +42,7 @@ def initialize():
     """
     Initialize devices, data and stylesheets
     """
+    logging.basicConfig(format=settings.LOG_FORMAT, datefmt='%Y.%m.%d %H:%M:%S', level='INFO')
     # Disable logs for request library
     logging.getLogger("requests").setLevel(logging.WARNING)
 
