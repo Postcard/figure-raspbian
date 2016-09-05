@@ -171,9 +171,9 @@ def render_print_and_upload(picture, exif_bytes):
 
     try:
         printer.print_ticket(pos_data)
-        update_paper_level_async(ticket_length)
+        update_paper_level(ticket_length)
     except OutOfPaperError:
-        update_paper_level_async(0)
+        update_paper_level(0)
     buf = cStringIO.StringIO()
     if exif_bytes:
         picture.save(buf, "JPEG", exif=exif_bytes)
@@ -382,14 +382,18 @@ def upload_portraits():
 
 def update_paper_level(pixels):
     paper_level = db.update_paper_level(pixels)
-    logger.info('Paper level is now %s percent, updating API...' % paper_level)
+    logger.info('Paper level is now %s percent' % paper_level)
+    update_api_paper_level_async(paper_level)
+
+
+def update_api_paper_level(paper_level):
     figure.Photobooth.edit(
         settings.RESIN_UUID, data={'paper_level': paper_level})
     logger.info('API updated with new paper level!')
 
 
-def update_paper_level_async(pixels):
-    thr = Thread(target=update_paper_level, args=(pixels,), kwargs={})
+def update_api_paper_level_async(paper_level):
+    thr = Thread(target=update_api_paper_level, args=(paper_level,), kwargs={})
     thr.start()
 
 
