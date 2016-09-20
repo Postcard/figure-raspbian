@@ -1,13 +1,13 @@
 # -*- coding: utf8 -*-
-from os.path import basename, dirname
+from os.path import basename, dirname, join
 
 from flask import Flask, send_from_directory, request, flash, redirect
 import psutil
 from PIL import Image
 
 from figureraspbian import photobooth
-from figureraspbian import db, settings
-from figureraspbian.exceptions import DevicesBusy
+from figureraspbian import db, settings, utils
+from figureraspbian.exceptions import DevicesBusy, OutOfPaperError
 
 app = Flask(__name__)
 
@@ -64,6 +64,49 @@ def test_template():
     </form>
     '''
 
+
+@app.route('/print', methods=['GET', 'POST'])
+def print_image():
+    """ Print the image uploaded by the user """
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'image' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        image_file = request.files['image']
+        # if user does not select file, browser also
+        # submit a empty part without filename
+        if image_file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if image_file and allowed_file(image_file.filename):
+            im = Image.open(image_file)
+            w, h = im.size
+            if w != settings.PRINTER_MAX_WIDTH:
+                ratio = settings.PRINTER_MAX_WIDTH / w
+                im = im.resize((settings.PRINTER_MAX_WIDTH, h * ratio))
+            if im.mode != '1':
+                im = im.convert('1')
+
+            im_path = join(settings.MEDIA_ROOT, 'test.png')
+            im.save(im_path, im.format, quality=100)
+            pos_data = utils.png2pos(im_path)
+
+            try:
+                photobooth.printer.print_ticket(pos_data)
+            except OutOfPaperError:
+                return u'Out of paper'
+            return u'Ticket successfully printed'
+
+    return u'''
+    <!doctype html>
+    <title>Upload an image</title>
+    <h1>Upload an image to print it in the photobooth</h1>
+    <form action="" method=post enctype=multipart/form-data>
+      <p><input type=file name=image>
+         <input type=submit value=Upload>
+    </form>
+    '''
 
 @app.route('/door_open')
 def door_open():
