@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 from os.path import basename, dirname, join
 
-from flask import Flask, send_from_directory, request, flash, redirect
+from flask import Flask, send_from_directory, request, flash, redirect, abort
 import psutil
 from PIL import Image
 
@@ -12,6 +12,17 @@ from figureraspbian.exceptions import DevicesBusy, OutOfPaperError
 app = Flask(__name__)
 
 
+def login_required(func):
+    """ A decorator that ensures the request is made by an admin user """
+    def wrapper(*args, **kwargs):
+        token = request.args.get('token', '')
+        if token != settings.TOKEN:
+            abort(401)
+        return func(*args, **kwargs)
+    return wrapper
+
+
+@login_required
 @app.route('/trigger')
 def trigger():
     try:
@@ -30,6 +41,7 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
+@login_required
 @app.route('/test_template', methods=['GET', 'POST'])
 def test_template():
     """ Print a ticket with the picture uploaded by the user """
@@ -65,6 +77,7 @@ def test_template():
     '''
 
 
+@login_required
 @app.route('/print', methods=['GET', 'POST'])
 def print_image():
     """ Print the image uploaded by the user """
@@ -108,12 +121,15 @@ def print_image():
     </form>
     '''
 
+
+@login_required
 @app.route('/door_open')
 def door_open():
     photobooth.door_open()
     return u'Door opened'
 
 
+@login_required
 @app.route('/logs')
 def logs():
     resp = send_from_directory('/data/log', 'figure.log')
@@ -121,6 +137,7 @@ def logs():
     return resp
 
 
+@login_required
 @app.route('/info')
 def info():
     photobooth = db.get_photobooth()
@@ -142,6 +159,7 @@ def info():
     return html
 
 
+@login_required
 @app.route('/system')
 def system():
     cpu_percent = psutil.cpu_percent(interval=1)
@@ -162,6 +180,7 @@ def system():
     return html
 
 
+@login_required
 @app.route('/acquire_lock')
 def acquire_lock():
     acquired = photobooth.lock.acquire(False)
@@ -171,6 +190,7 @@ def acquire_lock():
         return 'Could not acquire the lock'
 
 
+@login_required
 @app.route('/release_lock')
 def release_lock():
     try:
