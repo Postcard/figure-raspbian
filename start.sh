@@ -59,7 +59,7 @@ fi
 # lock supervisor update by default
 lockfile /data/resin-updates.lock
 
-mkdir -p /data/log && touch/data/log/figure.log
+mkdir -p /data/log && touch /data/log/figure.log
 
 # Launch supervisor in the foreground
 echo 'Starting supervisor'
