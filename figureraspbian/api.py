@@ -22,8 +22,8 @@ def login_required(func):
     return wrapper
 
 
-@login_required
 @app.route('/trigger')
+@login_required
 def trigger():
     try:
         ticket_path = photobooth._trigger()
@@ -41,8 +41,8 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
-@login_required
 @app.route('/test_template', methods=['GET', 'POST'])
+@login_required
 def test_template():
     """ Print a ticket with the picture uploaded by the user """
     if request.method == 'POST':
@@ -77,8 +77,8 @@ def test_template():
     '''
 
 
-@login_required
 @app.route('/print', methods=['GET', 'POST'])
+@login_required
 def print_image():
     """ Print the image uploaded by the user """
     if request.method == 'POST':
@@ -122,23 +122,23 @@ def print_image():
     '''
 
 
-@login_required
 @app.route('/door_open')
+@login_required
 def door_open():
     photobooth.door_open()
     return u'Door opened'
 
 
-@login_required
 @app.route('/logs')
+@login_required
 def logs():
     resp = send_from_directory('/data/log', 'figure.log')
     resp.headers['Content-Disposition'] = 'attachment; filename="figure.log"'
     return resp
 
 
-@login_required
 @app.route('/info')
+@login_required
 def info():
     photobooth = db.get_photobooth()
     place = photobooth.place.name if photobooth.place else ''
@@ -159,8 +159,8 @@ def info():
     return html
 
 
-@login_required
 @app.route('/system')
+@login_required
 def system():
     cpu_percent = psutil.cpu_percent(interval=1)
     memory_percent = psutil.virtual_memory().percent
@@ -180,8 +180,8 @@ def system():
     return html
 
 
-@login_required
 @app.route('/acquire_lock')
+@login_required
 def acquire_lock():
     acquired = photobooth.lock.acquire(False)
     if acquired:
@@ -190,8 +190,8 @@ def acquire_lock():
         return 'Could not acquire the lock'
 
 
-@login_required
 @app.route('/release_lock')
+@login_required
 def release_lock():
     try:
         photobooth.lock.release()
