@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 from os.path import basename, dirname, join
+from functools import wraps
 
 from flask import Flask, send_from_directory, request, flash, redirect, abort
 import psutil
@@ -14,12 +15,14 @@ app = Flask(__name__)
 
 def login_required(func):
     """ A decorator that ensures the request is made by an admin user """
-    def wrapper(*args, **kwargs):
+
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
         token = request.args.get('token', '')
         if token != settings.TOKEN:
             abort(401)
         return func(*args, **kwargs)
-    return wrapper
+    return decorated_function
 
 
 @app.route('/trigger')
