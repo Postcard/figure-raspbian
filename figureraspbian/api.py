@@ -35,7 +35,7 @@ def trigger():
         return jsonify(error='the photobooth is busy'), 423
 
 
-ALLOWED_EXTENSIONS = ['jpg', 'JPEG', 'JPG']
+ALLOWED_EXTENSIONS = ['jpg', 'JPEG', 'JPG', 'png', 'PNG', 'gif']
 
 
 def allowed_file(filename):
@@ -68,11 +68,10 @@ def print_image():
         im = Image.open(image_file)
         w, h = im.size
         if w != settings.PRINTER_MAX_WIDTH:
-            ratio = settings.PRINTER_MAX_WIDTH / w
-            im = im.resize((settings.PRINTER_MAX_WIDTH, h * ratio))
+            ratio = float(settings.PRINTER_MAX_WIDTH) / w
+            im = im.resize((settings.PRINTER_MAX_WIDTH, int(h * ratio)))
         if im.mode != '1':
             im = im.convert('1')
-
         im_path = join(settings.MEDIA_ROOT, 'test.png')
         im.save(im_path, im.format, quality=100)
         pos_data = utils.png2pos(im_path)
