@@ -92,7 +92,8 @@ def get_pure_black_and_white_ticket(ticket_io):
 @timeit
 def png2pos(path):
     # TODO make png2pos support passing base64 file argument
-    args = ['png2pos', '-r', '-s2', '-aC', path]
+    speed_arg = '-s%s' % settings.PRINTER_SPEED
+    args = ['png2pos', '-r', speed_arg, '-aC', path]
     my_env = os.environ.copy()
     my_env['PNG2POS_PRINTER_MAX_WIDTH'] = str(settings.PRINTER_MAX_WIDTH)
 

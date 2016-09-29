@@ -69,6 +69,9 @@ SHUTTER_SPEED = int(get_env_setting('SHUTTER_SPEED', 39))
 ISO = int(get_env_setting('ISO', 3))
 CAPTURE_DELAY = float(get_env_setting('CAPTURE_DELAY', 1.0))
 
+# Printer config
+PRINTER_SPEED = int(get_env_setting('PRINTER_SPEED', 2))
+PRINTER_MAX_WIDTH = int(get_env_setting('PRINTER_MAX_WIDTH', 576))
 
 # Paper roll length in cm
 PAPER_ROLL_LENGTH = int(get_env_setting('PAPER_ROLL_LENGTH', 8000))
@@ -82,10 +85,9 @@ WIFI_ON = int(get_env_setting('WIFI_ON', 0))
 DOOR_OPENING_DELAY = int(get_env_setting('DOOR_OPENING_DELAY', 5))
 DOOR_OPENING_TIME = int(get_env_setting('DOOR_OPENING_TIME', 10))
 
-
 UPDATE_POLL_INTERVAL = int(get_env_setting('UPDATE_POLL_INTERVAL', 90))
 UPLOAD_PORTRAITS_INTERVAL = int(get_env_setting('UPLOAD_PORTRAITS_INTERVAL', 90))
 
 LOG_FORMAT = "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s"
 
-PRINTER_MAX_WIDTH = int(get_env_setting('PRINTER_MAX_WIDTH', 576))
+
