@@ -78,7 +78,7 @@ class DSLRCamera(object):
     def capture(self):
         with open_camera(self.camera) as (camera, context):
             # Capture picture
-            camera_path = self._trigger()
+            camera_path = self._trigger(camera, context)
             folder = camera_path.folder
             name = camera_path.name
 
@@ -123,7 +123,7 @@ class DSLRCamera(object):
             folders.append(name)
         # recurse over subfolders
         for name in folders:
-            result.extend(self.list_files(camera, context, os.path.join(path, name)))
+            result.extend(self._list_files(camera, context, os.path.join(path, name)))
         return result
 
     def list_files(self, path='/'):
