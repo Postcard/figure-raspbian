@@ -68,6 +68,7 @@ APERTURE = int(get_env_setting('APERTURE', 11))
 SHUTTER_SPEED = int(get_env_setting('SHUTTER_SPEED', 39))
 ISO = int(get_env_setting('ISO', 3))
 CAPTURE_DELAY = float(get_env_setting('CAPTURE_DELAY', 1.0))
+CAMERA_TRIGGER_TYPE = get_env_setting('CAMERA_TRIGGER_TYPE', 'TETHERED')
 
 # Printer config
 PRINTER_SPEED = int(get_env_setting('PRINTER_SPEED', 2))

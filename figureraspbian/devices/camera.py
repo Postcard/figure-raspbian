@@ -1,16 +1,13 @@
 # -*- coding: utf8 -*-
 
 import os
-import io
 import time
 
-from PIL import Image
 import gphoto2 as gp
-import piexif
 from pifacedigitalio import PiFaceDigital
 
 from figureraspbian import settings
-from figureraspbian.utils import timeit
+from figureraspbian.utils import timeit, crop_to_square
 
 
 EOS_1200D_CONFIG = {
@@ -22,21 +19,30 @@ EOS_1200D_CONFIG = {
     'iso': settings.ISO}
 
 
-class RemoteReleaseConnector:
-    """
-    Represents a remote release connector. http://www.doc-diy.net/photo/remote_pinout/
-    In our case the cable is just a 2.5mm jack
-    """
+class open_camera:
+    """ context manager to control access to the camera resource """
 
-    def __init__(self, pin=0):
-        self.pifacedigital = PiFaceDigital()
-        self.pin = pin
+    def __init__(self, camera):
+        self.camera = camera
 
-    def trigger(self):
-        self.pifacedigital.output_pins[0].turn_on()
+    def __enter__(self):
+        context = gp.gp_context_new()
+        gp.check_result(gp.gp_camera_init(self.camera, context))
+        self.context = context
+        return self.camera, self.context
+
+    def __exit__(self):
+        gp.check_result(gp.gp_camera_exit(self.camera, self.context))
 
 
-class DSLRCamera:
+def Camera():
+    """ Factory to create a camera """
+    if settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
+        return RemoteReleaseConnectorDSLRCamera()
+    return DSLRCamera()
+
+
+class DSLRCamera(object):
     """
     Digital Single Lens Reflex camera
     It uses gphoto2 to communicate with the digital camera:
@@ -63,74 +69,15 @@ class DSLRCamera:
         # Clear camera space
         self.clear_space()
 
-        if settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
-            self.remote_release_connector = RemoteReleaseConnector(pin=settings.REMOTE_RELEASE_CONNECTOR_PIN)
+    def _trigger(self, camera, context):
+        return gp.check_result(gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, context))
 
 
     @timeit
     def capture(self):
-        if settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
-            return self.capture_remote_release_connector()
-        else:
-            return self.capture_tethered()
-
-    def capture_remote_release_connector(self):
-        """ Use a remote release cable to trigger the camera. Download the picture with gphoto2 """
-        if not self.remote_release_connector:
-            pass
-
-        try:
-            self.remote_release_connector.trigger()
-            time.sleep(1)
-            context = gp.gp_context_new()
-            gp.check_result(gp.gp_camera_init(self.camera, context))
-            files = self.list_files(self.camera, context)
-            files.sort()
-            files.reverse()
-
-            picture_path = files[0]
-            folder = os.path.dirname(picture_path)
-            name = os.path.basename(picture_path)
-
-            # Get picture file
-            error, camera_file = gp.gp_camera_file_get(
-                self.camera,
-                folder,
-                name,
-                gp.GP_FILE_TYPE_NORMAL,
-                context)
-
-            file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
-
-            # Crop picture to be a square
-            picture = Image.open(io.BytesIO(file_data))
-            exif_dict = piexif.load(picture.info["exif"])
-            w, h = picture.size
-            left = (w - h) / 2
-            top = 0
-            right = w - left
-            bottom = h
-            picture = picture.crop((left, top, right, bottom))
-            w, h = picture.size
-            exif_dict["Exif"][piexif.ExifIFD.PixelXDimension] = w
-            exif_bytes = piexif.dump(exif_dict)
-            return picture, exif_bytes
-
-        finally:
-            if 'camera_file' in locals():
-                del camera_file
-            if 'file_data' in locals():
-                del file_data
-            gp.check_result(gp.gp_camera_exit(self.camera, context))
-
-    def capture_tethered(self):
-        """ Use gphoto2 to capture and download the picture """
-
-        try:
-            context = gp.gp_context_new()
-            gp.check_result(gp.gp_camera_init(self.camera, context))
+        with open_camera(self.camera) as (camera, context):
             # Capture picture
-            camera_path = gp.check_result(gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, context))
+            camera_path = self._trigger()
             folder = camera_path.folder
             name = camera_path.name
 
@@ -144,45 +91,25 @@ class DSLRCamera:
 
             file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
 
-            # Crop picture to be a square
-            picture = Image.open(io.BytesIO(file_data))
-            exif_dict = piexif.load(picture.info["exif"])
-            w, h = picture.size
-            left = (w - h) / 2
-            top = 0
-            right = w - left
-            bottom = h
-            picture = picture.crop((left, top, right, bottom))
-            w, h = picture.size
-            exif_dict["Exif"][piexif.ExifIFD.PixelXDimension] = w
-            exif_bytes = piexif.dump(exif_dict)
-            return picture, exif_bytes
-
-        finally:
-            if 'camera_file' in locals():
-                del camera_file
-            if 'file_data' in locals():
-                del file_data
-            gp.check_result(gp.gp_camera_exit(self.camera, context))
+            return crop_to_square(file_data)
 
     def clear_space(self):
         """ Clear space on camera SD card """
-        try:
-            context = gp.gp_context_new()
-            gp.check_result(gp.gp_camera_init(self.camera, context))
-            files = self.list_files(self.camera, context)
+        with open_camera(self.camera) as (camera, context):
+            files = self._list_files(self.camera, context)
             for f in files:
-                self.delete_file(self.camera, context, f)
-        finally:
-            gp.check_result(gp.gp_camera_exit(self.camera, context))
+                self._delete_file(self.camera, context, f)
 
-    def delete_file(self, camera, context, path):
-        """ Delete a file on the camera at a specific path """
+    def _delete_file(self, camera, context, path):
         folder, name = os.path.split(path)
         gp.check_result(gp.gp_camera_file_delete(camera, folder, name, context))
 
-    def list_files(self, camera, context, path='/'):
-        """ List all files on camera """
+    def delete_file(self, path):
+        """ Delete a file on the camera at a specific path """
+        with open_camera(self.camera) as (camera, context):
+            self._delete_file(camera, context, path)
+
+    def _list_files(self, camera, context, path='/'):
         result = []
         # get files
         for name, value in gp.check_result(
@@ -198,3 +125,50 @@ class DSLRCamera:
             result.extend(self.list_files(camera, context, os.path.join(path, name)))
         return result
 
+    def list_files(self, path='/'):
+        """ List all files on camera """
+        with open_camera(self.camera) as (camera, context):
+            return self._list_files(camera, context, path)
+
+
+class RemoteReleaseConnector:
+    """
+    Represents a remote release connector. http://www.doc-diy.net/photo/remote_pinout/
+    In our case the cable is just a 2.5mm jack
+    """
+
+    def __init__(self, pin=0):
+        self.pifacedigital = PiFaceDigital()
+        self.pin = pin
+
+    def trigger(self):
+        self.pifacedigital.output_pins[0].turn_on()
+
+
+class TimeoutWaitingForFileAdded(Exception):
+    pass
+
+
+class RemoteReleaseConnectorDSLRCamera(DSLRCamera):
+    """
+    Represents a camera that is triggered with a remote release connector
+    """
+
+    def __init__(self):
+        super(RemoteReleaseConnectorDSLRCamera, self).__init__()
+        self.remote_release_connector = RemoteReleaseConnector(pin=settings.REMOTE_RELEASE_CONNECTOR_PIN)
+
+    def _trigger(self, camera, context):
+        self.remote_release_connector.trigger()
+        return self._wait_for_file_added()
+
+    def _wait_for_file_added(self, camera, context, timeout=10):
+        timeout_after = time.time() + timeout
+        while True:
+            if time.time() > timeout_after:
+                raise TimeoutWaitingForFileAdded()
+            event_type, data = gp.check_result(gp.gp_camera_wait_for_event(camera, gp.GP_EVENT_FILE_ADDED, context))
+            if event_type == gp.GP_EVENT_FILE_ADDED:
+                camera_file_path = data
+                return camera_file_path
+            time.sleep(0.1)
