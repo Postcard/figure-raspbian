@@ -163,7 +163,7 @@ class RemoteReleaseConnectorDSLRCamera(DSLRCamera):
 
     def _trigger(self, camera, context):
         self.remote_release_connector.trigger()
-        return self._wait_for_file_added()
+        return self._wait_for_file_added(camera, context)
 
     def _wait_for_file_added(self, camera, context, timeout=10):
         timeout_after = time.time() + timeout
