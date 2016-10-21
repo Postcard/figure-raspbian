@@ -2,10 +2,12 @@
 
 import os
 import io
+import time
 
 from PIL import Image
 import gphoto2 as gp
 import piexif
+from pifacedigitalio import PiFaceDigital
 
 from figureraspbian import settings
 from figureraspbian.utils import timeit
@@ -18,6 +20,20 @@ EOS_1200D_CONFIG = {
     'aperture': settings.APERTURE,
     'shutterspeed': settings.SHUTTER_SPEED,
     'iso': settings.ISO}
+
+
+class RemoteReleaseConnector:
+    """
+    Represents a remote release connector. http://www.doc-diy.net/photo/remote_pinout/
+    In our case the cable is just a 2.5mm jack
+    """
+
+    def __init__(self, pin=0):
+        self.pifacedigital = PiFaceDigital()
+        self.pin = pin
+
+    def trigger(self):
+        self.pifacedigital.output_pins[0].turn_on()
 
 
 class DSLRCamera:
@@ -47,8 +63,68 @@ class DSLRCamera:
         # Clear camera space
         self.clear_space()
 
+        if settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
+            self.remote_release_connector = RemoteReleaseConnector(pin=settings.REMOTE_RELEASE_CONNECTOR_PIN)
+
+
     @timeit
     def capture(self):
+        if settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
+            return self.capture_remote_release_connector()
+        else:
+            return self.capture_tethered()
+
+    def capture_remote_release_connector(self):
+        """ Use a remote release cable to trigger the camera. Download the picture with gphoto2 """
+        if not self.remote_release_connector:
+            pass
+
+        try:
+            self.remote_release_connector.trigger()
+            time.sleep(1)
+            context = gp.gp_context_new()
+            gp.check_result(gp.gp_camera_init(self.camera, context))
+            files = self.list_files(self.camera, context)
+            files.sort()
+            files.reverse()
+
+            picture_path = files[0]
+            folder = os.path.dirname(picture_path)
+            name = os.path.basename(picture_path)
+
+            # Get picture file
+            error, camera_file = gp.gp_camera_file_get(
+                self.camera,
+                folder,
+                name,
+                gp.GP_FILE_TYPE_NORMAL,
+                context)
+
+            file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
+
+            # Crop picture to be a square
+            picture = Image.open(io.BytesIO(file_data))
+            exif_dict = piexif.load(picture.info["exif"])
+            w, h = picture.size
+            left = (w - h) / 2
+            top = 0
+            right = w - left
+            bottom = h
+            picture = picture.crop((left, top, right, bottom))
+            w, h = picture.size
+            exif_dict["Exif"][piexif.ExifIFD.PixelXDimension] = w
+            exif_bytes = piexif.dump(exif_dict)
+            return picture, exif_bytes
+
+        finally:
+            if 'camera_file' in locals():
+                del camera_file
+            if 'file_data' in locals():
+                del file_data
+            gp.check_result(gp.gp_camera_exit(self.camera, context))
+
+    def capture_tethered(self):
+        """ Use gphoto2 to capture and download the picture """
 
         try:
             context = gp.gp_context_new()
