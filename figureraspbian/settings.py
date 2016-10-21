@@ -69,6 +69,7 @@ SHUTTER_SPEED = int(get_env_setting('SHUTTER_SPEED', 39))
 ISO = int(get_env_setting('ISO', 3))
 CAPTURE_DELAY = float(get_env_setting('CAPTURE_DELAY', 1.0))
 CAMERA_TRIGGER_TYPE = get_env_setting('CAMERA_TRIGGER_TYPE', 'TETHERED')
+CAMERA_REMOTE_RELEASE_CONNECTOR_PIN = int(get_env_setting('CAMERA_REMOTE_RELEASE_CONNECTOR_PIN', 2))
 
 # Printer config
 PRINTER_SPEED = int(get_env_setting('PRINTER_SPEED', 2))

@@ -138,7 +138,7 @@ class RemoteReleaseConnector:
     In our case the cable is just a 2.5mm jack
     """
 
-    def __init__(self, pin=1):
+    def __init__(self, pin=settings.CAMERA_REMOTE_RELEASE_CONNECTOR_PIN):
         self.pifacedigital = PiFaceDigital()
         self.pin = pin
 
@@ -159,7 +159,7 @@ class RemoteReleaseConnectorDSLRCamera(DSLRCamera):
 
     def __init__(self):
         super(RemoteReleaseConnectorDSLRCamera, self).__init__()
-        self.remote_release_connector = RemoteReleaseConnector(pin=settings.REMOTE_RELEASE_CONNECTOR_PIN)
+        self.remote_release_connector = RemoteReleaseConnector()
 
     def _trigger(self, camera, context):
         self.remote_release_connector.trigger()
