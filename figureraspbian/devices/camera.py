@@ -138,12 +138,14 @@ class RemoteReleaseConnector:
     In our case the cable is just a 2.5mm jack
     """
 
-    def __init__(self, pin=0):
+    def __init__(self, pin=1):
         self.pifacedigital = PiFaceDigital()
         self.pin = pin
 
     def trigger(self):
-        self.pifacedigital.output_pins[0].turn_on()
+        self.pifacedigital.relays[1].turn_on()
+        time.sleep(0.1)
+        self.pifacedigital.relays[1].turn_off()
 
 
 class TimeoutWaitingForFileAdded(Exception):
