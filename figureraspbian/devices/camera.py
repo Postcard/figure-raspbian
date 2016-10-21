@@ -31,8 +31,9 @@ class open_camera:
         self.context = context
         return self.camera, self.context
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         gp.check_result(gp.gp_camera_exit(self.camera, self.context))
+
 
 
 def Camera():
