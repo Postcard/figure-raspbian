@@ -38,15 +38,11 @@ RUN apt-get update && apt-get install -y \
     wireless-tools \
     sysstat \
     procmail \
+    libgphoto2-6  \
+    libgphoto2-2-dev \
+    gphoto2 \
     vim \
     && rm -rf /var/lib/apt/lists/*
-
-
-RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/archive/2.5.10.zip && \
-    unzip 2.5.10.zip && \
-    cd gphoto2-updater-2.5.10 && \
-    chmod +x gphoto2-updater.sh && \
-    ./gphoto2-updater.sh
 
 
 RUN wget --no-check-certificate https://github.com/Postcard/python-epson-printer/archive/v1.9.0.zip && \
