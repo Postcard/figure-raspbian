@@ -169,7 +169,7 @@ class RemoteReleaseConnectorDSLRCamera(DSLRCamera):
         while True:
             if time.time() > timeout_after:
                 raise TimeoutWaitingForFileAdded()
-            event_type, data = gp.check_result(gp.gp_camera_wait_for_event(camera, gp.GP_EVENT_FILE_ADDED, context))
+            event_type, data = gp.check_result(gp.gp_camera_wait_for_event(camera, 1000, context))
             if event_type == gp.GP_EVENT_FILE_ADDED:
                 camera_file_path = data
                 return camera_file_path
