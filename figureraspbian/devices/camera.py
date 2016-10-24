@@ -22,18 +22,16 @@ EOS_1200D_CONFIG = {
 class open_camera:
     """ context manager to control access to the camera resource """
 
-    def __init__(self, camera):
-        self.camera = camera
+    def __init__(self):
+        self.camera = gp.check_result(gp.gp_camera_new())
 
     def __enter__(self):
-        context = gp.gp_context_new()
-        gp.check_result(gp.gp_camera_init(self.camera, context))
-        self.context = context
+        self.context = gp.gp_context_new()
+        gp.check_result(gp.gp_camera_init(self.camera, self.context))
         return self.camera, self.context
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         gp.check_result(gp.gp_camera_exit(self.camera, self.context))
-
 
 
 def Camera():
@@ -53,9 +51,8 @@ class DSLRCamera(object):
     """
 
     def __init__(self):
-        self.camera = gp.check_result(gp.gp_camera_new())
 
-        with open_camera(self.camera) as (camera, context):
+        with open_camera() as (camera, context):
             gp.check_result(gp.gp_camera_init(camera, context))
             config = gp.check_result(gp.gp_camera_get_config(camera, context))
             for param, choice in EOS_1200D_CONFIG.iteritems():
@@ -72,7 +69,7 @@ class DSLRCamera(object):
 
     @timeit
     def capture(self):
-        with open_camera(self.camera) as (camera, context):
+        with open_camera() as (camera, context):
             # Capture picture
             camera_path = self._trigger(camera, context)
             folder = camera_path.folder
@@ -97,7 +94,7 @@ class DSLRCamera(object):
 
     def clear_space(self):
         """ Clear space on camera SD card """
-        with open_camera(self.camera) as (camera, context):
+        with open_camera() as (camera, context):
             self._clear_space(camera, context)
 
     def _delete_file(self, camera, context, path):
@@ -106,7 +103,7 @@ class DSLRCamera(object):
 
     def delete_file(self, path):
         """ Delete a file on the camera at a specific path """
-        with open_camera(self.camera) as (camera, context):
+        with open_camera(camera) as (camera, context):
             self._delete_file(camera, context, path)
 
     def _list_files(self, camera, context, path='/'):
@@ -127,7 +124,7 @@ class DSLRCamera(object):
 
     def list_files(self, path='/'):
         """ List all files on camera """
-        with open_camera(self.camera) as (camera, context):
+        with open_camera() as (camera, context):
             return self._list_files(camera, context, path)
 
 
