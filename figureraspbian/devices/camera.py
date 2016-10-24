@@ -134,9 +134,9 @@ class RemoteReleaseConnector:
         self.pin = pin
 
     def trigger(self):
-        self.pifacedigital.relays[1].turn_on()
+        self.pifacedigital.relays[self.pin].turn_on()
         time.sleep(0.1)
-        self.pifacedigital.relays[1].turn_off()
+        self.pifacedigital.relays[self.pin].turn_off()
 
 
 class TimeoutWaitingForFileAdded(Exception):
@@ -165,4 +165,4 @@ class RemoteReleaseConnectorDSLRCamera(DSLRCamera):
             if event_type == gp.GP_EVENT_FILE_ADDED:
                 camera_file_path = data
                 return camera_file_path
-            time.sleep(0.1)
+            time.sleep(0.0001)
