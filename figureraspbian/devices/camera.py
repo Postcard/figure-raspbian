@@ -62,12 +62,12 @@ class DSLRCamera(object):
                 widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
                 value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
                 gp.gp_widget_set_value(widget, value)
-            gp.gp_camera_set_config(self.camera, config, context)
+            gp.gp_camera_set_config(camera, config, context)
 
             self._clear_space(camera, context)
 
     def _trigger(self, camera, context):
-        return gp.check_result(gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, context))
+        return gp.check_result(gp.gp_camera_capture(camera, gp.GP_CAPTURE_IMAGE, context))
 
 
     @timeit
@@ -80,7 +80,7 @@ class DSLRCamera(object):
 
             # Get picture file
             error, camera_file = gp.gp_camera_file_get(
-                self.camera,
+                camera,
                 folder,
                 name,
                 gp.GP_FILE_TYPE_NORMAL,
