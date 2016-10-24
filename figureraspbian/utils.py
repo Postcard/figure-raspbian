@@ -12,11 +12,13 @@ import subprocess
 import urllib2
 from os.path import join
 import codecs
+import io
 
 from PIL import Image
 from hashids import Hashids
 from jinja2 import Environment
 import netifaces
+import piexif
 
 from figureraspbian import settings
 
@@ -71,6 +73,22 @@ def timeit(func):
     return timed
 
 
+def crop_to_square(image_data):
+    """ convert a rectangle picture to a square shape """
+    picture = Image.open(io.BytesIO(image_data))
+    exif_dict = piexif.load(picture.info["exif"])
+    w, h = picture.size
+    left = (w - h) / 2
+    top = 0
+    right = w - left
+    bottom = h
+    picture = picture.crop((left, top, right, bottom))
+    w, h = picture.size
+    exif_dict["Exif"][piexif.ExifIFD.PixelXDimension] = w
+    exif_bytes = piexif.dump(exif_dict)
+    return picture, exif_bytes
+
+
 @timeit
 def get_base64_picture_thumbnail(picture):
     buf = cStringIO.StringIO()
@@ -92,7 +110,8 @@ def get_pure_black_and_white_ticket(ticket_io):
 @timeit
 def png2pos(path):
     # TODO make png2pos support passing base64 file argument
-    args = ['png2pos', '-r', '-s2', '-aC', path]
+    speed_arg = '-s%s' % settings.PRINTER_SPEED
+    args = ['png2pos', '-r', speed_arg, '-aC', path]
     my_env = os.environ.copy()
     my_env['PNG2POS_PRINTER_MAX_WIDTH'] = str(settings.PRINTER_MAX_WIDTH)
 

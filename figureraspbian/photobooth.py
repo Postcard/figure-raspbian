@@ -14,7 +14,7 @@ import figure
 from gpiozero import PingServer
 
 from figureraspbian import settings
-from figureraspbian.devices.camera import DSLRCamera
+from figureraspbian.devices.camera import Camera
 from figureraspbian.devices.printer import EpsonPrinter
 from figureraspbian.devices.door_lock import PiFaceDigitalDoorLock
 from figureraspbian.utils import get_base64_picture_thumbnail, get_pure_black_and_white_ticket, \
@@ -96,7 +96,7 @@ def set_intervals():
 
 def initialize_devices():
     global camera, printer, button, door_lock
-    camera = DSLRCamera()
+    camera = Camera()
     printer = EpsonPrinter()
     door_lock = PiFaceDigitalDoorLock()
 
