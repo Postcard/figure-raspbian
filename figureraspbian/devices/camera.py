@@ -55,20 +55,16 @@ class DSLRCamera(object):
     def __init__(self):
         self.camera = gp.check_result(gp.gp_camera_new())
 
-        try:
-            context = gp.gp_context_new()
-            gp.check_result(gp.gp_camera_init(self.camera, context))
-            config = gp.check_result(gp.gp_camera_get_config(self.camera, context))
+        with open_camera(self.camera) as (camera, context):
+            gp.check_result(gp.gp_camera_init(camera, context))
+            config = gp.check_result(gp.gp_camera_get_config(camera, context))
             for param, choice in EOS_1200D_CONFIG.iteritems():
                 widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
                 value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
                 gp.gp_widget_set_value(widget, value)
             gp.gp_camera_set_config(self.camera, config, context)
-        finally:
-            gp.check_result(gp.gp_camera_exit(self.camera, context))
 
-        # Clear camera space
-        self.clear_space()
+            self._clear_space(camera, context)
 
     def _trigger(self, camera, context):
         return gp.check_result(gp.gp_camera_capture(self.camera, gp.GP_CAPTURE_IMAGE, context))
@@ -94,12 +90,15 @@ class DSLRCamera(object):
 
             return crop_to_square(file_data)
 
+    def _clear_space(self, camera, context):
+        files = self._list_files(camera, context)
+        for f in files:
+            self._delete_file(camera, context, f)
+
     def clear_space(self):
         """ Clear space on camera SD card """
         with open_camera(self.camera) as (camera, context):
-            files = self._list_files(self.camera, context)
-            for f in files:
-                self._delete_file(self.camera, context, f)
+            self._clear_space(camera, context)
 
     def _delete_file(self, camera, context, path):
         folder, name = os.path.split(path)
