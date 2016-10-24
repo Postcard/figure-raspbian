@@ -22,15 +22,13 @@ EOS_1200D_CONFIG = {
 class open_camera:
     """ context manager to control access to the camera resource """
 
-    def __init__(self):
-        self.camera = gp.check_result(gp.gp_camera_new())
-
     def __enter__(self):
+        self.camera = gp.check_result(gp.gp_camera_new())
         self.context = gp.gp_context_new()
         gp.check_result(gp.gp_camera_init(self.camera, self.context))
         return self.camera, self.context
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *exc):
         gp.check_result(gp.gp_camera_exit(self.camera, self.context))
 
 
@@ -103,7 +101,7 @@ class DSLRCamera(object):
 
     def delete_file(self, path):
         """ Delete a file on the camera at a specific path """
-        with open_camera(camera) as (camera, context):
+        with open_camera() as (camera, context):
             self._delete_file(camera, context, path)
 
     def _list_files(self, camera, context, path='/'):
