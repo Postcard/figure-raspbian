@@ -13,6 +13,7 @@ import urllib2
 from os.path import join
 import codecs
 import io
+import re
 
 from PIL import Image
 from hashids import Hashids
@@ -98,14 +99,6 @@ def get_base64_picture_thumbnail(picture):
     buf.close()
     return content
 
-@timeit
-def get_pure_black_and_white_ticket(ticket_io):
-    ticket = Image.open(cStringIO.StringIO(ticket_io))
-    ticket = ticket.convert('1')
-    ticket_path = join(settings.RAMDISK_ROOT, 'ticket.png')
-    ticket.save(ticket_path, ticket.format, quality=100)
-    _, ticket_length = ticket.size
-    return ticket_path, ticket_length
 
 @timeit
 def png2pos(path):
@@ -154,6 +147,37 @@ def render_jinja_template(path, **kwargs):
     with codecs.open(path, 'rb', encoding='utf-8') as content_file:
         template = env.from_string(content_file.read())
         return template.render(kwargs)
+
+
+def get_usb_devices():
+    pattern = re.compile("Bus\s+(?P<bus>\d+)\s+Device\s+(?P<device>\d+).+ID\s(?P<vendor_id>\w+):(?P<product_id>\w+)\s(?P<tag>.+)$", re.I)
+    df = subprocess.check_output("lsusb", shell=True)
+    # parse all usb devices
+    devices = []
+    for i in df.split('\n'):
+        if i:
+            info = pattern.match(i)
+            if info:
+                dinfo = info.groupdict()
+                dinfo['device'] = '/dev/bus/usb/%s/%s' % (dinfo.pop('bus'), dinfo.pop('device'))
+                devices.append(dinfo)
+    return devices
+
+
+def resize_preserve_ratio(image, new_height=None, new_width=None):
+    if new_height:
+        (w, h) = image.size
+        if h != new_height:
+            new_width = int(new_height * w / float(h))
+            resized = image.resize((new_width, new_height))
+            return resized
+    elif new_width:
+        (w, h) = image.size
+        if w != new_width:
+            new_height = int(new_width * h / float(w))
+            resized = image.resize((new_width, new_height))
+            return resized
+    return image
 
 
 

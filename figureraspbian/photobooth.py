@@ -15,10 +15,10 @@ from gpiozero import PingServer
 
 from figureraspbian import settings
 from figureraspbian.devices.camera import Camera
-from figureraspbian.devices.printer import EpsonPrinter
-from figureraspbian.devices.door_lock import PiFaceDigitalDoorLock
-from figureraspbian.utils import get_base64_picture_thumbnail, get_pure_black_and_white_ticket, \
-    png2pos, get_file_name, download, write_file, get_mac_addresses, render_jinja_template
+from figureraspbian.devices.printer import Printer
+from figureraspbian.devices.door_lock import DoorLock
+from figureraspbian.utils import get_base64_picture_thumbnail, png2pos, get_file_name, download, write_file, \
+    get_mac_addresses, render_jinja_template
 from figureraspbian.decorators import execute_if_not_busy
 from figureraspbian.phantomjs import get_screenshot
 from figureraspbian import db
@@ -96,9 +96,9 @@ def set_intervals():
 
 def initialize_devices():
     global camera, printer, button, door_lock
-    camera = Camera()
-    printer = EpsonPrinter()
-    door_lock = PiFaceDigitalDoorLock()
+    camera = Camera.factory()
+    printer = Printer.factory()
+    door_lock = DoorLock.factory(settings.DOOR_LOCK_PIN)
 
 
 def download_ticket_stylesheet():
@@ -165,13 +165,10 @@ def render_print_and_upload(picture, exif_bytes):
 
     ticket_base64 = get_screenshot(rendered)
     ticket_io = base64.b64decode(ticket_base64)
-    ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
-
-    pos_data = png2pos(ticket_path)
 
     try:
-        printer.print_ticket(pos_data)
-        update_paper_level(ticket_length)
+        printer.print_image(ticket_io)
+        #update_paper_level(ticket_length)
     except OutOfPaperError:
         update_paper_level(0)
     buf = cStringIO.StringIO()
@@ -199,7 +196,6 @@ def render_print_and_upload(picture, exif_bytes):
     claim_new_codes_async()
     upload_portrait_async(portrait)
 
-    return ticket_path
 
 @execute_if_not_busy(lock)
 def print_booting_ticket():
@@ -219,9 +215,7 @@ def print_booting_ticket():
         )
         ticket_base64 = get_screenshot(rendered)
         ticket_io = base64.b64decode(ticket_base64)
-        ticket_path, ticket_length = get_pure_black_and_white_ticket(ticket_io)
-        pos_data = png2pos(ticket_path)
-        printer.print_ticket(pos_data)
+        printer.print_image(ticket_io)
 
 
 def trigger_async():

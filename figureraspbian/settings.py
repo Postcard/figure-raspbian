@@ -21,76 +21,86 @@ def get_env_setting(setting, default=None):
         raise ImproperlyConfigured(error_msg)
 
 
-DEBUG = get_env_setting('DEBUG', True)
-
+########## API CONFIGURATION
 # Http host of the API
 API_HOST = get_env_setting('API_HOST', 'http://localhost:8000')
-
-# Http host for static files
-STATIC_HOST = get_env_setting('STATIC_HOST', API_HOST)
-
 # Token to authenticate to the API
 TOKEN = get_env_setting('TOKEN', 'token')
-
 RESIN_UUID = get_env_setting('RESIN_DEVICE_UUID', 'resin_uuid')
+UPDATE_POLL_INTERVAL = int(get_env_setting('UPDATE_POLL_INTERVAL', 90))
+UPLOAD_PORTRAITS_INTERVAL = int(get_env_setting('UPLOAD_PORTRAITS_INTERVAL', 90))
+# Timezone information
+DEFAULT_TIMEZONE = 'Europe/Paris'
+########## END API CONFIGURATION
 
+########## DATA CONFIGURATION
 # Root directory to store data
 DATA_ROOT = get_env_setting('DATA_ROOT', '/Users/benoit/git/figure-raspbian')
+########## END DATA CONFIGURATION
 
+######### STATIC FILES CONFIGURATION
+# Http host for static files
+STATIC_HOST = get_env_setting('STATIC_HOST', API_HOST)
+TICKET_CSS_URL = "%s/%s" % (STATIC_HOST, 'static/css/ticket.css')
+LOGO_FIGURE_URL = "%s/%s" % (STATIC_HOST, 'static/images/logo_figure.jpg')
 # Root directory for static files
 STATIC_ROOT = get_env_setting('STATIC_ROOT', '/Users/benoit/git/figure-raspbian/static')
+LOCAL_TICKET_CSS_URL = 'file://%s/ticket.css' % STATIC_ROOT
+LOCAL_LOGO_FIGURE_URL = 'file://%s/logo_figure.jpg' % STATIC_ROOT
+######### END STATIC FILES CONFIGURATION
 
-# Root for media files
+######### MEDIA CONFIGURATION
 MEDIA_ROOT = get_env_setting('MEDIA_ROOT', '/Users/benoit/git/figure-raspbian/media')
 IMAGE_ROOT = os.path.join(MEDIA_ROOT, 'images')
 PICTURE_ROOT = os.path.join(MEDIA_ROOT, 'pictures')
 TICKET_ROOT = os.path.join(MEDIA_ROOT, 'tickets')
 MEDIA_URL = 'file://%s' % MEDIA_ROOT
 RAMDISK_ROOT = '/mnt/ramdisk'
+######### END MEDIA CONFIGURATION
 
-TICKET_CSS_URL = "%s/%s" % (STATIC_HOST, 'static/css/ticket.css')
-LOCAL_TICKET_CSS_URL = 'file://%s/ticket.css' % STATIC_ROOT
-
-BOOTING_TICKET_TEMPLATE_URL = "%s/%s" % (STATIC_HOST, 'static/ticket_templates/booting.html')
-LOGO_FIGURE_URL = "%s/%s" % (STATIC_HOST, 'static/images/logo_figure.jpg')
-LOCAL_LOGO_FIGURE_URL = 'file://%s/logo_figure.jpg' % STATIC_ROOT
-
-# Path to PhantomJS executable
+######### PHANTOMJS CONFIGURATION
 PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
+######### END PHANTOMJS CONFIGURATION
 
+######### I/O CONFIGURATION
+IO_INTERFACE = get_env_setting('IO_INTERFACE', 'GPIOZERO')
 # Pin used to trigger the process
 BUTTON_PIN = get_env_setting('BUTTON_PIN', 0)
+REMOTE_RELEASE_CONNECTOR_PIN = get_env_setting('REMOTE_RELEASE_CONNECTOR_PIN', 1)
+DOOR_LOCK_PIN = get_env_setting('DOOR_LOCK_PIN', 0)
+######### END I/O CONFIGURATION
 
-# Timezone information
-DEFAULT_TIMEZONE = 'Europe/Paris'
-
-# Camera config
+######### CAMERA CONFIGURATION
 APERTURE = int(get_env_setting('APERTURE', 11))
 SHUTTER_SPEED = int(get_env_setting('SHUTTER_SPEED', 39))
 ISO = int(get_env_setting('ISO', 3))
+WHITE_BALANCE = int(get_env_setting('WHITE_BALANCE', 6))
 CAPTURE_DELAY = float(get_env_setting('CAPTURE_DELAY', 1.0))
-CAMERA_TRIGGER_TYPE = get_env_setting('CAMERA_TRIGGER_TYPE', 'TETHERED')
+CAMERA_TRIGGER_TYPE = get_env_setting('CAMERA_TRIGGER_TYPE', 'GPHOTO2')
 CAMERA_REMOTE_RELEASE_CONNECTOR_PIN = int(get_env_setting('CAMERA_REMOTE_RELEASE_CONNECTOR_PIN', 1))
+CAMERA_FOCUS_STEPS = int(get_env_setting('CAMERA_FOCUS_STEPS', 15))
+######### END CAMERA CONFIGURATION
 
-# Printer config
+######### PRINTER CONFIGURATION
 PRINTER_SPEED = int(get_env_setting('PRINTER_SPEED', 2))
 PRINTER_MAX_WIDTH = int(get_env_setting('PRINTER_MAX_WIDTH', 576))
-
 # Paper roll length in cm
 PAPER_ROLL_LENGTH = int(get_env_setting('PAPER_ROLL_LENGTH', 8000))
 PIXEL_CM_RATIO = float(get_env_setting('PIXEL_CM_RATIO', 75.59))
-
 # Number of line feed at the end of the ticket
 LINE_FEED_COUNT = int(get_env_setting('LINE_FEED_COUNT', 5))
+######### END PRINTER CONFIGURATION
 
-WIFI_ON = int(get_env_setting('WIFI_ON', 0))
-
+######### DOOR LOCK CONFIGURATION
 DOOR_OPENING_DELAY = int(get_env_setting('DOOR_OPENING_DELAY', 5))
 DOOR_OPENING_TIME = int(get_env_setting('DOOR_OPENING_TIME', 10))
+######## END DOOR LOCK CONFIGURATION
 
-UPDATE_POLL_INTERVAL = int(get_env_setting('UPDATE_POLL_INTERVAL', 90))
-UPLOAD_PORTRAITS_INTERVAL = int(get_env_setting('UPLOAD_PORTRAITS_INTERVAL', 90))
+######## WIFI CONFIGURATION
+WIFI_ON = int(get_env_setting('WIFI_ON', 0))
+######## END WIFI CONFIGURATION
 
+######## LOG CONFIGURATION
 LOG_FORMAT = "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s"
-
+######## END LOG CONFIGURATION
 

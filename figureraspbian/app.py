@@ -2,7 +2,7 @@
 import logging
 
 from figureraspbian import photobooth, settings
-from figureraspbian.devices.button import PiFaceDigitalButton
+from figureraspbian.devices.button import Button
 from figureraspbian import db
 from figureraspbian.api import start_server
 from figureraspbian.exceptions import OutOfPaperError
@@ -18,7 +18,7 @@ class App(object):
     def __init__(self):
         db.init()
         photobooth.initialize()
-        self.button = PiFaceDigitalButton(settings.BUTTON_PIN, 0.05, settings.DOOR_OPENING_DELAY)
+        self.button = Button.factory(settings.BUTTON_PIN, 0.05, settings.DOOR_OPENING_DELAY)
         self.button.when_pressed = self.when_pressed
         self.button.when_held = self.when_held
         self.intervals = photobooth.set_intervals()

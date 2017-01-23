@@ -5,7 +5,11 @@ from threading import Event
 import logging
 
 from pifacedigitalio import PiFaceDigital
-from figureraspbian.threads import StoppableThread
+import gpiozero
+
+from ..threads import StoppableThread
+from .. import settings
+from .. exceptions import InvalidIOInterfaceError
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +109,15 @@ class Button(object):
         self._event_thread.stop()
         self._hold_thread.stop()
 
+    def factory(*args, **kwargs):
+        if settings.IO_INTERFACE == 'PIFACE':
+            return PiFaceDigitalButton(*args, **kwargs)
+        elif settings.IO_INTERFACE == 'GPIOZERO':
+            return GPIOZeroButton(*args, **kwargs)
+        raise InvalidIOInterfaceError()
+
+    factory = staticmethod(factory)
+
 
 class PiFaceDigitalButton(Button):
     """
@@ -118,6 +131,17 @@ class PiFaceDigitalButton(Button):
 
     def value(self):
         return self.pifacedigital.input_pins[self.pin].value
+
+
+class GPIOZeroButton(Button):
+    """ Represents a button whose value is determined using the GPIOZero library """
+
+    def __init__(self, *args, **kwargs):
+        super(GPIOZeroButton, self).__init__(*args, **kwargs)
+        self.device = gpiozero.Button(self.pin)
+
+    def value(self):
+        return self.device.is_pressed()
 
 
 class EventThread(StoppableThread):
