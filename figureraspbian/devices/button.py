@@ -141,7 +141,7 @@ class GPIOZeroButton(Button):
         self.device = gpiozero.Button(self.pin)
 
     def value(self):
-        return self.device.is_pressed()
+        return self.device.is_pressed
 
 
 class EventThread(StoppableThread):
