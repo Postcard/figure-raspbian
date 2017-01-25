@@ -61,17 +61,6 @@ class TestUtils:
         cm = utils.pixels2cm(1098)
         assert abs(cm - 14.5) < 0.1
 
-    def test_get_pure_black_and_white_ticket(self, mocker):
-        """
-        it should convert PIL Image to '1' and return the path and the ticket length
-        """
-        im = PILImage.open('test_ticket.jpg')
-        mock_image_open = mocker.patch.object(PILImage, 'open')
-        mock_image_open.return_value = im
-        ticket_path, length = utils.get_pure_black_and_white_ticket('')
-        assert ticket_path == '/Users/benoit/git/figure-raspbian/media/ticket.png'
-        assert length == 958
-
     def test_execute_if_not_busy(self):
         """
         it should execute function only if the lock is released
@@ -292,45 +281,6 @@ class TestDatabase:
         p2.uploaded = True
         p2.save()
         assert not db.get_portrait_to_be_uploaded()
-
-    def test_upload_portraits(self, db_fixture, mocker):
-
-        data_source = [
-            {
-                'code': 'AAAAA',
-                'taken': datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE)),
-                'place_id': '1',
-                'event_id': '1',
-                'photobooth_id': '1',
-                'ticket': '/path/to/ticket1',
-                'picture': '/path/to/picture1',
-                'uploaded': False
-            },
-            {
-                'code': 'BBBBB',
-                'taken': datetime.now(pytz.timezone(settings.DEFAULT_TIMEZONE)),
-                'place_id': '1',
-                'event_id': '1',
-                'photobooth_id': '1',
-                'ticket': '/path/to/ticket2',
-                'picture': '/path/to/picture2',
-                'uploaded': False
-            }
-        ]
-
-        for data_dict in data_source:
-            Portrait.create(**data_dict)
-
-        mock_figure = mocker.patch('figureraspbian.photobooth.figure')
-        mock_read_file = mocker.patch('figureraspbian.photobooth.read_file')
-        upload_portraits()
-
-        assert mock_read_file.call_args_list == [
-            call(u'/path/to/picture1'),
-            call(u'/path/to/ticket1'),
-            call(u'/path/to/picture2'),
-            call(u'/path/to/ticket2')]
-
 
     def test_update_or_create_text(self, db_fixture):
         """
@@ -842,14 +792,17 @@ class TestPhotobooth:
         portrait2 = create_autospec(Portrait)
         portrait3 = create_autospec(Portrait)
 
+        picture = './test_snapshot.jpg'
+        ticket = './test_ticket.png'
+
         portrait1.id = 1
         portrait1.code = 'AAAAA'
         portrait1.taken = '2016-06-02T00:00:00Z'
         portrait1.place_id = '1'
         portrait1.event_id = '1'
         portrait1.photobooth_id = '1'
-        portrait1.picture = '/path/to/picture'
-        portrait1.ticket = '/path/to/ticket'
+        portrait1.picture = picture
+        portrait1.ticket = ticket
         portrait1.uploaded = False
 
         portrait2.id = 2
@@ -858,8 +811,8 @@ class TestPhotobooth:
         portrait2.place_id = '1'
         portrait2.event_id = '1'
         portrait2.photobooth_id = '1'
-        portrait2.picture = '/path/to/picture'
-        portrait2.ticket = '/path/to/ticket'
+        portrait2.picture = picture
+        portrait2.ticket = ticket
         portrait2.uploaded = False
 
         portrait3.id = 3
@@ -868,27 +821,17 @@ class TestPhotobooth:
         portrait3.place_id = '1'
         portrait3.event_id = '1'
         portrait3.photobooth_id = '1'
-        portrait3.picture = '/path/to/picture'
-        portrait3.ticket = '/path/to/ticket'
+        portrait3.picture = picture
+        portrait3.ticket = ticket
         portrait3.uploaded = False
 
         mock_db.get_portrait_to_be_uploaded.side_effect = [portrait1, portrait2, portrait3, None]
 
         mock_api = mocker.patch('figureraspbian.photobooth.figure.Portrait')
 
-        mock_read_file = mocker.patch('figureraspbian.photobooth.read_file')
-        mock_read_file.return_value = 'file content'
-
         upload_portraits()
 
-        assert mock_api.create.call_args_list == [
-            call(files={'ticket': 'file content', 'picture_color': 'file content'},
-                 data={'taken': '2016-06-02T00:00:00Z', 'code': 'AAAAA', 'place': '1', 'event': '1', 'photobooth': '1'}),
-            call(files={'ticket': 'file content', 'picture_color': 'file content'},
-                 data={'taken': '2016-06-02T00:00:00Z', 'code': 'BBBBB', 'place': '1', 'event': '1', 'photobooth': '1'}),
-            call(files={'ticket': 'file content', 'picture_color': 'file content'},
-                 data={'taken': '2016-06-02T00:00:00Z', 'code': 'CCCCC', 'place': '1', 'event': '1', 'photobooth': '1'})
-        ]
+        assert mock_api.create.call_count == 3
 
         assert mock_db.update_portrait.call_args_list == [
             call(1, uploaded=True),
@@ -903,14 +846,17 @@ class TestPhotobooth:
         portrait2 = create_autospec(Portrait)
         portrait3 = create_autospec(Portrait)
 
+        picture = './test_snapshot.jpg'
+        ticket = './test_ticket.png'
+
         portrait1.id = 1
         portrait1.code = 'AAAAA'
         portrait1.taken = '2016-06-02T00:00:00Z'
         portrait1.place_id = '1'
         portrait1.event_id = '1'
         portrait1.photobooth_id = '1'
-        portrait1.picture = '/path/to/picture'
-        portrait1.ticket = '/path/to/ticket'
+        portrait1.picture = picture
+        portrait1.ticket = ticket
         portrait1.uploaded = False
 
         portrait2.id = 2
@@ -919,8 +865,8 @@ class TestPhotobooth:
         portrait2.place_id = '1'
         portrait2.event_id = '1'
         portrait2.photobooth_id = '1'
-        portrait2.picture = '/path/to/picture'
-        portrait2.ticket = '/path/to/ticket'
+        portrait2.picture = picture
+        portrait2.ticket = ticket
         portrait2.uploaded = False
 
         portrait3.id = 3
@@ -929,17 +875,14 @@ class TestPhotobooth:
         portrait3.place_id = '1'
         portrait3.event_id = '1'
         portrait3.photobooth_id = '1'
-        portrait3.picture = '/path/to/picture'
-        portrait3.ticket = '/path/to/ticket'
+        portrait3.picture = picture
+        portrait3.ticket = ticket
         portrait3.uploaded = False
 
         mock_db.get_portrait_to_be_uploaded.side_effect = [portrait1, portrait2, portrait3, None]
 
         mock_api = mocker.patch('figureraspbian.photobooth.figure.Portrait')
         mock_api.create.side_effect = Exception
-
-        mock_read_file = mocker.patch('figureraspbian.photobooth.read_file')
-        mock_read_file.return_value = 'file content'
 
         upload_portraits()
 
@@ -954,14 +897,17 @@ class TestPhotobooth:
         portrait2 = create_autospec(Portrait)
         portrait3 = create_autospec(Portrait)
 
+        picture = './test_snapshot.jpg'
+        ticket = './test_ticket.png'
+
         portrait1.id = 1
         portrait1.code = 'AAAAA'
         portrait1.taken = '2016-06-02T00:00:00Z'
         portrait1.place_id = '1'
         portrait1.event_id = '1'
         portrait1.photobooth_id = '1'
-        portrait1.picture = '/path/to/picture'
-        portrait1.ticket = '/path/to/ticket'
+        portrait1.picture = picture
+        portrait1.ticket = ticket
         portrait1.uploaded = False
 
         portrait2.id = 2
@@ -970,8 +916,8 @@ class TestPhotobooth:
         portrait2.place_id = '1'
         portrait2.event_id = '1'
         portrait2.photobooth_id = '1'
-        portrait2.picture = '/path/to/picture'
-        portrait2.ticket = '/path/to/ticket'
+        portrait2.picture = picture
+        portrait2.ticket = ticket
         portrait2.uploaded = False
 
         portrait3.id = 3
@@ -980,17 +926,14 @@ class TestPhotobooth:
         portrait3.place_id = '1'
         portrait3.event_id = '1'
         portrait3.photobooth_id = '1'
-        portrait3.picture = '/path/to/picture'
-        portrait3.ticket = '/path/to/ticket'
+        portrait3.picture = picture
+        portrait3.ticket = ticket
         portrait3.uploaded = False
 
         mock_db.get_portrait_to_be_uploaded.side_effect = [portrait1, portrait2, portrait3, None]
 
         mock_api = mocker.patch('figureraspbian.photobooth.figure.Portrait')
         mock_api.create.side_effect = BadRequestError
-
-        mock_read_file = mocker.patch('figureraspbian.photobooth.read_file')
-        mock_read_file.return_value = 'file content'
 
         upload_portraits()
 
@@ -1005,14 +948,17 @@ class TestPhotobooth:
         portrait2 = create_autospec(Portrait)
         portrait3 = create_autospec(Portrait)
 
+        picture = './test_snapshot.jpg'
+        ticket = './test_ticket.png'
+
         portrait1.id = 1
         portrait1.code = 'AAAAA'
         portrait1.taken = '2016-06-02T00:00:00Z'
         portrait1.place_id = '1'
         portrait1.event_id = '1'
         portrait1.photobooth_id = '1'
-        portrait1.picture = '/path/to/picture'
-        portrait1.ticket = '/path/to/ticket'
+        portrait1.picture = picture
+        portrait1.ticket = ticket
         portrait1.uploaded = False
 
         portrait2.id = 2
@@ -1021,8 +967,8 @@ class TestPhotobooth:
         portrait2.place_id = '1'
         portrait2.event_id = '1'
         portrait2.photobooth_id = '1'
-        portrait2.picture = '/path/to/picture'
-        portrait2.ticket = '/path/to/ticket'
+        portrait2.picture = picture
+        portrait2.ticket = ticket
         portrait2.uploaded = False
 
         portrait3.id = 3
@@ -1031,17 +977,14 @@ class TestPhotobooth:
         portrait3.place_id = '1'
         portrait3.event_id = '1'
         portrait3.photobooth_id = '1'
-        portrait3.picture = '/path/to/picture'
-        portrait3.ticket = '/path/to/ticket'
+        portrait3.picture = picture
+        portrait3.ticket = ticket
         portrait3.uploaded = False
 
         mock_db.get_portrait_to_be_uploaded.side_effect = [portrait1, portrait2, portrait3, None]
 
         mock_api = mocker.patch('figureraspbian.photobooth.figure.Portrait')
         mock_api.create.side_effect = APIConnectionError
-
-        mock_read_file = mocker.patch('figureraspbian.photobooth.read_file')
-        mock_read_file.return_value = 'file content'
 
         upload_portraits()
 
@@ -1082,7 +1025,7 @@ class TestPhotobooth:
         """it should take a picture, print a ticket and send data to the server"""
 
         mock_camera = mocker.patch('figureraspbian.photobooth.camera')
-        mock_camera.capture.return_value = PILImage.open('test_snapshot.jpg')
+        mock_camera.capture.return_value = (PILImage.open('test_snapshot.jpg'), "")
         mock_printer = mocker.patch('figureraspbian.photobooth.printer')
 
         mock_db = mocker.patch('figureraspbian.photobooth.db')
@@ -1118,18 +1061,17 @@ class TestPhotobooth:
 
         mock_db.get_code.return_value = 'AAAAA'
 
-        mock_update_paper_level = mocker.patch('figureraspbian.photobooth.update_paper_level_async')
+        mock_update_paper_level = mocker.patch('figureraspbian.photobooth.update_api_paper_level_async')
         mock_claim_new_codes = mocker.patch('figureraspbian.photobooth.claim_new_codes_async')
         mock_upload_portrait = mocker.patch('figureraspbian.photobooth.upload_portrait_async')
 
         trigger()
 
         assert mock_camera.capture.called
-        assert mock_printer.print_ticket.called
+        assert mock_printer.print_image.called
         assert mock_update_paper_level.called
         assert mock_claim_new_codes.called
         assert mock_upload_portrait.called
-
 
 
 class TestButtton:

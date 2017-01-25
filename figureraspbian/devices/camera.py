@@ -5,7 +5,6 @@ import time
 from contextlib import contextmanager
 
 import gphoto2 as gp
-from pifacedigitalio import PiFaceDigital
 
 from .. import settings
 from ..utils import timeit, crop_to_square

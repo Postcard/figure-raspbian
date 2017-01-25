@@ -17,8 +17,8 @@ from figureraspbian import settings
 from figureraspbian.devices.camera import Camera
 from figureraspbian.devices.printer import Printer
 from figureraspbian.devices.door_lock import DoorLock
-from figureraspbian.utils import get_base64_picture_thumbnail, png2pos, get_file_name, download, write_file, \
-    get_mac_addresses, render_jinja_template
+from figureraspbian.utils import get_base64_picture_thumbnail, get_file_name, download, write_file, get_mac_addresses, \
+    render_jinja_template
 from figureraspbian.decorators import execute_if_not_busy
 from figureraspbian.phantomjs import get_screenshot
 from figureraspbian import db
@@ -167,8 +167,8 @@ def render_print_and_upload(picture, exif_bytes):
     ticket_io = base64.b64decode(ticket_base64)
 
     try:
-        printer.print_image(ticket_io)
-        #update_paper_level(ticket_length)
+        ticket_length = printer.print_image(ticket_io)
+        update_paper_level(ticket_length)
     except OutOfPaperError:
         update_paper_level(0)
     buf = cStringIO.StringIO()

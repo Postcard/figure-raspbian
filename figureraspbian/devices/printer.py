@@ -66,11 +66,7 @@ class EpsonPrinter(Printer):
     def configure(self):
         self.printer.set_print_speed(2)
 
-    def image_to_raster(self, image):
-        ticket = Image.open(cStringIO.StringIO(image))
-        ticket = resize_preserve_ratio(ticket, new_width=self.max_width)
-        if ticket.mode is not '1':
-            ticket = ticket.convert('1')
+    def image_to_raster(self, ticket):
         ticket_path = join(settings.RAMDISK_ROOT, 'ticket.png')
         ticket.save(ticket_path, "PNG", quality=100)
         # TODO make png2pos support passing base64 file argument
@@ -85,11 +81,17 @@ class EpsonPrinter(Printer):
         return pos_data
 
     def print_image(self, image):
-        raster_data = self.image_to_raster(image)
+        im = Image.open(cStringIO.StringIO(image))
+        im = resize_preserve_ratio(im, new_width=self.max_width)
+        if im.mode is not '1':
+            im = im.convert('1')
+        raster_data = self.image_to_raster(im)
         try:
             self.printer.write(raster_data)
             self.printer.linefeed(settings.LINE_FEED_COUNT)
             self.printer.cut()
+            (_, h) = im.size
+            return h
         except USBError:
             # best guess is that we are out out of paper
             raise OutOfPaperError()
@@ -136,3 +138,5 @@ class VKP80III(Printer):
         yH, yL = custom_printer_utils.to_base_256(h)
         self.printer.print_raster_image(0, xL, xH, yL, yH, raster_data)
         self.printer.present_paper(23, 1, 69, 0)
+        (_, h) = im.size
+        return h
