@@ -1,9 +1,11 @@
 
 import time
-from .. import settings
 
 from pifacedigitalio import PiFaceDigital
 import gpiozero
+
+from .. import settings
+from ..exceptions import InvalidIOInterfaceError
 
 
 class RemoteReleaseConnector(object):
@@ -17,8 +19,10 @@ class RemoteReleaseConnector(object):
     def factory(*args, **kwargs):
         if settings.IO_INTERFACE == 'PIFACE':
             return PiFaceRemoteReleaseConnector(*args, **kwargs)
-        elif settings.IO_INTERFACE == 'GPIO':
+        elif settings.IO_INTERFACE == 'GPIOZERO':
             return GPIOZeroRemoteReleaseConnector(*args, **kwargs)
+        else:
+            raise InvalidIOInterfaceError()
 
     factory = staticmethod(factory)
 
