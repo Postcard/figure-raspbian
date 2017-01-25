@@ -43,6 +43,7 @@ DATA_ROOT = get_env_setting('DATA_ROOT', '/Users/benoit/git/figure-raspbian')
 STATIC_HOST = get_env_setting('STATIC_HOST', API_HOST)
 TICKET_CSS_URL = "%s/%s" % (STATIC_HOST, 'static/css/ticket.css')
 LOGO_FIGURE_URL = "%s/%s" % (STATIC_HOST, 'static/images/logo_figure.jpg')
+BOOTING_TICKET_TEMPLATE_URL = "%s/%s" % (STATIC_HOST, 'static/ticket_templates/booting.html')
 # Root directory for static files
 STATIC_ROOT = get_env_setting('STATIC_ROOT', '/Users/benoit/git/figure-raspbian/static')
 LOCAL_TICKET_CSS_URL = 'file://%s/ticket.css' % STATIC_ROOT
@@ -65,9 +66,9 @@ PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 ######### I/O CONFIGURATION
 IO_INTERFACE = get_env_setting('IO_INTERFACE', 'GPIOZERO')
 # Pin used to trigger the process
-BUTTON_PIN = get_env_setting('BUTTON_PIN', 0)
-REMOTE_RELEASE_CONNECTOR_PIN = get_env_setting('REMOTE_RELEASE_CONNECTOR_PIN', 1)
-DOOR_LOCK_PIN = get_env_setting('DOOR_LOCK_PIN', 0)
+BUTTON_PIN = int(get_env_setting('BUTTON_PIN', 0))
+REMOTE_RELEASE_CONNECTOR_PIN = int(get_env_setting('REMOTE_RELEASE_CONNECTOR_PIN', 1))
+DOOR_LOCK_PIN = int(get_env_setting('DOOR_LOCK_PIN', 0))
 ######### END I/O CONFIGURATION
 
 ######### CAMERA CONFIGURATION
