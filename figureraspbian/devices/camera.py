@@ -157,7 +157,7 @@ class Camera(object):
         if settings.CAMERA_TRIGGER_TYPE == 'GPHOTO2':
             return cls(*args, **kwargs)
         elif settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
-            return RemoteReleaseConnector(*args, **kwargs)
+            return RemoteReleaseConnectorCamera(*args, **kwargs)
 
 
 class RemoteReleaseConnectorCamera(Camera):
