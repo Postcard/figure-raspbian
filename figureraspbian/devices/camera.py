@@ -53,6 +53,7 @@ class Camera(object):
                 gp.gp_widget_set_value(widget, value)
             gp.gp_camera_set_config(camera, config, context)
             self._clear_space(camera, context)
+            self.focus(camera, context)
 
     def _trigger(self, camera, context):
         return gp.check_result(gp.gp_camera_capture(camera, gp.GP_CAPTURE_IMAGE, context))
@@ -137,19 +138,18 @@ class Camera(object):
         gp.gp_widget_set_value(widget, value)
         gp.gp_camera_set_config(camera, config, context)
 
-    def focus(self):
+    def focus(self, camera, context):
         """ Adjust the focus """
-        with open_camera() as (camera, context):
-            config = gp.check_result(gp.gp_camera_get_config(camera, context))
-            widget = gp.check_result(gp.gp_widget_get_child_by_name(config, 'viewfinder'))
-            gp.gp_widget_set_value(widget, 1)
-            gp.gp_camera_set_config(camera, config, context)
-            time.sleep(0.5)
-            # focus is relative so we need to focus the furthest possible before adjusting
-            self.focus_further(80, camera, config, context)
-            self.focus_nearer(settings.CAMERA_FOCUS_STEPS, camera, config, context)
-            gp.gp_widget_set_value(widget, 1)
-            gp.gp_camera_set_config(camera, config, context)
+        config = gp.check_result(gp.gp_camera_get_config(camera, context))
+        widget = gp.check_result(gp.gp_widget_get_child_by_name(config, 'viewfinder'))
+        gp.gp_widget_set_value(widget, 1)
+        gp.gp_camera_set_config(camera, config, context)
+        time.sleep(0.5)
+        # focus is relative so we need to focus the furthest possible before adjusting
+        self.focus_further(80, camera, config, context)
+        self.focus_nearer(settings.CAMERA_FOCUS_STEPS, camera, config, context)
+        gp.gp_widget_set_value(widget, 1)
+        gp.gp_camera_set_config(camera, config, context)
 
 
     @classmethod
