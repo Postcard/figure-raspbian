@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     python-setuptools \
     python-pip \
     python-numpy \
+    imagemagick \
     pkg-config \
     gcc \
     g++ \
