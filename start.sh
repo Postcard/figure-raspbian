@@ -48,7 +48,12 @@ grep -q "$HOSTNAME" /etc/hosts || echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
 
 # Start Wifi Access Point if WIFI_ON
 if [ "$WIFI_ON" = 1 ]; then
-    cd /usr/src/app && npm start &
+
+    export DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket
+
+    sleep 1 # Delay needed to avoid DBUS introspection errors
+
+    node /usr/src/wifi-connect/src/app.js --clear=false &
 fi
 
 if [  -f /var/run/supervisor.sock ]

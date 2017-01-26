@@ -1,7 +1,9 @@
 # Base image 
-FROM resin/%%RESIN_MACHINE_NAME%%-node:0.10
+FROM resin/%%RESIN_MACHINE_NAME%%-node:6
 
-MAINTAINER Benoit Guigal <benoit@postcardgroup.com>
+MAINTAINER Benoit Guigal <benoit@figure.co>
+
+ENV DEVICE_TYPE=%%RESIN_MACHINE_NAME%%
 
 # Make sure installation is not asking for prompt 
 ENV DEBIAN_FRONTEND noninteractive
@@ -29,14 +31,13 @@ RUN apt-get update && apt-get install -y \
     libfreetype6 \
     libfontconfig \
     git \
-    bind9 \
-    bridge-utils \
-    connman \
-    iptables \
+    dnsmasq \
+    hostapd \
+    iproute2 \
+    iw \
     libdbus-1-dev \
     libexpat-dev \
-    net-tools \
-    wireless-tools \
+    rfkill \
     sysstat \
     procmail \
     vim \
@@ -81,16 +82,14 @@ ENV MEDIA_ROOT /data/media
 ENV ZEO_SOCKET /data/zeo.sock
 
 COPY ./wifi-connect/assets/bind /etc/bind
-RUN mkdir -p /usr/src/app/
-WORKDIR /usr/src/app
-COPY ./wifi-connect/package.json ./
+
+WORKDIR /usr/src/wifi-connect/
+RUN mkdir -p /usr/src/wifi-connect/
+COPY ./wifi-connect/package.json /usr/src/wifi-connect/
 RUN JOBS=MAX npm install --unsafe-perm --production && npm cache clean
-
-COPY ./wifi-connect/bower.json ./wifi-connect/.bowerrc ./
-RUN ./node_modules/.bin/bower --allow-root install \
-	&& ./node_modules/.bin/bower --allow-root cache clean
-
-COPY ./wifi-connect/. ./
+COPY ./wifi-connect/bower.json ./wifi-connect/.bowerrc /usr/src/wifi-connect/
+RUN ./node_modules/.bin/bower --allow-root install && ./node_modules/.bin/bower --allow-root cache clean
+COPY ./wifi-connect /usr/src/wifi-connect/
 RUN ./node_modules/.bin/coffee -c ./src
 
 RUN touch /var/log/named.log
