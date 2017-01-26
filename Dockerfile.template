@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     python-dev \
     python-setuptools \
     python-pip \
+    python-numpy \
     pkg-config \
     gcc \
     g++ \
