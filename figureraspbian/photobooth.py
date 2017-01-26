@@ -13,17 +13,17 @@ from ticketrenderer import TicketRenderer
 import figure
 from gpiozero import PingServer
 
-from figureraspbian import settings
-from figureraspbian.devices.camera import Camera
-from figureraspbian.devices.printer import Printer
-from figureraspbian.devices.door_lock import DoorLock
-from figureraspbian.utils import get_base64_picture_thumbnail, get_file_name, download, write_file, get_mac_addresses, \
+from . import settings
+from .devices.camera import Camera
+from .devices.printer import Printer
+from .devices.door_lock import DoorLock
+from .utils import get_base64_picture_thumbnail, get_file_name, download, write_file, get_mac_addresses, \
     render_jinja_template
-from figureraspbian.decorators import execute_if_not_busy
-from figureraspbian.phantomjs import get_screenshot
-from figureraspbian import db
-from figureraspbian.threads import Interval
-from figureraspbian.exceptions import DevicesBusy, OutOfPaperError
+from .decorators import execute_if_not_busy
+from .phantomjs import get_screenshot
+import db
+from .threads import Interval
+from .exceptions import DevicesBusy, OutOfPaperError
 
 logger = logging.getLogger(__name__)
 

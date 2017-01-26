@@ -21,7 +21,6 @@ from .. import constants
 class Printer(object):
     """ Base class for all printers """
 
-    @timeit
     def print_image(self, image):
         raise NotImplementedError()
 
@@ -80,6 +79,7 @@ class EpsonPrinter(Printer):
             raise err
         return pos_data
 
+    @timeit
     def print_image(self, image):
         im = Image.open(cStringIO.StringIO(image))
         im = resize_preserve_ratio(im, new_width=self.max_width)
@@ -129,6 +129,7 @@ class VKP80III(Printer):
     def image_to_raster(self, image):
         return custom_printer_utils.image_to_raster(image)
 
+    @timeit
     def print_image(self, image):
         im = Image.open(cStringIO.StringIO(image))
         im = resize_preserve_ratio(im, new_width=self.max_width)
