@@ -180,6 +180,15 @@ def resize_preserve_ratio(image, new_height=None, new_width=None):
     return image
 
 
+def set_system_time(dt):
+    date_format = "%Y-%m-%d %H:%M:%S"
+    date_string = dt.strftime(date_format)
+    cmd = 'date -s "%s"' % date_string
+    os.system(cmd)
+
+
+
+
 
 
 

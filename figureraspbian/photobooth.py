@@ -17,6 +17,7 @@ from . import settings
 from .devices.camera import Camera
 from .devices.printer import Printer
 from .devices.door_lock import DoorLock
+from .devices.real_time_clock import RTC
 from .utils import get_base64_picture_thumbnail, get_file_name, download, write_file, get_mac_addresses, \
     render_jinja_template
 from .decorators import execute_if_not_busy
@@ -24,6 +25,7 @@ from .phantomjs import get_screenshot
 import db
 from .threads import Interval
 from .exceptions import DevicesBusy, OutOfPaperError
+from .utils import set_system_time
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +78,13 @@ def initialize():
 
         # update mac addresses
         update_mac_addresses_async()
+    else:
+        # set system clock from hardware clock if hardware clock exists
+        rtc = RTC.factory()
+        if rtc:
+            hc_dt = rtc.read_datetime()
+            set_system_time(hc_dt)
+
 
 
 def set_intervals():

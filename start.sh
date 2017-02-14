@@ -21,24 +21,6 @@ fi
 modprobe i2c-dev
 
 
-# Enable RTC
-if [[ $RTC ]]; then
-
-    i2cset -y 1 0x6f 0x08 0x47
-    modprobe i2c:mcp7941x
-    echo mcp7941x 0x6f > /sys/class/i2c-dev/i2c-1/device/new_device
-
-    wget -q --spider http://google.com
-
-    if [ $? -eq 0 ]; then
-        echo "Device online, setting hardware clock from system"
-        hwclock --systohc
-    else
-        echo "Device offline, setting system clock from hardware clock"
-        hwclock --hctosys
-    fi
-fi
-
 # create data directories
 mkdir -p /data/static /data/media/tickets /data/media/images /data/media/pictures
 

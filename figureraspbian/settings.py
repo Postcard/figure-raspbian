@@ -96,6 +96,13 @@ DOOR_OPENING_DELAY = int(get_env_setting('DOOR_OPENING_DELAY', 5))
 DOOR_OPENING_TIME = int(get_env_setting('DOOR_OPENING_TIME', 10))
 ######## END DOOR LOCK CONFIGURATION
 
+######## RTC CONFIGURATION
+RTC = get_env_setting('RTC', None)
+RTC_SCLK_PIN = int(get_env_setting('RTC_SLCK_PIN', 3))
+RTC_SDAT_PIN = int(get_env_setting('RTC_SDAT_PIN', 2))
+RTC_RST_PIN = int(get_env_setting('RTC_RST_PIN', 13))
+######## END RTC CONFIGURATION
+
 ######## WIFI CONFIGURATION
 WIFI_ON = int(get_env_setting('WIFI_ON', 0))
 ######## END WIFI CONFIGURATION
