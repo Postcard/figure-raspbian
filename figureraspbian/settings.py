@@ -97,7 +97,7 @@ DOOR_OPENING_TIME = int(get_env_setting('DOOR_OPENING_TIME', 10))
 ######## END DOOR LOCK CONFIGURATION
 
 ######## RTC CONFIGURATION
-RTC = get_env_setting('RTC', None)
+RTC = get_env_setting('RTC', '')
 RTC_SCLK_PIN = int(get_env_setting('RTC_SLCK_PIN', 3))
 RTC_SDAT_PIN = int(get_env_setting('RTC_SDAT_PIN', 2))
 RTC_RST_PIN = int(get_env_setting('RTC_RST_PIN', 13))

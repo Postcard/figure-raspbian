@@ -41,7 +41,7 @@ def transaction_decorate(func):
         SDAT.off()
         time.sleep(self.CLK_PERIOD)
         RST.off()
-    return wrapper()
+    return wrapper
 
 
 class RTC_DS1302(RTC):
