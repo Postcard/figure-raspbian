@@ -66,9 +66,9 @@ PHANTOMJS_PATH = get_env_setting('PHANTOMJS_PATH', '/usr/local/bin/phantomjs')
 ######### I/O CONFIGURATION
 IO_INTERFACE = get_env_setting('IO_INTERFACE', 'GPIOZERO')
 # Pin used to trigger the process
-BUTTON_PIN = int(get_env_setting('BUTTON_PIN', 0))
-REMOTE_RELEASE_CONNECTOR_PIN = int(get_env_setting('REMOTE_RELEASE_CONNECTOR_PIN', 1))
-DOOR_LOCK_PIN = int(get_env_setting('DOOR_LOCK_PIN', 0))
+BUTTON_PIN = int(get_env_setting('BUTTON_PIN', 4))
+REMOTE_RELEASE_CONNECTOR_PIN = int(get_env_setting('REMOTE_RELEASE_CONNECTOR_PIN', 5))
+DOOR_LOCK_PIN = int(get_env_setting('DOOR_LOCK_PIN', 12))
 ######### END I/O CONFIGURATION
 
 ######### CAMERA CONFIGURATION
