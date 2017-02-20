@@ -80,11 +80,11 @@ def initialize():
         update_mac_addresses_async()
     else:
         # set system clock from hardware clock if hardware clock exists
-        rtc = RTC.factory()
-        if rtc:
-            hc_dt = rtc.read_datetime()
-            set_system_time(hc_dt)
-
+        # rtc = RTC.factory()
+        # if rtc:
+        #     hc_dt = rtc.read_datetime()
+        #     set_system_time(hc_dt)
+        pass
 
 
 def set_intervals():
