@@ -3,7 +3,7 @@ import operator
 
 from datetime import datetime
 
-from gpiozero import OutputDevice, InputDevice
+import RPi.GPIO
 
 from .. import settings
 
@@ -24,68 +24,61 @@ class RTC(object):
     factory = staticmethod(factory)
 
 
-def transaction_decorate(func):
-    """ Start and complete a transaction with the DS1302 RTC """
-    from functools import wraps
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
 
-        SCLK = OutputDevice(self.SCLK_PIN, initial_value=False)
-        SDAT = OutputDevice(self.SDAT_PIN, initial_value=False)
-        RST = OutputDevice(self.RST_PIN, initial_value=False)
+# RTC_DS1302 - Python Hardware Programming Education Project For Raspberry Pi
+# Copyright (C) 2015 Jason Birch
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-        SCLK.off()
-        SDAT.off()
-        time.sleep(self.CLK_PERIOD)
-        RST.on()
-
-        SCLK.close()
-        SDAT.close()
-        RST.close()
-
-        func(self, *args, **kwargs)
-
-        SCLK = OutputDevice(self.SCLK_PIN, initial_value=False)
-        SDAT = OutputDevice(self.SDAT_PIN, initial_value=False)
-        RST = OutputDevice(self.RST_PIN, initial_value=False)
-
-        SCLK.off()
-        SDAT.off()
-        time.sleep(self.CLK_PERIOD)
-        RST.off()
-
-        SCLK.close()
-        SDAT.close()
-        RST.close()
-
-    return wrapper
+#/****************************************************************************/
+#/* RTC_DS1302                                                               */
+#/* ------------------------------------------------------------------------ */
+#/* V1.00 - 2015-08-26 - Jason Birch                                         */
+#/* ------------------------------------------------------------------------ */
+#/* Class to handle controlling a Real Time Clock IC DS1302.                 */
+#/****************************************************************************/
 
 
-class RTC_DS1302(RTC):
-    """
-    Inspired by https://github.com/BirchJD/RTC_DS1302
-    """
+class RTC_DS1302:
+    RTC_DS1302_SCLK = settings.RTC_SCLK_PIN
+    RTC_DS1302_CE = settings.RTC_RST_PIN
+    RTC_DS1302_IO = settings.RTC_SDAT_PIN
 
-    SCLK_PIN = settings.RTC_SCLK_PIN
-    SDAT_PIN = settings.RTC_SDAT_PIN
-    RST_PIN = settings.RTC_RST_PIN
     CLK_PERIOD = 0.00001
 
-    def __init__(self, *args, **kwargs):
-        super(RTC_DS1302, self).__init__(*args, **kwargs)
-        self.initialize()
+    DOW = [ "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" ]
 
-    @transaction_decorate
-    def initialize(self):
-        self._write_byte(int("10001110", 2))
-        self._write_byte(int("00000000", 2))
+
+    def __init__(self):
+        # Turn off GPIO warnings.
+        RPi.GPIO.setwarnings(False)
+        # Configure Raspberry Pi GPIO interfaces.
+        RPi.GPIO.setmode(RPi.GPIO.BCM)
+        # Initiate DS1302 communication.
+        self.InitiateDS1302()
+        # Make sure write protect is turned off.
+        self.WriteByte(int("10001110", 2))
+        self.WriteByte(int("00000000", 2))
         # Make sure trickle charge mode is turned off.
-        self._write_byte(int("10010000", 2))
-        self._write_byte(int("00000000", 2))
+        self.WriteByte(int("10010000", 2))
+        self.WriteByte(int("00000000", 2))
+        # End DS1302 communication.
+        self.EndDS1302()
 
-    def read_datetime(self):
-        return self._read_date_time()
-
+    #/***********************************/
+    #/* Write date and time to the RTC. */
+    #/***********************************/
     def write_datetime(self, dt):
         year = dt.year % 100
         month = dt.month
@@ -94,76 +87,167 @@ class RTC_DS1302(RTC):
         hour = dt.hour
         minute = dt.minute
         second = dt.second
-        self._write_date_time(year, month, day, day_of_week, hour, minute, second)
+        self._write_datetime(year, month, day, day_of_week, hour, minute, second)
 
-    def _write_byte(self, Byte):
+
+    #/*************************************/
+    #/* Read date and time from the RTC. */
+    #/*************************************/
+    def read_datetime(self):
+        # Initiate DS1302 communication.
+        self.InitiateDS1302()
+        # Write address byte.
+        self.WriteByte(int("10111111", 2))
+        # Read date and time data.
+
+        Byte = self.ReadByte()
+        second = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
+        Byte = self.ReadByte()
+        minute = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
+        Byte = self.ReadByte()
+        hour = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
+        Byte = self.ReadByte()
+        day = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
+        Byte = self.ReadByte()
+        month = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
+        Byte = self.ReadByte()
+        _ = (operator.mod(Byte, 16) + operator.div(Byte, 16) * 10) - 1
+        Byte = self.ReadByte()
+        year = 2000 + operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
+
+        dt = datetime(year, month, day, hour, minute, second)
+
+        # End DS1302 communication.
+        self.EndDS1302()
+        return dt
+
+    #/*************************************************/
+    #/* Close Raspberry Pi GPIO use before finishing. */
+    #/*************************************************/
+    def CloseGPIO(self):
+        RPi.GPIO.cleanup()
+
+
+    #/********************************************/
+    #/* Start a transaction with the DS1302 RTC. */
+    #/********************************************/
+    def InitiateDS1302(self):
+        RPi.GPIO.setup(self.RTC_DS1302_SCLK, RPi.GPIO.OUT, initial=0)
+        RPi.GPIO.setup(self.RTC_DS1302_CE, RPi.GPIO.OUT, initial=0)
+        RPi.GPIO.setup(self.RTC_DS1302_IO, RPi.GPIO.OUT, initial=0)
+        RPi.GPIO.output(self.RTC_DS1302_SCLK, 0)
+        RPi.GPIO.output(self.RTC_DS1302_IO, 0)
+        time.sleep(self.CLK_PERIOD)
+        RPi.GPIO.output(self.RTC_DS1302_CE, 1)
+
+
+    #/***********************************************/
+    #/* Complete a transaction with the DS1302 RTC. */
+    #/***********************************************/
+    def EndDS1302(self):
+        RPi.GPIO.setup(self.RTC_DS1302_SCLK, RPi.GPIO.OUT, initial=0)
+        RPi.GPIO.setup(self.RTC_DS1302_CE, RPi.GPIO.OUT, initial=0)
+        RPi.GPIO.setup(self.RTC_DS1302_IO, RPi.GPIO.OUT, initial=0)
+        RPi.GPIO.output(self.RTC_DS1302_SCLK, 0)
+        RPi.GPIO.output(self.RTC_DS1302_IO, 0)
+        time.sleep(self.CLK_PERIOD)
+        RPi.GPIO.output(self.RTC_DS1302_CE, 0)
+
+
+    #/*******************************************/
+    #/* Write a byte of data to the DS1302 RTC. */
+    #/*******************************************/
+    def WriteByte(self, Byte):
         for Count in range(8):
             time.sleep(self.CLK_PERIOD)
-            SCLK = OutputDevice(self.SCLK_PIN, initial_value=False)
-            SDAT = OutputDevice(self.SDAT_PIN, initial_value=False)
-            SCLK.off()
+            RPi.GPIO.output(self.RTC_DS1302_SCLK, 0)
+
             Bit = operator.mod(Byte, 2)
             Byte = operator.div(Byte, 2)
             time.sleep(self.CLK_PERIOD)
-            SDAT.on() if Bit else SDAT.off()
-            time.sleep(self.CLK_PERIOD)
-            SCLK.on()
-            SCLK.close()
-            SDAT.close()
+            RPi.GPIO.output(self.RTC_DS1302_IO, Bit)
 
-    def _read_byte(self):
-        SDAT = InputDevice(self.SDAT_PIN, pull_up=False)
-        SCLK = OutputDevice(self.SCLK_PIN, initial_value=False)
+            time.sleep(self.CLK_PERIOD)
+            RPi.GPIO.output(self.RTC_DS1302_SCLK, 1)
+
+
+    #/******************************************/
+    #/* Read a byte of data to the DS1302 RTC. */
+    #/******************************************/
+    def ReadByte(self):
+        RPi.GPIO.setup(self.RTC_DS1302_IO, RPi.GPIO.IN, pull_up_down=RPi.GPIO.PUD_DOWN)
+
         Byte = 0
         for Count in range(8):
             time.sleep(self.CLK_PERIOD)
-            SCLK.on()
+            RPi.GPIO.output(self.RTC_DS1302_SCLK, 1)
+
             time.sleep(self.CLK_PERIOD)
-            SCLK.off()
+            RPi.GPIO.output(self.RTC_DS1302_SCLK, 0)
+
             time.sleep(self.CLK_PERIOD)
-            Bit = 1 if SDAT.is_active() else 0
+            Bit = RPi.GPIO.input(self.RTC_DS1302_IO)
             Byte |= ((2 ** Count) * Bit)
-        SDAT.close()
-        SCLK.close()
+
         return Byte
 
-    @transaction_decorate
-    def _write_date_time(self, year, month, day, day_of_week, hour, minute, second):
-        self._write_byte(int("10111110", 2))
-        # Write seconds data.
-        self._write_byte(operator.mod(second, 10) | operator.div(second, 10) * 16)
-        # Write minute data.
-        self._write_byte(operator.mod(minute, 10) | operator.div(minute, 10) * 16)
-        # Write hour data.
-        self._write_byte(operator.mod(hour, 10) | operator.div(hour, 10) * 16)
-        # Write day data.
-        self._write_byte(operator.mod(day, 10) | operator.div(day, 10) * 16)
-        # Write month data.
-        self._write_byte(operator.mod(month, 10) | operator.div(month, 10) * 16)
-        # Write day of week data.
-        self._write_byte(operator.mod(day_of_week, 10) | operator.div(day_of_week, 10) * 16)
-        # Write year of week data.
-        self._write_byte(operator.mod(year, 10) | operator.div(year, 10) * 16)
-        # Make sure write protect is turned off.
-        self._write_byte(int("00000000", 2))
-        # Make sure trickle charge mode is turned off.
-        self._write_byte(int("00000000", 2))
 
-    @transaction_decorate
-    def _read_date_time(self):
-        # Read date and time data.
-        Byte = self._read_byte()
-        second = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
-        Byte = self._read_byte()
-        minute = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
-        Byte = self._read_byte()
-        hour = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
-        Byte = self._read_byte()
-        day = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
-        Byte = self._read_byte()
-        month = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
-        Byte = self._read_byte()
-        day_of_week = (operator.mod(Byte, 16) + operator.div(Byte, 16) * 10) - 1
-        Byte = self._read_byte()
-        year = 2000 + (operator.mod(Byte, 16) + operator.div(Byte, 16) * 10)
-        return datetime(year, month, day, hour, minute, second)
+    #/***********************************/
+    #/* Write a message to the RTC RAM. */
+    #/***********************************/
+    def WriteRAM(self, Data):
+        # Initiate DS1302 communication.
+        self.InitiateDS1302()
+        # Write address byte.
+        self.WriteByte(int("11111110", 2))
+        # Write data bytes.
+        for Count in range(len(Data)):
+            self.WriteByte(ord(Data[Count:Count + 1]))
+        for Count in range(31 - len(Data)):
+            self.WriteByte(ord(" "))
+        # End DS1302 communication.
+        self.EndDS1302()
+
+
+    #/**********************************/
+    #/* Read message from the RTC RAM. */
+    #/**********************************/
+    def ReadRAM(self):
+    # Initiate DS1302 communication.
+        self.InitiateDS1302()
+        # Write address byte.
+        self.WriteByte(int("11111111", 2))
+        # Read data bytes.
+        Data = ""
+        for Count in range(31):
+            Byte = self.ReadByte()
+            Data += chr(Byte)
+            # End DS1302 communication.
+        self.EndDS1302()
+        return Data
+
+    def _write_datetime(self, Year, Month, Day, DayOfWeek, Hour, Minute, Second):
+        # Initiate DS1302 communication.
+        self.InitiateDS1302()
+        # Write address byte.
+        self.WriteByte(int("10111110", 2))
+        # Write seconds data.
+        self.WriteByte(operator.mod(Second, 10) | operator.div(Second, 10) * 16)
+        # Write minute data.
+        self.WriteByte(operator.mod(Minute, 10) | operator.div(Minute, 10) * 16)
+        # Write hour data.
+        self.WriteByte(operator.mod(Hour, 10) | operator.div(Hour, 10) * 16)
+        # Write day data.
+        self.WriteByte(operator.mod(Day, 10) | operator.div(Day, 10) * 16)
+        # Write month data.
+        self.WriteByte(operator.mod(Month, 10) | operator.div(Month, 10) * 16)
+        # Write day of week data.
+        self.WriteByte(operator.mod(DayOfWeek, 10) | operator.div(DayOfWeek, 10) * 16)
+        # Write year of week data.
+        self.WriteByte(operator.mod(Year, 10) | operator.div(Year, 10) * 16)
+        # Make sure write protect is turned off.
+        self.WriteByte(int("00000000", 2))
+        # Make sure trickle charge mode is turned off.
+        self.WriteByte(int("00000000", 2))
+        # End DS1302 communication.
+        self.EndDS1302()

@@ -13,5 +13,6 @@ Flask==0.11.1
 psutil==4.3.0
 netifaces==0.10.4
 piexif==1.0.5
+RPi.GPIO==0.6.3
 https://github.com/Postcard/python-epson-printer/archive/v1.9.0.zip
 git+https://github.com/Postcard/py-custom-printer.git@f8761f83e31c6f968babf9a1ce0b992d6940c1ac
