@@ -29,22 +29,42 @@ def transaction_decorate(func):
     from functools import wraps
     @wraps(func)
     def wrapper(self, *args, **kwargs):
+
         SCLK = OutputDevice(self.SCLK_PIN, initial_value=False)
         SDAT = OutputDevice(self.SDAT_PIN, initial_value=False)
         RST = OutputDevice(self.RST_PIN, initial_value=False)
+
         SCLK.off()
         SDAT.off()
         time.sleep(self.CLK_PERIOD)
         RST.on()
+
+        SCLK.close()
+        SDAT.close()
+        RST.close()
+
         func(self, *args, **kwargs)
+
+        SCLK = OutputDevice(self.SCLK_PIN, initial_value=False)
+        SDAT = OutputDevice(self.SDAT_PIN, initial_value=False)
+        RST = OutputDevice(self.RST_PIN, initial_value=False)
+
         SCLK.off()
         SDAT.off()
         time.sleep(self.CLK_PERIOD)
         RST.off()
+
+        SCLK.close()
+        SDAT.close()
+        RST.close()
+
     return wrapper
 
 
 class RTC_DS1302(RTC):
+    """
+    Inspired by https://github.com/BirchJD/RTC_DS1302
+    """
 
     SCLK_PIN = settings.RTC_SCLK_PIN
     SDAT_PIN = settings.RTC_SDAT_PIN
@@ -88,6 +108,8 @@ class RTC_DS1302(RTC):
             SDAT.on() if Bit else SDAT.off()
             time.sleep(self.CLK_PERIOD)
             SCLK.on()
+            SCLK.close()
+            SDAT.close()
 
     def _read_byte(self):
         SDAT = InputDevice(self.SDAT_PIN, pull_up=False)
@@ -101,6 +123,8 @@ class RTC_DS1302(RTC):
             time.sleep(self.CLK_PERIOD)
             Bit = 1 if SDAT.is_active() else 0
             Byte |= ((2 ** Count) * Bit)
+        SDAT.close()
+        SCLK.close()
         return Byte
 
     @transaction_decorate
@@ -128,18 +152,18 @@ class RTC_DS1302(RTC):
     @transaction_decorate
     def _read_date_time(self):
         # Read date and time data.
-        Byte = self.ReadByte()
+        Byte = self._read_byte()
         second = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
-        Byte = self.ReadByte()
+        Byte = self._read_byte()
         minute = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
-        Byte = self.ReadByte()
+        Byte = self._read_byte()
         hour = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
-        Byte = self.ReadByte()
+        Byte = self._read_byte()
         day = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
-        Byte = self.ReadByte()
+        Byte = self._read_byte()
         month = operator.mod(Byte, 16) + operator.div(Byte, 16) * 10
-        Byte = self.ReadByte()
+        Byte = self._read_byte()
         day_of_week = (operator.mod(Byte, 16) + operator.div(Byte, 16) * 10) - 1
-        Byte = self.ReadByte()
+        Byte = self._read_byte()
         year = 2000 + (operator.mod(Byte, 16) + operator.div(Byte, 16) * 10)
         return datetime(year, month, day, hour, minute, second)

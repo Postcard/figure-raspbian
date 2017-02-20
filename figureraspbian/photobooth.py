@@ -36,6 +36,7 @@ camera = None
 printer = None
 button = None
 door_lock = None
+rtc = None
 
 lock = RLock()
 
@@ -80,11 +81,9 @@ def initialize():
         update_mac_addresses_async()
     else:
         # set system clock from hardware clock if hardware clock exists
-        # rtc = RTC.factory()
-        # if rtc:
-        #     hc_dt = rtc.read_datetime()
-        #     set_system_time(hc_dt)
-        pass
+        if rtc:
+            hc_dt = rtc.read_datetime()
+            set_system_time(hc_dt)
 
 
 def set_intervals():
@@ -104,10 +103,11 @@ def set_intervals():
 
 
 def initialize_devices():
-    global camera, printer, button, door_lock
+    global camera, printer, button, door_lock, rtc
     camera = Camera.factory()
     printer = Printer.factory()
     door_lock = DoorLock.factory(settings.DOOR_LOCK_PIN)
+    rtc = RTC.factory()
 
 
 def download_ticket_stylesheet():
