@@ -104,10 +104,13 @@ def set_intervals():
 
 def initialize_devices():
     global camera, printer, button, door_lock, rtc
-    camera = Camera.factory()
     printer = Printer.factory()
     door_lock = DoorLock.factory(settings.DOOR_LOCK_PIN)
     rtc = RTC.factory()
+    camera = Camera.factory()
+    camera.clear_space()
+    camera.configure()
+    camera.focus()
 
 
 def download_ticket_stylesheet():

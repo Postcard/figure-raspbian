@@ -43,8 +43,10 @@ class Camera(object):
     http://www.gphoto.org/proj/libgphoto2/support.php
     """
 
-    def __init__(self, *args, **kwargs):
+    def _trigger(self, camera, context):
+        return gp.check_result(gp.gp_camera_capture(camera, gp.GP_CAPTURE_IMAGE, context))
 
+    def configure(self):
         with open_camera() as (camera, context):
             config = gp.check_result(gp.gp_camera_get_config(camera, context))
             for param, choice in EOS_1200D_CONFIG.iteritems():
@@ -52,11 +54,6 @@ class Camera(object):
                 value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
                 gp.gp_widget_set_value(widget, value)
             gp.gp_camera_set_config(camera, config, context)
-            self._clear_space(camera, context)
-            self.focus(camera, context)
-
-    def _trigger(self, camera, context):
-        return gp.check_result(gp.gp_camera_capture(camera, gp.GP_CAPTURE_IMAGE, context))
 
     @timeit
     def capture(self):
@@ -118,15 +115,25 @@ class Camera(object):
         with open_camera() as (camera, context):
             return self._list_files(camera, context, path)
 
-    def focus_further(self, steps, camera, config, context):
-        for i in range(0, steps):
-            self.change_focus(1, camera, config, context)
+    def focus_further(self, steps):
+        with open_camera() as (camera, context):
+            config = gp.check_result(gp.gp_camera_get_config(camera, context))
+            self._focus_further(steps, camera, config, context)
 
-    def focus_nearer(self, steps, camera, config, context):
+    def _focus_further(self, steps, camera, config, context):
         for i in range(0, steps):
-            self.change_focus(0, camera, config, context)
+            self._change_focus(1, camera, config, context)
 
-    def change_focus(self, direction, camera, config, context):
+    def focus_nearer(self, steps):
+        with open_camera() as (camera, context):
+            config = gp.check_result(gp.gp_camera_get_config(camera, context))
+            self._focus_nearer(steps, camera, config, context)
+
+    def _focus_nearer(self, steps, camera, config, context):
+        for i in range(0, steps):
+            self._change_focus(0, camera, config, context)
+
+    def _change_focus(self, direction, camera, config, context):
         """
         :param direction: 1 further, 0 nearer
         """
@@ -138,19 +145,18 @@ class Camera(object):
         gp.gp_widget_set_value(widget, value)
         gp.gp_camera_set_config(camera, config, context)
 
-    def focus(self, camera, context):
-        """ Adjust the focus """
-        config = gp.check_result(gp.gp_camera_get_config(camera, context))
-        widget = gp.check_result(gp.gp_widget_get_child_by_name(config, 'viewfinder'))
-        gp.gp_widget_set_value(widget, 1)
-        gp.gp_camera_set_config(camera, config, context)
-        time.sleep(0.5)
-        # focus is relative so we need to focus the furthest possible before adjusting
-        self.focus_further(80, camera, config, context)
-        self.focus_nearer(settings.CAMERA_FOCUS_STEPS, camera, config, context)
-        gp.gp_widget_set_value(widget, 1)
-        gp.gp_camera_set_config(camera, config, context)
-
+    def focus(self):
+        with open_camera() as (camera, context):
+            config = gp.check_result(gp.gp_camera_get_config(camera, context))
+            widget = gp.check_result(gp.gp_widget_get_child_by_name(config, 'viewfinder'))
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
+            time.sleep(0.5)
+            # focus is relative so we need to focus the furthest possible before adjusting
+            self._focus_further(80, camera, config, context)
+            self._focus_nearer(settings.CAMERA_FOCUS_STEPS, camera, config, context)
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
 
     @classmethod
     def factory(cls, *args, **kwargs):
