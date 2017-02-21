@@ -118,7 +118,13 @@ class Camera(object):
     def focus_further(self, steps):
         with open_camera() as (camera, context):
             config = gp.check_result(gp.gp_camera_get_config(camera, context))
+            widget = gp.check_result(gp.gp_widget_get_child_by_name(config, 'viewfinder'))
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
+            time.sleep(0.5)
             self._focus_further(steps, camera, config, context)
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
 
     def _focus_further(self, steps, camera, config, context):
         for i in range(0, steps):
@@ -127,7 +133,13 @@ class Camera(object):
     def focus_nearer(self, steps):
         with open_camera() as (camera, context):
             config = gp.check_result(gp.gp_camera_get_config(camera, context))
+            widget = gp.check_result(gp.gp_widget_get_child_by_name(config, 'viewfinder'))
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
+            time.sleep(0.5)
             self._focus_nearer(steps, camera, config, context)
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
 
     def _focus_nearer(self, steps, camera, config, context):
         for i in range(0, steps):
