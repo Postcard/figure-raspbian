@@ -78,7 +78,7 @@ ISO = int(get_env_setting('ISO', 3))
 WHITE_BALANCE = int(get_env_setting('WHITE_BALANCE', 6))
 CAPTURE_DELAY = float(get_env_setting('CAPTURE_DELAY', 1.0))
 CAMERA_TRIGGER_TYPE = get_env_setting('CAMERA_TRIGGER_TYPE', 'GPHOTO2')
-CAMERA_FOCUS_STEPS = int(get_env_setting('CAMERA_FOCUS_STEPS', 15))
+CAMERA_FOCUS_STEPS = int(get_env_setting('CAMERA_FOCUS_STEPS', 20))
 ######### END CAMERA CONFIGURATION
 
 ######### PRINTER CONFIGURATION
