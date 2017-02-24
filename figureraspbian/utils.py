@@ -102,7 +102,7 @@ def get_base64_picture_thumbnail(picture):
 def get_pure_black_and_white_ticket(ticket_io):
     ticket = Image.open(cStringIO.StringIO(ticket_io))
     ticket = ticket.convert('1')
-    ticket_path = join(settings.MEDIA_ROOT, 'ticket.png')
+    ticket_path = join(settings.RAMDISK_ROOT, 'ticket.png')
     ticket.save(ticket_path, ticket.format, quality=100)
     _, ticket_length = ticket.size
     return ticket_path, ticket_length

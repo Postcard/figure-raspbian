@@ -46,6 +46,7 @@ IMAGE_ROOT = os.path.join(MEDIA_ROOT, 'images')
 PICTURE_ROOT = os.path.join(MEDIA_ROOT, 'pictures')
 TICKET_ROOT = os.path.join(MEDIA_ROOT, 'tickets')
 MEDIA_URL = 'file://%s' % MEDIA_ROOT
+RAMDISK_ROOT = '/mnt/ramdisk'
 
 TICKET_CSS_URL = "%s/%s" % (STATIC_HOST, 'static/css/ticket.css')
 LOCAL_TICKET_CSS_URL = 'file://%s/ticket.css' % STATIC_ROOT
