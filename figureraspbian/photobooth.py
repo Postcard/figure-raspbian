@@ -411,7 +411,7 @@ def update_mac_addresses_async():
 def claim_new_codes():
     if db.should_claim_code():
         logger.info('We are running out of codes, fetching new ones from API...')
-        new_codes = figure.CodeList.claim()['codes']
+        new_codes = figure.Code.claim(data={'number': 10000})
         db.bulk_insert_codes(new_codes)
         logger.info('New codes fetched and saved !')
 

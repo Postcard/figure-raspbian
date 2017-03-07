@@ -303,7 +303,7 @@ def update_or_create_ticket_template(ticket_template):
 
     for image in ticket_template['images']:
         update_or_create_image(image, ticket_template=tt)
-
+        
     return tt
 
 
