@@ -61,6 +61,10 @@ lockfile /data/resin-updates.lock
 
 mkdir -p /data/log && touch /data/log/figure.log
 
+# mount RAM disk
+mkdir -p /mnt/ramdisk
+mount -t tmpfs -o size=2m tmpfs /mnt/ramdisk
+
 # Launch supervisor in the foreground
 echo 'Starting supervisor'
 supervisord --nodaemon --configuration /etc/supervisord.conf
