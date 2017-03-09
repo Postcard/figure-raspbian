@@ -69,6 +69,7 @@ IO_INTERFACE = get_env_setting('IO_INTERFACE', 'GPIOZERO')
 BUTTON_PIN = int(get_env_setting('BUTTON_PIN', 4))
 REMOTE_RELEASE_CONNECTOR_PIN = int(get_env_setting('REMOTE_RELEASE_CONNECTOR_PIN', 5))
 DOOR_LOCK_PIN = int(get_env_setting('DOOR_LOCK_PIN', 12))
+SHUTDOWN_PIN = int(get_env_setting('SHUTDOWN_PIN', 19))
 ######### END I/O CONFIGURATION
 
 ######### CAMERA CONFIGURATION
