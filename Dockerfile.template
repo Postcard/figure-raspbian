@@ -42,6 +42,7 @@ RUN apt-get update && apt-get install -y \
     sysstat \
     procmail \
     vim \
+    wireless-tools \
     && rm -rf /var/lib/apt/lists/*
 
 
