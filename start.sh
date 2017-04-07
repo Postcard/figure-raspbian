@@ -30,7 +30,7 @@ then
 fi
 
 # lock supervisor update by default
-lockfile /data/resin-updates.lock
+#lockfile /data/resin-updates.lock
 
 mkdir -p /data/log && touch /data/log/figure.log
 
