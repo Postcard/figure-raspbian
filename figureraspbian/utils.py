@@ -190,7 +190,7 @@ def _enhance_image(base64_image_file):
 def enhance_image(base64_data):
     encoded_string = "data:image/png;base64,%s" % base64_data
     temp_file_path = join(settings.RAMDISK_ROOT, 'ticket.b64')
-    with open(temp_file_path, 'w') as temp_file:
+    with io.open(temp_file_path, 'wb') as temp_file:
         temp_file.write(encoded_string)
     return _enhance_image(temp_file_path)
 
@@ -200,9 +200,6 @@ def set_system_time(dt):
     date_string = dt.strftime(date_format)
     cmd = 'date -s "%s"' % date_string
     os.system(cmd)
-
-
-
 
 
 
