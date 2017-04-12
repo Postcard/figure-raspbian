@@ -25,7 +25,7 @@ from .phantomjs import get_screenshot
 import db
 from .threads import Interval
 from .exceptions import DevicesBusy, OutOfPaperError
-from .utils import set_system_time
+from .utils import set_system_time, enhance_image
 
 logger = logging.getLogger(__name__)
 
@@ -176,7 +176,7 @@ def render_print_and_upload(picture, exif_bytes):
     del base64_picture_thumb
 
     ticket_base64 = get_screenshot(rendered)
-    ticket_io = base64.b64decode(ticket_base64)
+    ticket_io = enhance_image(ticket_base64)
 
     try:
         ticket_length = printer.print_image(ticket_io)

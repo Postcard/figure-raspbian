@@ -56,7 +56,7 @@ IMAGE_ROOT = os.path.join(MEDIA_ROOT, 'images')
 PICTURE_ROOT = os.path.join(MEDIA_ROOT, 'pictures')
 TICKET_ROOT = os.path.join(MEDIA_ROOT, 'tickets')
 MEDIA_URL = 'file://%s' % MEDIA_ROOT
-RAMDISK_ROOT = '/mnt/ramdisk'
+RAMDISK_ROOT = get_env_setting('RAMDISK_ROOT', '/mnt/ramdisk')
 ######### END MEDIA CONFIGURATION
 
 ######### PHANTOMJS CONFIGURATION

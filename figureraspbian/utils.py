@@ -180,9 +180,19 @@ def resize_preserve_ratio(image, new_height=None, new_width=None):
     return image
 
 
-def enhance_image(im):
-    #args = ['convert', '-sharpen', '0x1']
-    raise NotImplementedError()
+def _enhance_image(base64_image_file):
+    args = ['convert', "inline:%s" % base64_image_file, '-sharpen', '0x1', '-quality', '100', 'png:']
+    p = subprocess.Popen(args, stdout=subprocess.PIPE)
+    content, err = p.communicate()
+    return content
+
+
+def enhance_image(base64_data):
+    encoded_string = "data:image/png;base64,%s" % base64_data
+    temp_file_path = join(settings.RAMDISK_ROOT, 'ticket.b64')
+    with open(temp_file_path, 'w') as temp_file:
+        temp_file.write(encoded_string)
+    return _enhance_image(temp_file_path)
 
 
 def set_system_time(dt):
