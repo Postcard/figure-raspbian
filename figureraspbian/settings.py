@@ -82,6 +82,12 @@ CAMERA_TRIGGER_TYPE = get_env_setting('CAMERA_TRIGGER_TYPE', 'GPHOTO2')
 CAMERA_FOCUS_STEPS = int(get_env_setting('CAMERA_FOCUS_STEPS', 20))
 ######### END CAMERA CONFIGURATION
 
+######### IMAGE FILTER CONFIGURATION
+# see http://pillow.readthedocs.io/en/3.1.x/reference/ImageFilter.html
+filters = get_env_setting('FILTERS', 'EDGE_ENHANCE')
+FILTERS = filters.split(',')
+######### END IMAGE FILTER CONFIGURATION
+
 ######### PRINTER CONFIGURATION
 PRINTER_SPEED = int(get_env_setting('PRINTER_SPEED', 2))
 PRINTER_MAX_WIDTH = int(get_env_setting('PRINTER_MAX_WIDTH', 576))

@@ -32,3 +32,7 @@ class InvalidIOInterfaceError(FigureError):
 
 class TimeoutWaitingForFileAdded(FigureError):
     """ Error raised when no picture is received from the camera after a certain amount of time """
+
+
+class UnknownFilterException(FigureError):
+    """ Error raised when an invalid PIL image filter name was provided """

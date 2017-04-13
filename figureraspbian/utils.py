@@ -7,13 +7,13 @@ import logging
 import time
 from urlparse import urlsplit
 import cStringIO
-import base64
 import subprocess
 import urllib2
 from os.path import join
 import codecs
 import io
 import re
+import base64
 
 from PIL import Image
 from hashids import Hashids
@@ -21,7 +21,7 @@ from jinja2 import Environment
 import netifaces
 import piexif
 
-from figureraspbian import settings
+from . import settings, filters
 
 logging.basicConfig(format=settings.LOG_FORMAT, datefmt='%Y.%m.%d %H:%M:%S', level='INFO')
 logger = logging.getLogger(__name__)
@@ -180,19 +180,11 @@ def resize_preserve_ratio(image, new_height=None, new_width=None):
     return image
 
 
-def _enhance_image(base64_image_file):
-    args = ['convert', "inline:%s" % base64_image_file, '-sharpen', '0x1', '-quality', '100', 'png:']
-    p = subprocess.Popen(args, stdout=subprocess.PIPE)
-    content, err = p.communicate()
-    return content
-
-
-def enhance_image(base64_data):
-    encoded_string = "data:image/png;base64,%s" % base64_data
-    temp_file_path = join(settings.RAMDISK_ROOT, 'ticket.b64')
-    with io.open(temp_file_path, 'wb') as temp_file:
-        temp_file.write(encoded_string)
-    return _enhance_image(temp_file_path)
+@timeit
+def enhance_image(image):
+    for _filter in filters.FILTERS:
+        image = image.filter(_filter)
+    return image
 
 
 def set_system_time(dt):

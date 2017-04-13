@@ -18,14 +18,14 @@ from .devices.camera import Camera
 from .devices.printer import Printer
 from .devices.door_lock import DoorLock
 from .devices.real_time_clock import RTC
-from .utils import get_base64_picture_thumbnail, get_file_name, download, write_file, get_mac_addresses, \
+from .utils import get_file_name, download, write_file, get_mac_addresses, \
     render_jinja_template
 from .decorators import execute_if_not_busy
 from .phantomjs import get_screenshot
 import db
 from .threads import Interval
 from .exceptions import DevicesBusy, OutOfPaperError
-from .utils import set_system_time, enhance_image
+from .utils import set_system_time, enhance_image, get_base64_picture_thumbnail
 
 logger = logging.getLogger(__name__)
 
@@ -164,19 +164,20 @@ def render_print_and_upload(picture, exif_bytes):
     code = db.get_code()
     tz = photobooth.place.tz if photobooth.place else settings.DEFAULT_TIMEZONE
     date = datetime.now(pytz.timezone(tz))
-    base64_picture_thumb = get_base64_picture_thumbnail(picture)
+
+    enhanced_picture = enhance_image(picture)
+    base64_picture_thumb = get_base64_picture_thumbnail(enhanced_picture)
+    base64_picture_thumb_data = "data:image/jpeg;base64,%s" % base64_picture_thumb
 
     rendered = ticket_renderer.render(
-        picture="data:image/jpeg;base64,%s" % base64_picture_thumb,
+        picture=base64_picture_thumb_data,
         code=code,
         date=date,
         counter=photobooth.counter
     )
 
-    del base64_picture_thumb
-
     ticket_base64 = get_screenshot(rendered)
-    ticket_io = enhance_image(ticket_base64)
+    ticket_io = base64.b64decode(ticket_base64)
 
     try:
         ticket_length = printer.print_image(ticket_io)
