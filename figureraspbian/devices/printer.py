@@ -61,7 +61,6 @@ class Printer(object):
 class EpsonPrinter(Printer):
 
     def __init__(self, *args, **kwargs):
-        self.vendor_id = '0x%s' % constants.EPSON_VENDOR_ID
         self.max_width = 576
         super(EpsonPrinter, self).__init__(*args, **kwargs)
 
@@ -100,8 +99,7 @@ class EpsonPrinter(Printer):
             raise OutOfPaperError()
 
     def paper_present(self):
-        """ TODO find a way to determine if the paper is present """
-        return True
+        return self.printer.paper_present()
 
 
 class EpsonTMT20(EpsonPrinter):
@@ -109,7 +107,7 @@ class EpsonTMT20(EpsonPrinter):
     def __init__(self, *args, **kwargs):
         super(EpsonTMT20, self).__init__(*args, **kwargs)
         product_id = '0x%s' % constants.TMT20_PRODUCT_ID
-        self.printer = epsonprinter.EpsonPrinter(int(self.vendor_id, 16), int(product_id, 16))
+        self.printer = epsonprinter.EpsonPrinter(int(product_id, 16))
         self.configure()
 
 
@@ -118,7 +116,7 @@ class EpsonTMT20II(EpsonPrinter):
     def __init__(self, *args, **kwargs):
         super(EpsonTMT20II, self).__init__(*args, **kwargs)
         product_id = '0x%s' % constants.TMT20II_PRODUCT_ID
-        self.printer = epsonprinter.EpsonPrinter(int(self.vendor_id, 16), int(product_id, 16))
+        self.printer = epsonprinter.EpsonPrinter(int(product_id, 16))
         self.configure()
 
 
