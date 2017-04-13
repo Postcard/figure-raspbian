@@ -28,6 +28,9 @@ class Printer(object):
         with open(file_path, "rb") as image_file:
             self.print_image(image_file.read())
 
+    def paper_present(self):
+        raise NotImplemented()
+
     def factory():
         """ factory method to create different types of printers based on the output of lsusb"""
         devices = get_usb_devices()
@@ -96,6 +99,10 @@ class EpsonPrinter(Printer):
             # best guess is that we are out out of paper
             raise OutOfPaperError()
 
+    def paper_present(self):
+        """ TODO find a way to determine if the paper is present """
+        return True
+
 
 class EpsonTMT20(EpsonPrinter):
 
@@ -141,3 +148,7 @@ class VKP80III(Printer):
         self.printer.present_paper(23, 1, 69, 0)
         (_, h) = im.size
         return h
+
+    @timeit
+    def paper_present(self):
+        return self.printer.paper_present()

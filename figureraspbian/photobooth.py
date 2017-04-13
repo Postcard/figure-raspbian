@@ -146,9 +146,12 @@ def _trigger():
     - etc
     :return:
     """
+    if printer.paper_present():
+        picture, exif_bytes = camera.capture()
+        return render_print_and_upload(picture, exif_bytes)
+    else:
+        update_paper_level(0)
 
-    picture, exif_bytes = camera.capture()
-    return render_print_and_upload(picture, exif_bytes)
 
 @execute_if_not_busy(lock)
 def render_print_and_upload(picture, exif_bytes):
@@ -183,6 +186,7 @@ def render_print_and_upload(picture, exif_bytes):
         ticket_length = printer.print_image(ticket_io)
         update_paper_level(ticket_length)
     except OutOfPaperError:
+        logger.info("The printer is out of paper")
         update_paper_level(0)
     buf = cStringIO.StringIO()
     if exif_bytes:
