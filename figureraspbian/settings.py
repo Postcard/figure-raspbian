@@ -84,8 +84,8 @@ CAMERA_FOCUS_STEPS = int(get_env_setting('CAMERA_FOCUS_STEPS', 20))
 
 ######### IMAGE FILTER CONFIGURATION
 # see http://pillow.readthedocs.io/en/3.1.x/reference/ImageFilter.html
-filters = get_env_setting('FILTERS', 'EDGE_ENHANCE')
-FILTERS = filters.split(',')
+filters = get_env_setting('FILTERS', '')
+FILTERS = filters.split(',') if filters else []
 ######### END IMAGE FILTER CONFIGURATION
 
 ######### PRINTER CONFIGURATION
