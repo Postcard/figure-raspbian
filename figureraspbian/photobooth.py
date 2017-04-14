@@ -146,21 +146,21 @@ def _trigger():
     - etc
     :return:
     """
-    if printer.paper_present():
-        picture, exif_bytes = camera.capture()
-        return render_print_and_upload(picture, exif_bytes)
-    else:
-        update_paper_level(0)
+    photobooth = db.get_photobooth()
+    if photobooth.paper_level == 0:
+        # check if someone has refilled the paper
+        if not printer.paper_present():
+            return
+    picture, exif_bytes = camera.capture()
+    return render_print_and_upload(photobooth, picture, exif_bytes)
 
 
 @execute_if_not_busy(lock)
-def render_print_and_upload(picture, exif_bytes):
+def render_print_and_upload(photobooth, picture, exif_bytes):
     """
     The body of this function is not included in the _trigger function above because we want to print tickets
     with user provided picture. See figureraspbian.api.test_template
     """
-    photobooth = db.get_photobooth()
-
     ticket_renderer = TicketRenderer(
         photobooth.ticket_template.serialize(), settings.MEDIA_URL, settings.LOCAL_TICKET_CSS_URL)
 

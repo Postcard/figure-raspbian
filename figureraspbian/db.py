@@ -1,8 +1,8 @@
 from peewee import *
 from os.path import join, basename
 
-from figureraspbian import settings
-from figureraspbian.utils import pixels2cm, download
+from . import settings
+from .utils import pixels2cm, download, timeit
 
 
 database = SqliteDatabase(join(settings.DATA_ROOT, 'local.db'))
@@ -152,6 +152,7 @@ class Portrait(BaseModel):
     uploaded = BooleanField(default=False)
 
 
+@timeit
 def get_photobooth():
     return Photobooth.get(Photobooth.uuid == settings.RESIN_UUID)
 

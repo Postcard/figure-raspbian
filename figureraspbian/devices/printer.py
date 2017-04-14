@@ -149,5 +149,4 @@ class VKP80III(Printer):
 
     @timeit
     def paper_present(self):
-        self.printer.flush_read()
         return self.printer.paper_present()
