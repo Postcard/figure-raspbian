@@ -213,6 +213,7 @@ def render_print_and_upload(photobooth, picture, exif_bytes):
     db.increment_counter()
     claim_new_codes_async()
     upload_portrait_async(portrait)
+    return ticket_io
 
 
 @execute_if_not_busy(lock)

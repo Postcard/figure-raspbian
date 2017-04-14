@@ -1,8 +1,9 @@
 # -*- coding: utf8 -*-
-from os.path import basename, dirname, join
+from os.path import join
 from functools import wraps
+import cStringIO
 
-from flask import Flask, send_from_directory, request, abort, jsonify
+from flask import Flask, send_from_directory, request, jsonify, send_file
 import psutil
 from PIL import Image
 
@@ -29,8 +30,8 @@ def login_required(func):
 @login_required
 def trigger():
     try:
-        ticket_path = photobooth._trigger()
-        return send_from_directory(dirname(ticket_path), basename(ticket_path))
+        ticket_io = photobooth._trigger()
+        return send_file(cStringIO.StringIO(ticket_io))
     except DevicesBusy:
         return jsonify(error='the photobooth is busy'), 423
 
@@ -62,7 +63,6 @@ def test_template():
 @login_required
 def print_image():
     """ Print the image uploaded by the user """
-
     image_file = request.files['image']
     if image_file and allowed_file(image_file.filename):
         im = Image.open(image_file)
