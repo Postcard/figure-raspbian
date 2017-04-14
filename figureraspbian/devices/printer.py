@@ -142,10 +142,13 @@ class VKP80III(Printer):
         (w, h) = im.size
         xH, xL = custom_printer_utils.to_base_256(w / 8)
         yH, yL = custom_printer_utils.to_base_256(h)
-        self.printer.print_raster_image(0, xL, xH, yL, yH, raster_data)
-        self.printer.present_paper(23, 1, 69, 0)
-        (_, h) = im.size
-        return h
+        try:
+            self.printer.print_raster_image(0, xL, xH, yL, yH, raster_data)
+            self.printer.present_paper(23, 1, 69, 0)
+            (_, h) = im.size
+            return h
+        except USBError:
+            raise OutOfPaperError()
 
     @timeit
     def paper_present(self):

@@ -149,7 +149,8 @@ def _trigger():
     photobooth = db.get_photobooth()
     if photobooth.paper_level == 0:
         # check if someone has refilled the paper
-        if not printer.paper_present():
+        paper_present = printer.paper_present()
+        if not paper_present:
             return
     picture, exif_bytes = camera.capture()
     return render_print_and_upload(photobooth, picture, exif_bytes)
