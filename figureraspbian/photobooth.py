@@ -15,7 +15,7 @@ from gpiozero import PingServer
 
 from . import settings
 from .devices.camera import Camera
-from .devices.printer import Printer
+from .devices.printer import Printer, VKP80III
 from .devices.door_lock import DoorLock
 from .devices.real_time_clock import RTC
 from .utils import get_file_name, download, write_file, get_mac_addresses, \
@@ -147,11 +147,12 @@ def _trigger():
     :return:
     """
     photobooth = db.get_photobooth()
-    if photobooth.paper_level == 0:
-        # check if someone has refilled the paper
-        paper_present = printer.paper_present()
-        if not paper_present:
-            return
+    if isinstance(photobooth.printer, VKP80III):
+        if photobooth.paper_level == 0:
+            # check if someone has refilled the paper
+            paper_present = printer.paper_present()
+            if not paper_present:
+                return
     picture, exif_bytes = camera.capture()
     return render_print_and_upload(photobooth, picture, exif_bytes)
 
