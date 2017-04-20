@@ -147,7 +147,7 @@ def _trigger():
     :return:
     """
     photobooth = db.get_photobooth()
-    if isinstance(photobooth.printer, VKP80III):
+    if isinstance(printer, VKP80III):
         if photobooth.paper_level == 0:
             # check if someone has refilled the paper
             paper_present = printer.paper_present()
