@@ -82,6 +82,10 @@ CAMERA_TRIGGER_TYPE = get_env_setting('CAMERA_TRIGGER_TYPE', 'GPHOTO2')
 CAMERA_FOCUS_STEPS = int(get_env_setting('CAMERA_FOCUS_STEPS', 20))
 ######### END CAMERA CONFIGURATION
 
+######## TICKET TEMPLATE CONFIGURATION
+TICKET_WIDTH = int(get_env_setting('TICKET_WIDTH', 576))
+######## END TICKET TEMPLATE CONFIGURATION
+
 ######### IMAGE FILTER CONFIGURATION
 # see http://pillow.readthedocs.io/en/3.1.x/reference/ImageFilter.html
 filters = get_env_setting('FILTERS', '')

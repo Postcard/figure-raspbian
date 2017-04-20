@@ -13,7 +13,7 @@ from custom_printer import utils as custom_printer_utils
 from PIL import Image
 
 from .. import settings
-from ..utils import timeit, get_usb_devices, resize_preserve_ratio
+from ..utils import timeit, get_usb_devices, add_margin
 from ..exceptions import OutOfPaperError, PrinterNotFoundError, PrinterModelNotRecognizedError
 from .. import constants
 
@@ -137,9 +137,10 @@ class VKP80III(Printer):
     @timeit
     def print_image(self, image):
         im = Image.open(cStringIO.StringIO(image))
-        im = resize_preserve_ratio(im, new_width=self.max_width)
-        raster_data = custom_printer_utils.image_to_raster(im)
         (w, h) = im.size
+        horizontal_margin = (self.max_width - w) / 2
+        im = add_margin(im, horizontal_margin, 0)
+        raster_data = custom_printer_utils.image_to_raster(im)
         xH, xL = custom_printer_utils.to_base_256(w / 8)
         yH, yL = custom_printer_utils.to_base_256(h)
         try:

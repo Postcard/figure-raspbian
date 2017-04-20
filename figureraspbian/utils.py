@@ -15,7 +15,7 @@ import io
 import re
 import base64
 
-from PIL import Image
+from PIL import Image, ImageOps
 from hashids import Hashids
 from jinja2 import Environment
 import netifaces
@@ -93,7 +93,7 @@ def crop_to_square(image_data):
 @timeit
 def get_base64_picture_thumbnail(picture):
     buf = cStringIO.StringIO()
-    x = settings.PRINTER_MAX_WIDTH
+    x = settings.TICKET_WIDTH
     picture.resize((x, x)).save(buf, "JPEG")
     content = base64.b64encode(buf.getvalue())
     buf.close()
@@ -178,6 +178,11 @@ def resize_preserve_ratio(image, new_height=None, new_width=None):
             resized = image.resize((new_width, new_height))
             return resized
     return image
+
+
+def add_margin(image, horizontal_margin, vertical_margin, color='white'):
+    """ add an horizontal margin to the image """
+    return ImageOps.expand(image, (horizontal_margin, vertical_margin), color)
 
 
 @timeit
