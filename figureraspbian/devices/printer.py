@@ -141,7 +141,7 @@ class VKP80III(Printer):
         horizontal_margin = (self.max_width - w) / 2
         im = add_margin(im, horizontal_margin, 0)
         raster_data = custom_printer_utils.image_to_raster(im)
-        xH, xL = custom_printer_utils.to_base_256(w / 8)
+        xH, xL = custom_printer_utils.to_base_256(self.max_width / 8)
         yH, yL = custom_printer_utils.to_base_256(h)
         try:
             self.printer.print_raster_image(0, xL, xH, yL, yH, raster_data)
