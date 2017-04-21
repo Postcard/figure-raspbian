@@ -86,11 +86,11 @@ CAMERA_FOCUS_STEPS = int(get_env_setting('CAMERA_FOCUS_STEPS', 20))
 TICKET_WIDTH = int(get_env_setting('TICKET_WIDTH', 576))
 ######## END TICKET TEMPLATE CONFIGURATION
 
-######### IMAGE FILTER CONFIGURATION
-# see http://pillow.readthedocs.io/en/3.1.x/reference/ImageFilter.html
-filters = get_env_setting('FILTERS', '')
-FILTERS = filters.split(',') if filters else []
-######### END IMAGE FILTER CONFIGURATION
+######### IMAGE ENHANCEMENT CONFIGURATION
+# http://effbot.org/imagingbook/imageenhance.htm
+CONTRAST_FACTOR = float(get_env_setting('CONTRAST_FACTOR', 1.0))
+SHARPNESS_FACTOR = float(get_env_setting('SHARPNESS_FACTOR', 1.0))
+######### END IMAGE ENHANCEMENT CONFIGURATION
 
 ######### PRINTER CONFIGURATION
 PRINTER_SPEED = int(get_env_setting('PRINTER_SPEED', 2))

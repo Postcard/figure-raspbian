@@ -15,13 +15,13 @@ import io
 import re
 import base64
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageEnhance
 from hashids import Hashids
 from jinja2 import Environment
 import netifaces
 import piexif
 
-from . import settings, filters
+from . import settings
 
 logging.basicConfig(format=settings.LOG_FORMAT, datefmt='%Y.%m.%d %H:%M:%S', level='INFO')
 logger = logging.getLogger(__name__)
@@ -187,8 +187,10 @@ def add_margin(image, border, color='white'):
 
 @timeit
 def enhance_image(image):
-    for _filter in filters.FILTERS:
-        image = image.filter(_filter)
+    contraster = ImageEnhance.Contrast(image)
+    image = contraster.enhance(settings.CONTRAST_FACTOR)
+    sharpener = ImageEnhance.Sharpness(image)
+    image = sharpener.enhance(settings.SHARPNESS_FACTOR)
     return image
 
 
