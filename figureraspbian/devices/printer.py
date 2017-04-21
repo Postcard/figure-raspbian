@@ -139,7 +139,7 @@ class VKP80III(Printer):
         im = Image.open(cStringIO.StringIO(image))
         horizontal_margin = (self.max_width - im.size[0]) / 2
         border = (horizontal_margin, 20, horizontal_margin, 0)
-        im = add_margin(im, border, 0)
+        im = add_margin(im, border)
         im = im.rotate(180)
         raster_data = custom_printer_utils.image_to_raster(im)
         xH, xL = custom_printer_utils.to_base_256(self.max_width / 8)
