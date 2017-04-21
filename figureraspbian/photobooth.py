@@ -248,8 +248,6 @@ def update():
     """
     This will update the data in case it has been changed in the API
     """
-    logger.info("Updating data...")
-
     current = db.get_photobooth()
 
     next = figure.Photobooth.get(settings.RESIN_UUID)
@@ -313,8 +311,6 @@ def update():
     elif ticket_template and current.ticket_template and ticket_template.get('modified') > current.ticket_template.modified:
         db.update_or_create_ticket_template(ticket_template)
 
-    logger.info("Data updated !")
-
 
 def upload_portrait(portrait):
     """ Upload a portrait to Figure API or save it to local file system if an error occurs"""
@@ -356,7 +352,7 @@ def upload_portraits():
 
     number_of_portraits = db.get_number_of_portraits_to_be_uploaded()
     if number_of_portraits == 0:
-        logger.info('No portrait to be uploaded by worker')
+        pass
     else:
         logger.info('There are %s to be uploaded...' % number_of_portraits)
 

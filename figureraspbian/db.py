@@ -2,7 +2,7 @@ from peewee import *
 from os.path import join, basename
 
 from . import settings
-from .utils import pixels2cm, download, timeit
+from .utils import pixels2cm, download
 
 
 database = SqliteDatabase(join(settings.DATA_ROOT, 'local.db'))
@@ -152,7 +152,6 @@ class Portrait(BaseModel):
     uploaded = BooleanField(default=False)
 
 
-@timeit
 def get_photobooth():
     return Photobooth.get(Photobooth.uuid == settings.RESIN_UUID)
 
