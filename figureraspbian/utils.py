@@ -180,9 +180,9 @@ def resize_preserve_ratio(image, new_height=None, new_width=None):
     return image
 
 
-def add_margin(image, horizontal_margin, vertical_margin, color='white'):
+def add_margin(image, border, color='white'):
     """ add an horizontal margin to the image """
-    return ImageOps.expand(image, (horizontal_margin, vertical_margin), color)
+    return ImageOps.expand(image, border, color)
 
 
 @timeit

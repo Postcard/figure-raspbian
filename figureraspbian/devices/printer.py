@@ -137,17 +137,17 @@ class VKP80III(Printer):
     @timeit
     def print_image(self, image):
         im = Image.open(cStringIO.StringIO(image))
-        (w, h) = im.size
-        horizontal_margin = (self.max_width - w) / 2
-        im = add_margin(im, horizontal_margin, 0)
+        horizontal_margin = (self.max_width - image.size[0]) / 2
+        border = (horizontal_margin, 20, horizontal_margin, 0)
+        im = add_margin(im, border, 0)
+        im = im.rotate(180)
         raster_data = custom_printer_utils.image_to_raster(im)
         xH, xL = custom_printer_utils.to_base_256(self.max_width / 8)
-        yH, yL = custom_printer_utils.to_base_256(h)
+        yH, yL = custom_printer_utils.to_base_256(image.size[1])
         try:
             self.printer.print_raster_image(0, xL, xH, yL, yH, raster_data)
             self.printer.present_paper(23, 1, 69, 0)
-            (_, h) = im.size
-            return h
+            return image.size[1]
         except USBError:
             raise OutOfPaperError()
 
