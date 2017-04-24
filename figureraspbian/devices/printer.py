@@ -126,7 +126,10 @@ class VKP80III(Printer):
         super(VKP80III, self).__init__(*args, **kwargs)
         self.printer = customprinters.VKP80III()
         self.max_width = 640
-        self.configure()
+        try:
+            self.configure()
+        except USBError:
+            pass
 
     def configure(self):
         self.printer.set_print_speed(0)
