@@ -36,7 +36,8 @@ class App(object):
         except OutOfPaperError:
             pass
         logger.info("Ready...")
-        start_server()
+        if settings.SERVER_ON == 1:
+            start_server()
 
     def stop(self):
         db.close()
