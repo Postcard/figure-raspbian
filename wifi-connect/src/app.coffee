@@ -18,16 +18,8 @@ ssids = []
 
 error = (e) ->
 	console.log(e)
-	if retry
-		console.log('Retrying')
-		console.log('Clearing credentials')
-		manager.clearCredentials()
-		.then(run)
-		.catch(error)
-	else
-		console.log('Not retrying')
-		console.log('Exiting')
-		process.exit()
+	console.log('Retrying')
+	start_hotspot()
 
 app.get '/ssids', (req, res) ->
 	res.json(ssids)
@@ -47,6 +39,14 @@ app.post '/connect', (req, res) ->
 app.use (req, res) ->
 	res.redirect('/')
 
+start_hotspot = -> 
+	hotspot.stop(manager, device)
+	.then ->
+		wifiScan.scanAsync()
+		.then (results) ->
+			ssids = results
+			hotspot.start(manager, device)
+
 run = ->
 	manager.isSetup()
 	.then (setup) ->
@@ -63,17 +63,10 @@ run = ->
 			.catch(error)
 		else
 			console.log('Credentials not found')
-			hotspot.stop(manager, device)
-			.then ->
-				wifiScan.scanAsync()
-			.then (results) ->
-				ssids = results
-				hotspot.start(manager, device)
-			.catch(error)
+			start_hotspot()
 
 app.listen(80)
 
-retry = true
 clear = true
 device = null
 manager = null
