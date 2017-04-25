@@ -114,11 +114,6 @@ systemd.exists('NetworkManager.service')
 		console.log('Clearing credentials')
 		manager.clearCredentials()
 .then ->
-	manager.isSetup()
-	.then (setup) ->
-		if setup
-			retry = false
-.then ->
 	manager.ready()
 .then(run)
 .catch (e) ->
