@@ -81,6 +81,7 @@ exports.connect  = (timeout) ->
 				.then ->
 					new Promise (resolve, reject) ->
 						handler = (value) ->
+							console.log('NM_STATE =', value)
 							if value == NM_STATE_CONNECTED_GLOBAL
 								manager.removeListener('StateChanged', handler)
 								resolve()
@@ -92,6 +93,7 @@ exports.connect  = (timeout) ->
 						# after is was already connected
 						manager.CheckConnectivityAsync()
 						.then (state) ->
+							console.log('NMConnectivityState =', state)
 							if state == NM_CONNECTIVITY_FULL or state == NM_CONNECTIVITY_LIMITED
 								manager.removeListener('StateChanged', handler)
 								resolve()

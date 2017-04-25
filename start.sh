@@ -14,6 +14,8 @@ mkdir -p /data/static /data/media/tickets /data/media/images /data/media/picture
 grep -q "$HOSTNAME" /etc/hosts || echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
 
 
+mkdir -p /data/log && touch /data/log/figure.log && touch /data/log/wifi-connect.log
+
 # Start Wifi Access Point if WIFI_ON
 if [ "$WIFI_ON" = 1 ]; then
 
@@ -21,7 +23,7 @@ if [ "$WIFI_ON" = 1 ]; then
 
     sleep 1 # Delay needed to avoid DBUS introspection errors
 
-    node /usr/src/wifi-connect/src/app.js --clear=false &
+    node /usr/src/wifi-connect/src/app.js --clear=false >> /data/log/wifi-connect.log 2>&1 &
 fi
 
 if [  -f /var/run/supervisor.sock ]
@@ -31,8 +33,6 @@ fi
 
 # lock supervisor update by default
 #lockfile /data/resin-updates.lock
-
-mkdir -p /data/log && touch /data/log/figure.log
 
 # mount RAM disk
 mkdir -p /mnt/ramdisk
