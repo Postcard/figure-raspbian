@@ -21,11 +21,11 @@ from .devices.real_time_clock import RTC
 from .utils import get_file_name, download, write_file, get_mac_addresses, \
     render_jinja_template
 from .decorators import execute_if_not_busy
-from .phantomjs import get_screenshot
 import db
 from .threads import Interval
 from .exceptions import DevicesBusy, OutOfPaperError
 from .utils import set_system_time, enhance_image, get_base64_picture_thumbnail
+from webkit2png import get_screenshot
 
 logger = logging.getLogger(__name__)
 
@@ -181,8 +181,7 @@ def render_print_and_upload(photobooth, picture, exif_bytes):
         counter=photobooth.counter
     )
 
-    ticket_base64 = get_screenshot(rendered)
-    ticket_io = base64.b64decode(ticket_base64)
+    ticket_io = get_screenshot(rendered)
 
     try:
         ticket_length = printer.print_image(ticket_io)

@@ -52,13 +52,6 @@ RUN wget --no-check-certificate https://github.com/gonzalo/gphoto2-updater/archi
     ./gphoto2-updater.sh
 
 
-RUN wget --no-check-certificate https://github.com/aeberhardo/phantomjs-linux-armv6l/archive/master.zip && \
-    unzip master.zip && \
-    rm master.zip && \
-    cd phantomjs-linux-armv6l-master && \
-    bunzip2 *.bz2 && \
-    tar xf *.tar
-
 RUN git clone https://github.com/Postcard/png2pos.git && \
     cd png2pos && \
     git checkout tags/1.0 && \
@@ -66,6 +59,11 @@ RUN git clone https://github.com/Postcard/png2pos.git && \
     git submodule update && \
     make install
 
+# Install dependencies for python-webkit2png
+RUN apt-get update && apt-get install python-qt4 \
+    libqt4-webkit \
+    xvfb \
+    xauth
 
 RUN mkdir requirements
 ADD requirements ./requirements
@@ -76,7 +74,6 @@ ENV LANG C.UTF-8
 ENV C_FORCE_ROOT true
 ENV FIGURE_DIR /figure/figureraspbian
 ENV IMAGE_DIR /data/images
-ENV PHANTOMJS_PATH /phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l/bin/phantomjs
 ENV DATA_ROOT /data
 ENV STATIC_ROOT /data/static
 ENV MEDIA_ROOT /data/media
