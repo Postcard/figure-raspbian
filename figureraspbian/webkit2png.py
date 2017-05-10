@@ -49,16 +49,17 @@ def init_qtgui():
     return QApplication([])
 
 
-def render_screenshot(html):
-    renderer = WebkitRenderer(logger=logger)
-    with open(SCREENSHOT_PATH, 'rb') as f:
-        renderer.render_to_file((html, ''), f)
 
 @timeit
 def get_screenshot(html):
+
+    def _render_screenshot():
+        renderer = WebkitRenderer(logger=logger)
+        with open(SCREENSHOT_PATH, 'wb') as _f:
+            renderer.render_to_file((html, ''), _f)
     try:
         app = init_qtgui()
-        QTimer.singleShot(0, render_screenshot)
+        QTimer.singleShot(0, _render_screenshot)
         app.exec_()
         with open(SCREENSHOT_PATH, 'rb') as f:
             content = f.read()
