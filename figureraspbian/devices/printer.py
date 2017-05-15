@@ -13,7 +13,7 @@ from custom_printer import utils as custom_printer_utils
 from PIL import Image
 
 from .. import settings
-from ..utils import timeit, get_usb_devices, add_margin
+from ..utils import timeit, get_usb_devices, add_margin, resize_preserve_ratio
 from ..exceptions import OutOfPaperError, PrinterNotFoundError, PrinterModelNotRecognizedError
 from .. import constants
 

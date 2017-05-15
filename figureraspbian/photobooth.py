@@ -232,8 +232,7 @@ def print_booting_ticket():
             event=_photobooth.event.name if _photobooth.event else None,
             is_online=is_online()
         )
-        ticket_base64 = get_screenshot(rendered)
-        ticket_io = base64.b64decode(ticket_base64)
+        ticket_io = get_screenshot(rendered)
         printer.print_image(ticket_io)
 
 
