@@ -3,7 +3,6 @@ from threading import Thread, RLock
 from datetime import datetime
 import pytz
 import cStringIO
-import base64
 import logging
 import time
 from os.path import join

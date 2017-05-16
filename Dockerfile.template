@@ -21,6 +21,9 @@ RUN mkdir requirements
 ADD requirements ./requirements
 RUN cd requirements && pip install -r prod.txt
 
+# Add xvfb to init.d
+ADD xvfb /etc/init.d/xvfb
+RUN chmod +x /etc/init.d/xvfb
 
 ENV FIGURE_DIR /figure/figureraspbian
 ENV IMAGE_DIR /data/images
@@ -41,6 +44,7 @@ COPY ./start.sh /
 COPY ./supervisord.conf /etc/
 
 RUN mkdir -p /var/log /var/run && chmod 755 /start.sh
+
 
 CMD ["/bin/bash", "/start.sh"]
 
