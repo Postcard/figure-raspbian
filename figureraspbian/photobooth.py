@@ -41,7 +41,6 @@ rtc = None
 
 lock = RLock()
 
-qt_application = init_qtgui()
 
 
 def init_qtgui():
@@ -50,6 +49,7 @@ def init_qtgui():
         return QApplication.instance()
     return QApplication([])
 
+qt_application = init_qtgui()
 
 
 def initialize():
