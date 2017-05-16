@@ -243,7 +243,7 @@ def print_booting_ticket():
             event=_photobooth.event.name if _photobooth.event else None,
             is_online=is_online()
         )
-        ticket_io = get_screenshot(rendered)
+        ticket_io = get_screenshot(qt_application, rendered)
         printer.print_image(ticket_io)
 
 
