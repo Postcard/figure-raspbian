@@ -11,6 +11,7 @@ import errno
 from ticketrenderer import TicketRenderer
 import figure
 from gpiozero import PingServer
+from PyQt4.QtGui import QApplication
 
 from . import settings
 from .devices.camera import Camera
@@ -37,7 +38,18 @@ button = None
 door_lock = None
 rtc = None
 
+
 lock = RLock()
+
+qt_application = init_qtgui()
+
+
+def init_qtgui():
+    """Initiates the QApplication environment using the given args."""
+    if QApplication.instance():
+        return QApplication.instance()
+    return QApplication([])
+
 
 
 def initialize():
@@ -180,7 +192,7 @@ def render_print_and_upload(photobooth, picture, exif_bytes):
         counter=photobooth.counter
     )
 
-    ticket_io = get_screenshot(rendered)
+    ticket_io = get_screenshot(qt_application, rendered)
 
     try:
         ticket_length = printer.print_image(ticket_io)

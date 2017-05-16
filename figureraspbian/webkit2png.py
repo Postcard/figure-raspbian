@@ -42,31 +42,20 @@ logger = logging.getLogger(__name__)
 SCREENSHOT_PATH = os.path.join(settings.RAMDISK_ROOT, 'screenshot.png')
 
 
-def init_qtgui():
-    """Initiates the QApplication environment using the given args."""
-    if QApplication.instance():
-        return QApplication.instance()
-    return QApplication([])
-
-
 
 @timeit
-def get_screenshot(html):
+def get_screenshot(qt_application, html):
 
     def _render_screenshot():
         renderer = WebkitRenderer(logger=logger)
         with open(SCREENSHOT_PATH, 'wb') as _f:
             renderer.render_to_file((html, ''), _f)
     try:
-        app = init_qtgui()
         QTimer.singleShot(0, _render_screenshot)
-        app.exec_()
+        qt_application.exec_()
         with open(SCREENSHOT_PATH, 'rb') as f:
             content = f.read()
-        QApplication.exit(0)
         return content
-    except RuntimeError:
-        QApplication.exit(1)
 
 
 # Class for Website-Rendering. Uses QWebPage, which
