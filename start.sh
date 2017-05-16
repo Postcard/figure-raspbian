@@ -13,15 +13,13 @@ mkdir -p /data/static /data/media/tickets /data/media/images /data/media/picture
 # Make sure $HOSTNAME is present in /etc/hosts
 grep -q "$HOSTNAME" /etc/hosts || echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
 
-
 mkdir -p /data/log && touch /data/log/figure.log && touch /data/log/wifi-connect.log
+
+# Start Xvfb
+/etc/init.d/xvfb start
 
 # Start Wifi Access Point if WIFI_ON
 if [ "$WIFI_ON" = 1 ]; then
-
-    export DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket
-
-    sleep 1 # Delay needed to avoid DBUS introspection errors
 
     node /usr/src/wifi-connect/src/app.js --clear=false >> /data/log/wifi-connect.log 2>&1 &
 fi

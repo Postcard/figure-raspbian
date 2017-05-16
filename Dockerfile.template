@@ -24,6 +24,7 @@ RUN cd requirements && pip install -r prod.txt
 # Add xvfb to init.d
 ADD xvfb /etc/init.d/xvfb
 RUN chmod +x /etc/init.d/xvfb
+ENV DISPLAY :1
 
 ENV FIGURE_DIR /figure/figureraspbian
 ENV IMAGE_DIR /data/images
