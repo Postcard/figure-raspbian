@@ -50,12 +50,12 @@ def get_screenshot(qt_application, html):
         renderer = WebkitRenderer(logger=logger)
         with open(SCREENSHOT_PATH, 'wb') as _f:
             renderer.render_to_file((html, ''), _f)
-    try:
-        QTimer.singleShot(0, _render_screenshot)
-        qt_application.exec_()
-        with open(SCREENSHOT_PATH, 'rb') as f:
-            content = f.read()
-        return content
+
+    QTimer.singleShot(0, _render_screenshot)
+    qt_application.exec_()
+    with open(SCREENSHOT_PATH, 'rb') as f:
+        content = f.read()
+    return content
 
 
 # Class for Website-Rendering. Uses QWebPage, which
