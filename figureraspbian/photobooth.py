@@ -170,7 +170,8 @@ def render_print_and_upload(photobooth, picture, exif_bytes):
     tz = photobooth.place.tz if photobooth.place else settings.DEFAULT_TIMEZONE
     date = datetime.now(pytz.timezone(tz))
 
-    enhanced_picture = enhance_image(picture)
+    #enhanced_picture = enhance_image(picture)
+    enhanced_picture = picture
     base64_picture_thumb = get_base64_picture_thumbnail(enhanced_picture)
     base64_picture_thumb_data = "data:image/jpeg;base64,%s" % base64_picture_thumb
 

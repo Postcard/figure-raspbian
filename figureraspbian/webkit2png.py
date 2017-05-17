@@ -51,21 +51,7 @@ def init_qtgui():
                         Ignoring given arguments and returning existing QApplication.")
         return QApplication.instance()
 
-    # if display:
-    #     qtargs2.append('-display')
-    #     qtargs2.append(display)
-    #     # Also export DISPLAY var as this may be used
-    #     # by flash plugin
-    #     os.environ["DISPLAY"] = display
-    #
-    # if style:
-    #     qtargs2.append('-style')
-    #     qtargs2.append(style)
-    #
-    # qtargs2.extend(qtargs or [])
-
     return QApplication([])
-
 
 
 @timeit
@@ -75,7 +61,7 @@ def get_screenshot(html):
     p.join()
     with open(SCREENSHOT_PATH, 'rb') as f:
         content = f.read()
-    print content
+    return content
 
 
 def _get_screenshot(html):
@@ -86,14 +72,13 @@ def _get_screenshot(html):
             with open(SCREENSHOT_PATH, 'wb') as _f:
                 renderer.render_to_file((html, ''), _f)
             QApplication.exit(0)
-        except RuntimeError, e:
+        except RuntimeError as e:
             logger.error("main: %s" % e)
-            print >> sys.stderr, e
             QApplication.exit(1)
 
     app = init_qtgui()
     QTimer.singleShot(0, _render_screenshot)
-    return app.exec_()
+    app.exec_()
 
 
 # Class for Website-Rendering. Uses QWebPage, which
