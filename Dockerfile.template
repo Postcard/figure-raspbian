@@ -21,6 +21,11 @@ RUN mkdir requirements
 ADD requirements ./requirements
 RUN cd requirements && pip install -r prod.txt
 
+# Install python-webkit2png
+RUN git clone https://github.com/adamn/python-webkit2png.git && \
+    cd python-webkit2png && \
+    python setup.py install
+
 # Add xvfb to init.d
 ADD xvfb /etc/init.d/xvfb
 RUN chmod +x /etc/init.d/xvfb

@@ -16,7 +16,7 @@ grep -q "$HOSTNAME" /etc/hosts || echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
 mkdir -p /data/log && touch /data/log/figure.log && touch /data/log/wifi-connect.log
 
 # Start Xvfb
-/etc/init.d/xvfb start
+#/etc/init.d/xvfb start
 
 # Start Wifi Access Point if WIFI_ON
 if [ "$WIFI_ON" = 1 ]; then
