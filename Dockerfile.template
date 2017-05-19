@@ -1,5 +1,5 @@
 # Base image 
-FROM figure/%%RESIN_MACHINE_NAME%%:1.0.0
+FROM figure/%%RESIN_MACHINE_NAME%%:1.1.0
 
 MAINTAINER Benoit Guigal <benoit@figure.co>
 
