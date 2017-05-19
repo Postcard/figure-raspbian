@@ -1,11 +1,11 @@
 # -*- coding: utf8 -*-
 import logging
 
-from figureraspbian import photobooth, settings
-from figureraspbian.devices.button import Button
-from figureraspbian import db
-from figureraspbian.api import start_server
-from figureraspbian.exceptions import OutOfPaperError
+from . import photobooth, settings
+from .devices.button import Button
+import db
+from .api import start_server
+from .exceptions import OutOfPaperError
 
 logger = logging.getLogger(__name__)
 

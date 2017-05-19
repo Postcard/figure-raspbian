@@ -7,9 +7,9 @@ from flask import Flask, send_from_directory, request, jsonify, send_file
 import psutil
 from PIL import Image
 
-from figureraspbian import photobooth
-from figureraspbian import db, settings, utils
-from figureraspbian.exceptions import DevicesBusy, OutOfPaperError
+from . import photobooth
+from . import db, settings, utils
+from .exceptions import DevicesBusy, OutOfPaperError
 
 app = Flask(__name__)
 

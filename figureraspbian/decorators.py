@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 
-from figureraspbian.db import database
-from figureraspbian.exceptions import DevicesBusy
+from .db import database
+from .exceptions import DevicesBusy
 
 def execute_if_not_busy(lock):
     """
