@@ -1,440 +1,199 @@
 # -*- coding: utf8 -*-
-from threading import Thread, RLock
+
 from datetime import datetime
 import pytz
 import cStringIO
 import logging
+from threading import Thread
 import time
-from os.path import join
-import errno
+from os import path
 
 from ticketrenderer import TicketRenderer
-import figure
-from gpiozero import PingServer
+from PIL import Image
 
-from . import settings
-from .devices.camera import Camera
-from .devices.printer import Printer, VKP80III
-from .devices.door_lock import DoorLock
-from .devices.real_time_clock import RTC
-from .utils import get_file_name, download, write_file, get_mac_addresses, \
-    render_jinja_template
-from .decorators import execute_if_not_busy
-import db
-from .threads import Interval
-from .exceptions import DevicesBusy, OutOfPaperError
-from .utils import set_system_time, enhance_image, get_base64_picture_thumbnail
-from webkit2png import get_screenshot
+from models import Code, Photobooth as PhotoboothModel
+import settings
+import utils
+from decorators import execute_if_not_busy
+from exceptions import OutOfPaperError, DevicesBusy
+import request
+from devices.camera import Camera
+from devices.printer import Printer
+from devices.door_lock import DoorLock
+from threads import rlock
+import webkit2png
+
 
 logger = logging.getLogger(__name__)
 
-figure.api_base = settings.API_HOST
-figure.token = settings.TOKEN
 
-camera = None
-printer = None
-button = None
-door_lock = None
-rtc = None
+class Photobooth(object):
 
+    def __init__(self):
+        # data
+        self.photobooth = PhotoboothModel.get()
+        self.context = None
+        self.update_dict = {}
+        # devices
+        self.camera = self.printer = self.door_lock = None
+        self.ready = False
+        self.initialize_devices()
+        if self.camera and self.printer:
+            self.ready = True
 
-lock = RLock()
+    def initialize_devices(self):
+        self.camera = Camera.factory()
+        if self.camera:
+            self.camera.clear_space()
+        self.printer = Printer.factory()
+        self.door_lock = DoorLock.factory()
 
+    def trigger(self):
+        if self.ready:
+            try:
+                self._trigger()
+            except DevicesBusy:
+                pass
+        else:
+            logger.info("Devices not initialized properly, skipping trigger...")
 
-def initialize():
-    """
-    Initialize devices, data and stylesheets
-    """
-    logging.basicConfig(format=settings.LOG_FORMAT, datefmt='%Y.%m.%d %H:%M:%S', level='INFO')
-    # Disable logs for request library
-    logging.getLogger("requests").setLevel(logging.WARNING)
-
-    try:
-        initialize_devices()
-    except Exception as e:
-        logger.exception(e)
-
-    if is_online():
-        try:
-            download_ticket_stylesheet()
-        except Exception as e:
-            logger.exception(e)
-
-        try:
-            download_booting_ticket_template()
-        except Exception as e:
-            logger.exception(e)
-
-        # update photobooth
-        try:
-            update()
-        except Exception as e:
-            logger.exception(e)
-
-        # grab new codes if necessary
-        try:
-            claim_new_codes()
-        except Exception as e:
-            logger.exception(e)
-
-        # update mac addresses
-        update_mac_addresses_async()
-    else:
-        # set system clock from hardware clock if hardware clock exists
-        if rtc:
-            hc_dt = rtc.read_datetime()
-            set_system_time(hc_dt)
-
-
-def set_intervals():
-    """
-    Start tasks that are run in the background at regular intervals
-    """
-
-    intervals = [
-        Interval(update, settings.UPDATE_POLL_INTERVAL),
-        Interval(upload_portraits, settings.UPLOAD_PORTRAITS_INTERVAL)
-    ]
-
-    for interval in intervals:
-        interval.start()
-
-    return intervals
-
-
-def initialize_devices():
-    global camera, printer, button, door_lock, rtc
-    printer = Printer.factory()
-    door_lock = DoorLock.factory(settings.DOOR_LOCK_PIN)
-    rtc = RTC.factory()
-    camera = Camera.factory()
-    camera.clear_space()
-    camera.configure()
-    camera.focus()
-
-
-def download_ticket_stylesheet():
-    download(settings.TICKET_CSS_URL, settings.STATIC_ROOT, force=True)
-
-
-def download_booting_ticket_template():
-    download(settings.LOGO_FIGURE_URL, settings.STATIC_ROOT)
-    download(settings.BOOTING_TICKET_TEMPLATE_URL, settings.STATIC_ROOT, force=True)
-
-
-def door_open():
-    door_lock.open()
-    time.sleep(settings.DOOR_OPENING_TIME)
-    door_lock.close()
-
-
-def trigger():
-    try:
-        _trigger()
-    except DevicesBusy:
-        pass
-
-@execute_if_not_busy(lock)
-def _trigger():
-    """
-    Execute a sequence of actions on devices after a trigger occurs
-    Eg:
-    - take a photo
-    - render a ticket
-    - print a ticket
-    - upload files
-    - etc
-    :return:
-    """
-    photobooth = db.get_photobooth()
-    if isinstance(printer, VKP80III):
-        if photobooth.paper_level == 0:
+    @execute_if_not_busy(rlock)
+    def _trigger(self):
+        self.photobooth = PhotoboothModel.get()
+        if self.photobooth.paper_level == 0:
             # check if someone has refilled the paper
-            paper_present = printer.paper_present()
+            paper_present = self.printer.paper_present()
             if not paper_present:
                 return
-    picture, exif_bytes = camera.capture()
-    return render_print_and_upload(photobooth, picture, exif_bytes)
+        picture = self.camera.capture()
+        return self.render_print_and_upload(picture)
+
+    def render_print_and_upload(self, picture):
+        self.set_context()
+        html = self.render_ticket(picture)
+        ticket = webkit2png.get_screenshot(html)
+        try:
+            ticket_length = self.printer.print_image(ticket)
+            self.update_dict['paper_level'] = utils.new_paper_level(self.paper_level, ticket_length)
+        except OutOfPaperError:
+            logger.info("The printer is out of paper")
+            self.update_dict['paper_level'] = 0
+        filename = utils.get_file_name(self.context['code'])
+
+        portrait = {
+            'picture': picture,
+            'ticket': ticket,
+            'taken': self.context['date'],
+            'place': self.place.id if self.place else None,
+            'event': self.event.id if self.event else None,
+            'photobooth': self.id,
+            'code': self.context['code'],
+            'filename': filename
+        }
+
+        q = PhotoboothModel.update(counter=PhotoboothModel.counter + 1, **self.update_dict)
+        q = q.where(PhotoboothModel.uuid == settings.RESIN_UUID)
+        q.execute()
+        self.photobooth = PhotoboothModel.get()
+
+        request.upload_portrait_async(portrait)
+        request.update_paper_level_async(self.paper_level)
+
+        return ticket
+
+    def trigger_async(self):
+        thr = Thread(target=self.trigger, args=(), kwargs={})
+        thr.start()
+        return thr
+
+    def set_context(self):
+        """ returns the context used to generate a ticket from a ticket template """
+        code = Code.pop()
+        tz = self.place.tz if self.place else settings.DEFAULT_TIMEZONE
+        date = datetime.now(pytz.timezone(tz))
+        counter = self.counter
+        self.context = {'code': code, 'date': date, 'counter': counter}
+
+    def render_ticket(self, picture):
+        ticket_renderer = TicketRenderer(
+            self.ticket_template.serialize(),
+            settings.MEDIA_URL,
+            settings.LOCAL_TICKET_CSS_URL)
+        # resize picture
+        w = h = settings.TICKET_TEMPLATE_PICTURE_SIZE
+        pil_picture = Image.open(cStringIO.StringIO(picture))
+        resized = pil_picture.resize((w, h))
+        resized.format = pil_picture.format
+        data_url = utils.get_data_url(resized)
+        html = ticket_renderer.render(data_url, **self.context)
+        return html
+
+    def unlock_door(self):
+        self.door_lock.open()
+        time.sleep(settings.DOOR_OPENING_TIME)
+        self.door_lock.close()
+
+    def print_booting_ticket(self):
+        if self.ready:
+            booting_template_path = path.join(settings.STATIC_ROOT, 'booting.html')
+            tz = self.place.tz if self.place else settings.DEFAULT_TIMEZONE
+            rendered = utils.render_jinja_template(
+                booting_template_path,
+                css_url=settings.LOCAL_TICKET_CSS_URL,
+                logo_url=settings.LOCAL_LOGO_FIGURE_URL,
+                date=datetime.now(pytz.timezone(tz)).strftime('%d/%m/%Y %H:%M'),
+                serial_number=self.serial_number,
+                place=self.place.name if self.place else None,
+                event=self.event.name if self.event else None,
+                is_online=request.is_online()
+            )
+            ticket = webkit2png.get_screenshot(rendered)
+            self.printer.print_image(ticket)
+
+    @property
+    def id(self):
+        return self.photobooth.id
+
+    @property
+    def serial_number(self):
+        return self.photobooth.serial_number
+
+    @property
+    def place(self):
+        return self.photobooth.place
+
+    @property
+    def event(self):
+        return self.photobooth.event
+
+    @property
+    def ticket_template(self):
+        return self.photobooth.ticket_template
+
+    @property
+    def counter(self):
+        return self.photobooth.counter
+
+    @counter.setter
+    def counter(self, value):
+        self.photobooth.counter = value
+
+    @property
+    def paper_level(self):
+        return self.photobooth.paper_level
+
+    @paper_level.setter
+    def paper_level(self, value):
+        self.photobooth.paper_level = value
 
 
-@execute_if_not_busy(lock)
-def render_print_and_upload(photobooth, picture, exif_bytes):
-    """
-    The body of this function is not included in the _trigger function above because we want to print tickets
-    with user provided picture. See figureraspbian.api.test_template
-    """
-    ticket_renderer = TicketRenderer(
-        photobooth.ticket_template.serialize(), settings.MEDIA_URL, settings.LOCAL_TICKET_CSS_URL)
 
-    code = db.get_code()
-    tz = photobooth.place.tz if photobooth.place else settings.DEFAULT_TIMEZONE
-    date = datetime.now(pytz.timezone(tz))
-
-    #enhanced_picture = enhance_image(picture)
-    enhanced_picture = picture
-    base64_picture_thumb = get_base64_picture_thumbnail(enhanced_picture)
-    base64_picture_thumb_data = "data:image/jpeg;base64,%s" % base64_picture_thumb
-
-    rendered = ticket_renderer.render(
-        picture=base64_picture_thumb_data,
-        code=code,
-        date=date,
-        counter=photobooth.counter
-    )
-
-    ticket_io = get_screenshot(rendered)
-
-    try:
-        ticket_length = printer.print_image(ticket_io)
-        update_paper_level(ticket_length)
-    except OutOfPaperError:
-        logger.info("The printer is out of paper")
-        update_paper_level(0)
-    buf = cStringIO.StringIO()
-    if exif_bytes:
-        picture.save(buf, "JPEG", exif=exif_bytes)
-    else:
-        picture.save(buf, "JPEG")
-    picture_io = buf.getvalue()
-    buf.close()
-
-    filename = get_file_name(code)
-
-    portrait = {
-        'picture': picture_io,
-        'ticket': ticket_io,
-        'taken': date,
-        'place': photobooth.place.id if photobooth.place else None,
-        'event': photobooth.event.id if photobooth.event else None,
-        'photobooth': photobooth.id,
-        'code': code,
-        'filename': filename
-    }
-
-    db.increment_counter()
-    claim_new_codes_async()
-    upload_portrait_async(portrait)
-    return ticket_io
+_photobooth = None
 
 
-@execute_if_not_busy(lock)
-def print_booting_ticket():
-    if printer:
-        booting_template_path = join(settings.STATIC_ROOT, 'booting.html')
-        _photobooth = db.get_photobooth()
-        tz = _photobooth.place.tz if _photobooth.place else settings.DEFAULT_TIMEZONE
-        rendered = render_jinja_template(
-            booting_template_path,
-            css_url=settings.LOCAL_TICKET_CSS_URL,
-            logo_url=settings.LOCAL_LOGO_FIGURE_URL,
-            date=datetime.now(pytz.timezone(tz)).strftime('%d/%m/%Y %H:%M'),
-            serial_number=_photobooth.serial_number,
-            place=_photobooth.place.name if _photobooth.place else None,
-            event=_photobooth.event.name if _photobooth.event else None,
-            is_online=is_online()
-        )
-        ticket_io = get_screenshot(rendered)
-        printer.print_image(ticket_io)
-
-
-def trigger_async():
-    thr = Thread(target=trigger, args=(), kwargs={})
-    thr.start()
-    return thr
-
-
-def update():
-    """
-    This will update the data in case it has been changed in the API
-    """
-    current = db.get_photobooth()
-
-    next = figure.Photobooth.get(settings.RESIN_UUID)
-
-    if current.id != next['id']:
-        db.update_photobooth(id=next['id'], serial_number=next.get('serial_number'))
-
-    # check if we need to update the place
-    place = next.get('place')
-
-    if place and not current.place:
-        p = db.create_place(place)
-        db.update_photobooth(place=p)
-
-    elif not place and current.place:
-        db.delete(current.place)
-        db.update_photobooth(place=None)
-
-    elif place and current.place and place.get('id') != current.place.id:
-        db.delete(current.place)
-        p = db.create_place(place)
-        db.update_photobooth(place=p)
-
-    elif place and current.place and place.get('modified') > current.place.modified:
-        db.update_place(current.place.id, name=place.get('name'), tz=place.get('tz'), modified=place.get('modified'))
-
-    # check if we need to update the event
-    event = next.get('event')
-    if event and not current.event:
-        e = db.create_event(event)
-        db.update_photobooth(event=e)
-
-    elif not event and current.event:
-        db.delete(current.event)
-        db.update_photobooth(event=None)
-
-    elif event and current.event and event.get('id') != current.event.id:
-        db.delete(current.event)
-        e = db.create_event(event)
-        db.update_photobooth(event=e)
-
-    elif event and current.event and event.get('modified') > current.event.modified:
-        db.update_event(current.event.id, name=event.get('name'), modified=event.get('modified'))
-
-    # check if we need to update the ticket template
-    ticket_template = next.get('ticket_template')
-
-    if ticket_template and not current.ticket_template:
-        t = db.update_or_create_ticket_template(ticket_template)
-        db.update_photobooth(ticket_template=t)
-
-    elif not ticket_template and current.ticket_template:
-        db.delete(current.ticket_template)
-        db.update_photobooth(ticket_template=None)
-
-    elif ticket_template and current.ticket_template and ticket_template.get('id') != current.ticket_template.id:
-        db.delete(current.ticket_template)
-        t = db.update_or_create_ticket_template(ticket_template)
-        db.update_photobooth(ticket_template=t)
-
-    elif ticket_template and current.ticket_template and ticket_template.get('modified') > current.ticket_template.modified:
-        db.update_or_create_ticket_template(ticket_template)
-
-
-def upload_portrait(portrait):
-    """ Upload a portrait to Figure API or save it to local file system if an error occurs"""
-
-    files = {
-        'picture_color': (portrait['filename'], portrait['picture']),
-        'ticket': (portrait['filename'], portrait['ticket'])
-    }
-
-    data = {key: portrait[key] for key in ['code', 'taken', 'place', 'event', 'photobooth']}
-
-    try:
-        logger.info('Uploading portrait %s' % portrait['code'])
-        figure.Portrait.create(data=data, files=files)
-        logger.info('Portrait %s uploaded !' % portrait['code'])
-    except Exception as e:
-        logger.error(e)
-        # Couldn't upload the portrait, save picture and ticket
-        # to filesystem and add the portrait to local db for scheduled upload
-        picture_path = join(settings.PICTURE_ROOT,  portrait['filename'])
-        write_file(portrait['picture'], picture_path)
-        portrait['picture'] = picture_path
-
-        ticket_path = join(settings.TICKET_ROOT, portrait['filename'])
-        write_file(portrait['ticket'], ticket_path)
-        portrait['ticket'] = ticket_path
-
-        portrait.pop('filename')
-
-        db.create_portrait(portrait)
-
-
-def upload_portrait_async(portrait):
-    thr = Thread(target=upload_portrait, args=(portrait,), kwargs={})
-    thr.start()
-
-
-def upload_portraits():
-
-    number_of_portraits = db.get_number_of_portraits_to_be_uploaded()
-    if number_of_portraits == 0:
-        pass
-    else:
-        logger.info('There are %s to be uploaded...' % number_of_portraits)
-
-    while True:
-        portrait = db.get_portrait_to_be_uploaded()
-        if portrait:
-            logger.info('Uploading portrait %s...' % portrait.code)
-            try:
-                files = {'picture_color': open(portrait.picture, 'rb'), 'ticket': open(portrait.ticket, 'rb')}
-                data = {
-                    'code': portrait.code,
-                    'taken': portrait.taken,
-                    'place': portrait.place_id,
-                    'event': portrait.event_id,
-                    'photobooth': portrait.photobooth_id,
-                }
-                figure.Portrait.create(data=data, files=files)
-                db.update_portrait(portrait.id, uploaded=True)
-                logger.info('Portrait %s uploaded !' % portrait.code)
-            except figure.BadRequestError as e:
-                # Duplicate code or files empty
-                logger.exception(e)
-                db.delete(portrait)
-            except IOError as e:
-                logger.exception(e)
-                if e.errno == errno.ENOENT:
-                    # snapshot or ticket file may be corrupted, proceed with remaining tickets
-                    db.delete(portrait)
-                else:
-                    break
-            except Exception as e:
-                logger.exception(e)
-                break
-        else:
-            break
-
-
-def update_paper_level(pixels):
-    paper_level = db.update_paper_level(pixels)
-    logger.info('Paper level is now %s percent' % paper_level)
-    update_api_paper_level_async(paper_level)
-
-
-def update_api_paper_level(paper_level):
-    figure.Photobooth.edit(
-        settings.RESIN_UUID, data={'paper_level': paper_level})
-    logger.info('API updated with new paper level!')
-
-
-def update_api_paper_level_async(paper_level):
-    thr = Thread(target=update_api_paper_level, args=(paper_level,), kwargs={})
-    thr.start()
-
-
-def update_mac_addresses():
-    mac_addresses = get_mac_addresses()
-    figure.Photobooth.edit(
-        settings.RESIN_UUID, data={'mac_addresses': mac_addresses})
-
-
-def update_mac_addresses_async():
-    thr = Thread(target=update_mac_addresses, args=(), kwargs={})
-    thr.start()
-
-
-def claim_new_codes():
-    if db.should_claim_code():
-        logger.info('We are running out of codes, fetching new ones from API...')
-        new_codes = figure.Code.claim(data={'number': 10000})
-        db.bulk_insert_codes(new_codes)
-        logger.info('New codes fetched and saved !')
-
-
-def claim_new_codes_async():
-    thr = Thread(target=claim_new_codes, args=(), kwargs={})
-    thr.start()
-
-
-def is_online():
-    # check if the device is online
-    ping_host = '8.8.8.8'
-    server = PingServer(ping_host)
-    b = server.is_active
-    server.close()
-    return b
-
+def get_photobooth():
+    """ Instantiate photobooth lazily """
+    global _photobooth
+    if not _photobooth:
+        _photobooth = Photobooth()
+    return _photobooth

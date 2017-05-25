@@ -33,10 +33,10 @@ UPLOAD_PORTRAITS_INTERVAL = int(get_env_setting('UPLOAD_PORTRAITS_INTERVAL', 90)
 DEFAULT_TIMEZONE = 'Europe/Paris'
 ########## END API CONFIGURATION
 
-########## DATA CONFIGURATION
+########## SQLITE CONFIGURATION
 # Root directory to store data
-DATA_ROOT = get_env_setting('DATA_ROOT', '/Users/benoit/git/figure-raspbian')
-########## END DATA CONFIGURATION
+SQLITE_FILEPATH = get_env_setting('SQLITE_FILEPATH', ':memory:')
+########## SQLITE CONFIGURATION
 
 ######### STATIC FILES CONFIGURATION
 # Http host for static files
@@ -83,7 +83,7 @@ CAMERA_FOCUS_STEPS = int(get_env_setting('CAMERA_FOCUS_STEPS', 20))
 ######### END CAMERA CONFIGURATION
 
 ######## TICKET TEMPLATE CONFIGURATION
-TICKET_WIDTH = int(get_env_setting('TICKET_WIDTH', 576))
+TICKET_TEMPLATE_PICTURE_SIZE = int(get_env_setting('TICKET_TEMPLATE_PICTURE_SIZE', 576))
 ######## END TICKET TEMPLATE CONFIGURATION
 
 ######### IMAGE ENHANCEMENT CONFIGURATION
@@ -125,4 +125,9 @@ SERVER_ON = int(get_env_setting('SERVER_ON', 0))
 ######## LOG CONFIGURATION
 LOG_FORMAT = "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s"
 ######## END LOG CONFIGURATION
+
+######## RESINIO SUPERVISOR CONFIGURATION
+RESIN_SUPERVISOR_ADDRESS = get_env_setting('RESIN_SUPERVISOR_ADDRESS', '')
+RESIN_SUPERVISOR_API_KEY = get_env_setting('RESIN_SUPERVISOR_API_KEY', '')
+######## END RESINIO SUPERVISOR CONFIGURATION
 

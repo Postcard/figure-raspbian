@@ -4,6 +4,7 @@ import subprocess
 import os
 from os.path import join
 import cStringIO
+import logging
 
 from usb.core import USBError
 
@@ -18,6 +19,8 @@ from ..exceptions import OutOfPaperError, PrinterNotFoundError, PrinterModelNotR
 from .. import constants
 
 
+logger = logging.getLogger(__name__)
+
 class Printer(object):
     """ Base class for all printers """
 
@@ -31,31 +34,36 @@ class Printer(object):
     def paper_present(self):
         raise NotImplemented()
 
+    @staticmethod
     def factory():
-        """ factory method to create different types of printers based on the output of lsusb"""
-        devices = get_usb_devices()
-        # Try finding an EPSON printer
-        generator = (device for device in devices if device['vendor_id'] == constants.EPSON_VENDOR_ID)
-        epson_printer_device = next(generator, None)
-        if epson_printer_device:
-            product_id = epson_printer_device['product_id']
-            if product_id == constants.TMT20_PRODUCT_ID:
-                return EpsonTMT20()
-            if product_id == constants.TMT20II_PRODUCT_ID:
-                return EpsonTMT20II()
-            else:
-                raise PrinterModelNotRecognizedError(epson_printer_device)
-        generator = (device for device in devices if device['vendor_id'] == constants.CUSTOM_VENDOR_ID)
-        custom_printer_device = next(generator, None)
-        if custom_printer_device:
-            product_id = custom_printer_device['product_id']
-            if product_id == constants.VKP80III_PRODUCT_ID:
-                return VKP80III()
-            else:
-                raise PrinterModelNotRecognizedError(custom_printer_device)
-        raise PrinterNotFoundError()
+        def _factory():
+            """ factory method to create different types of printers based on the output of lsusb"""
+            devices = get_usb_devices()
+            # Try finding an EPSON printer
+            generator = (device for device in devices if device['vendor_id'] == constants.EPSON_VENDOR_ID)
+            epson_printer_device = next(generator, None)
+            if epson_printer_device:
+                product_id = epson_printer_device['product_id']
+                if product_id == constants.TMT20_PRODUCT_ID:
+                    return EpsonTMT20()
+                if product_id == constants.TMT20II_PRODUCT_ID:
+                    return EpsonTMT20II()
+                else:
+                    raise PrinterModelNotRecognizedError(epson_printer_device)
+            generator = (device for device in devices if device['vendor_id'] == constants.CUSTOM_VENDOR_ID)
+            custom_printer_device = next(generator, None)
+            if custom_printer_device:
+                product_id = custom_printer_device['product_id']
+                if product_id == constants.VKP80III_PRODUCT_ID:
+                    return VKP80III()
+                else:
+                    raise PrinterModelNotRecognizedError(custom_printer_device)
+            raise PrinterNotFoundError()
 
-    factory = staticmethod(factory)
+        try:
+            return _factory()
+        except Exception as e:
+            logger.error(e.message)
 
 
 class EpsonPrinter(Printer):
@@ -99,7 +107,9 @@ class EpsonPrinter(Printer):
             raise OutOfPaperError()
 
     def paper_present(self):
-        return self.printer.paper_present()
+        # TODO make this work
+        # return self.printer.paper_present()
+        return True
 
 
 class EpsonTMT20(EpsonPrinter):

@@ -1,7 +1,9 @@
-from threading import Thread, Event
+from threading import Thread, Event, RLock
 
 
 _THREADS = set()
+
+rlock = RLock()
 
 
 def threads_shutdown():

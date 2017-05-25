@@ -1,5 +1,4 @@
 # -*- coding: utf8 -*-
-from os.path import join
 from functools import wraps
 import cStringIO
 
@@ -7,9 +6,12 @@ from flask import Flask, send_from_directory, request, jsonify, send_file
 import psutil
 from PIL import Image
 
-from . import photobooth
-from . import db, settings, utils
-from .exceptions import DevicesBusy, OutOfPaperError
+
+from threads import rlock
+from photobooth import get_photobooth
+from models import Photobooth, Portrait
+import settings
+from exceptions import DevicesBusy, OutOfPaperError
 
 app = Flask(__name__)
 
@@ -30,7 +32,8 @@ def login_required(func):
 @login_required
 def trigger():
     try:
-        ticket_io = photobooth._trigger()
+        photobooth = get_photobooth()
+        ticket_io = photobooth._trigger_if_ready()
         return send_file(cStringIO.StringIO(ticket_io))
     except DevicesBusy:
         return jsonify(error='the photobooth is busy'), 423
@@ -54,8 +57,8 @@ def test_template():
         w, h = picture.size
         if w != h:
             return jsonify(error='The picture must have a square shape'), 400
-        exif_bytes = picture.info['exif'] if 'exif' in picture.info else None
-        photobooth.render_print_and_upload(picture, exif_bytes)
+        photobooth = get_photobooth()
+        photobooth.render_print_and_upload(picture_file)
         return jsonify(message='Ticket successfully printed')
 
 
@@ -65,19 +68,9 @@ def print_image():
     """ Print the image uploaded by the user """
     image_file = request.files['image']
     if image_file and allowed_file(image_file.filename):
-        im = Image.open(image_file)
-        w, h = im.size
-        if w != settings.PRINTER_MAX_WIDTH:
-            ratio = float(settings.PRINTER_MAX_WIDTH) / w
-            im = im.resize((settings.PRINTER_MAX_WIDTH, int(h * ratio)))
-        if im.mode != '1':
-            im = im.convert('1')
-        im_path = join(settings.MEDIA_ROOT, 'test.png')
-        im.save(im_path, im.format, quality=100)
-        pos_data = utils.png2pos(im_path)
-
         try:
-            photobooth.printer.print_ticket(pos_data)
+            photobooth = get_photobooth()
+            photobooth.printer.print_image(image_file)
         except OutOfPaperError:
             return jsonify(error='Out of paper'), 500
         return jsonify(message='Ticket printed succesfully')
@@ -86,7 +79,8 @@ def print_image():
 @app.route('/door_open', methods=['POST'])
 @login_required
 def door_open():
-    photobooth.door_open()
+    photobooth = get_photobooth()
+    photobooth.unlock_door()
     return jsonify(message='Door opened')
 
 
@@ -101,15 +95,15 @@ def logs():
 @app.route('/info')
 @login_required
 def info():
-    photobooth = db.get_photobooth()
+    photobooth = Photobooth.select().get()
     place = photobooth.place.name if photobooth.place else ''
     identifier = photobooth.serial_number or settings.RESIN_UUID
-    number_of_portraits_to_be_uploaded = db.get_portrait_to_be_uploaded() or 0
+    portraits_not_uploaded_count = Portrait.not_uploaded_count()
     res = {
         'identifier': identifier,
         'place': place,
         'counter': photobooth.counter,
-        'number_of_portraits_to_be_uploaded': number_of_portraits_to_be_uploaded
+        'number_of_portraits_to_be_uploaded': portraits_not_uploaded_count
     }
     return jsonify(**res)
 
@@ -133,7 +127,7 @@ def system():
 @app.route('/acquire_lock', methods=['POST'])
 @login_required
 def acquire_lock():
-    acquired = photobooth.lock.acquire(False)
+    acquired = rlock.acquire(False)
     if acquired:
         return jsonify(message='Lock acquired')
     else:
@@ -144,7 +138,7 @@ def acquire_lock():
 @login_required
 def release_lock():
     try:
-        photobooth.lock.release()
+        rlock.release()
     except Exception:
         pass
     finally:

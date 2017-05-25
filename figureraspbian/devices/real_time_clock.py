@@ -1,6 +1,5 @@
 import time
 import operator
-
 from datetime import datetime
 
 import RPi.GPIO
