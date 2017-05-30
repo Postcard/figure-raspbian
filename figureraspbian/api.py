@@ -75,7 +75,7 @@ def test_template():
         if w != h:
             return jsonify(error='The picture must have a square shape'), 400
         photobooth = get_photobooth()
-        photobooth.render_print_and_upload(picture_file)
+        photobooth.render_print_and_upload(picture_file.getvalue())
         return jsonify(message='Ticket successfully printed')
 
 
@@ -87,7 +87,7 @@ def print_image():
     if image_file and allowed_file(image_file.filename):
         try:
             photobooth = get_photobooth()
-            photobooth.print_image(image_file)
+            photobooth.print_image(image_file.getvalue())
         except DevicesBusy:
             return jsonify(error='the photobooth is busy'), 423
         except OutOfPaperError:
@@ -101,14 +101,6 @@ def door_open():
     photobooth = get_photobooth()
     photobooth.unlock_door()
     return jsonify(message='Door opened')
-
-
-@app.route('/logs')
-@login_required
-def logs():
-    resp = send_from_directory('/data/log', 'figure.log')
-    resp.headers['Content-Disposition'] = 'attachment; filename="figure.log"'
-    return resp
 
 
 @app.route('/info')
