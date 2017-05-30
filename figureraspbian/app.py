@@ -1,6 +1,7 @@
 # -*- coding: utf8 -*-
 import logging
 from .threads import Interval, rlock
+import socket
 
 import settings
 from devices.button import Button
@@ -63,8 +64,10 @@ class App(object):
         except OutOfPaperError:
             pass
         logger.info("Ready...")
-        if settings.SERVER_ON == 1:
+        try:
             start_server()
+        except socket.error as e:
+            logger.exception(e)
 
     def stop(self):
         for interval in self.intervals:

@@ -20,17 +20,14 @@ mkdir -p /data/log && touch /data/log/figure.log && touch /data/log/wifi-connect
 
 # Start Wifi Access Point if WIFI_ON
 if [ "$WIFI_ON" = 1 ]; then
-
-    node /usr/src/wifi-connect/src/app.js --clear=false >> /data/log/wifi-connect.log 2>&1 &
+    export DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket
+    node /usr/src/app/resin-wifi-connect/src/app.js --clear=false >> /data/log/wifi-connect.log 2>&1 &
 fi
 
 if [  -f /var/run/supervisor.sock ]
 then
     unlink /var/run/supervisor.sock
 fi
-
-# lock supervisor update by default
-#lockfile /data/resin-updates.lock
 
 # mount RAM disk
 mkdir -p /mnt/ramdisk
