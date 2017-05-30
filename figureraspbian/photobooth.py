@@ -51,7 +51,7 @@ class Photobooth(object):
     def trigger(self):
         if self.ready:
             try:
-                self._trigger()
+                return self._trigger()
             except DevicesBusy:
                 pass
         else:
@@ -73,6 +73,7 @@ class Photobooth(object):
         html = self.render_ticket(picture)
         ticket = webkit2png.get_screenshot(html)
         try:
+            ticket = self.printer.prepare_image(ticket)
             ticket_length = self.printer.print_image(ticket)
             self.update_dict['paper_level'] = utils.new_paper_level(self.paper_level, ticket_length)
         except OutOfPaperError:

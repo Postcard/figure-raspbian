@@ -21,6 +21,7 @@ from .. import constants
 
 logger = logging.getLogger(__name__)
 
+
 class Printer(object):
     """ Base class for all printers """
 
@@ -89,18 +90,26 @@ class EpsonPrinter(Printer):
             raise err
         return pos_data
 
-    @timeit
-    def print_image(self, image):
+    def prepare_image(self, image):
         im = Image.open(cStringIO.StringIO(image))
         im = resize_preserve_ratio(im, new_width=self.max_width)
         if im.mode is not '1':
             im = im.convert('1')
+        buf = cStringIO.StringIO()
+        im.save(buf, 'PNG')
+        im = buf.getvalue()
+        buf.close()
+        return im
+
+    @timeit
+    def print_image(self, image):
+        im = Image.open(cStringIO.StringIO(image))
         raster_data = self.image_to_raster(im)
         try:
             self.printer.write(raster_data)
             self.printer.linefeed(settings.LINE_FEED_COUNT)
             self.printer.cut()
-            (_, h) = im.size
+            _, h = im.size
             return h
         except USBError:
             # best guess is that we are out out of paper
@@ -147,12 +156,22 @@ class VKP80III(Printer):
     def image_to_raster(self, image):
         return custom_printer_utils.image_to_raster(image)
 
-    @timeit
-    def print_image(self, image):
+    def prepare_image(self, image):
         im = Image.open(cStringIO.StringIO(image))
+        if im.mode != '1':
+            im = im.convert('1')
         horizontal_margin = (self.max_width - im.size[0]) / 2
         border = (horizontal_margin, 20, horizontal_margin, 0)
         im = add_margin(im, border)
+        buf = cStringIO.StringIO()
+        im.save(buf, 'PNG')
+        im = buf.getvalue()
+        buf.close()
+        return im
+
+    @timeit
+    def print_image(self, image):
+        im = Image.open(cStringIO.StringIO(image))
         im = im.rotate(180)
         raster_data = custom_printer_utils.image_to_raster(im)
         xH, xL = custom_printer_utils.to_base_256(self.max_width / 8)
@@ -160,7 +179,8 @@ class VKP80III(Printer):
         try:
             self.printer.print_raster_image(0, xL, xH, yL, yH, raster_data)
             self.printer.present_paper(23, 1, 69, 0)
-            return im.size[1]
+            (_, h) = im.size
+            return h
         except USBError:
             raise OutOfPaperError()
 
