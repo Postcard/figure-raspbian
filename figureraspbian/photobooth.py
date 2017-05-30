@@ -68,13 +68,13 @@ class Photobooth(object):
         picture = self.camera.capture()
         return self.render_print_and_upload(picture)
 
+    @execute_if_not_busy(rlock)
     def render_print_and_upload(self, picture):
         self.set_context()
         html = self.render_ticket(picture)
         ticket = webkit2png.get_screenshot(html)
         try:
-            ticket = self.printer.prepare_image(ticket)
-            ticket_length = self.printer.print_image(ticket)
+            ticket_length = self.print_image(ticket)
             self.update_dict['paper_level'] = utils.new_paper_level(self.paper_level, ticket_length)
         except OutOfPaperError:
             logger.info("The printer is out of paper")
@@ -134,6 +134,7 @@ class Photobooth(object):
         time.sleep(settings.DOOR_OPENING_TIME)
         self.door_lock.close()
 
+    @execute_if_not_busy(rlock)
     def print_booting_ticket(self):
         if self.ready:
             booting_template_path = path.join(settings.STATIC_ROOT, 'booting.html')
@@ -149,8 +150,19 @@ class Photobooth(object):
                 is_online=request.is_online()
             )
             ticket = webkit2png.get_screenshot(rendered)
-            ticket = self.printer.prepare_image(ticket)
-            self.printer.print_image(ticket)
+            self.print_image(ticket)
+
+    @execute_if_not_busy(rlock)
+    def focus_camera(self, steps=None):
+        if steps:
+            self.camera.focus(steps)
+        else:
+            self.camera.focus()
+
+    @execute_if_not_busy(rlock)
+    def print_image(self, image):
+        image = self.printer.prepare_image(image)
+        return self.printer.print_image(image)
 
     @property
     def id(self):
