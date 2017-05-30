@@ -3,13 +3,21 @@
 import os
 import time
 from contextlib import contextmanager
+import cStringIO
+import logging
 
 import gphoto2 as gp
+from PIL import Image
+import piexif
 
 from .. import settings
 from ..utils import timeit, crop_to_square
 from .remote_release_connector import RemoteReleaseConnector
 from ..exceptions import TimeoutWaitingForFileAdded
+
+
+logger = logging.getLogger(__name__)
+
 
 EOS_1200D_CONFIG = {
     'reviewtime': 0,
@@ -43,6 +51,10 @@ class Camera(object):
     http://www.gphoto.org/proj/libgphoto2/support.php
     """
 
+    def __init__(self, *args, **kwargs):
+        super(Camera, self).__init__(*args, **kwargs)
+        self.configure()
+
     def _trigger(self, camera, context):
         return gp.check_result(gp.gp_camera_capture(camera, gp.GP_CAPTURE_IMAGE, context))
 
@@ -73,7 +85,20 @@ class Camera(object):
 
             file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
 
-            return crop_to_square(file_data)
+            picture = Image.open(cStringIO.StringIO(file_data))
+            exif_dict = piexif.load(picture.info["exif"])
+            cropped = crop_to_square(picture)
+
+            s, _ = cropped.size
+            exif_dict["Exif"][piexif.ExifIFD.PixelXDimension] = s
+            exif_bytes = piexif.dump(exif_dict)
+
+            buf = cStringIO.StringIO()
+            cropped.save(buf, "JPEG", exif=exif_bytes)
+            cropped = buf.getvalue()
+            buf.close()
+
+            return cropped
 
     def _clear_space(self, camera, context):
         files = self._list_files(camera, context)
@@ -172,10 +197,14 @@ class Camera(object):
 
     @classmethod
     def factory(cls, *args, **kwargs):
-        if settings.CAMERA_TRIGGER_TYPE == 'GPHOTO2':
-            return cls(*args, **kwargs)
-        elif settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
-            return RemoteReleaseConnectorCamera(*args, **kwargs)
+        try:
+            if settings.CAMERA_TRIGGER_TYPE == 'GPHOTO2':
+                return cls(*args, **kwargs)
+            elif settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
+                return RemoteReleaseConnectorCamera(*args, **kwargs)
+        except Exception as e:
+            logger.error(e.message)
+            return None
 
 
 class RemoteReleaseConnectorCamera(Camera):

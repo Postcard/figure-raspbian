@@ -4,6 +4,7 @@ import subprocess
 import os
 from os.path import join
 import cStringIO
+import logging
 
 from usb.core import USBError
 
@@ -16,6 +17,9 @@ from .. import settings
 from ..utils import timeit, get_usb_devices, add_margin, resize_preserve_ratio
 from ..exceptions import OutOfPaperError, PrinterNotFoundError, PrinterModelNotRecognizedError
 from .. import constants
+
+
+logger = logging.getLogger(__name__)
 
 
 class Printer(object):
@@ -31,31 +35,36 @@ class Printer(object):
     def paper_present(self):
         raise NotImplemented()
 
+    @staticmethod
     def factory():
-        """ factory method to create different types of printers based on the output of lsusb"""
-        devices = get_usb_devices()
-        # Try finding an EPSON printer
-        generator = (device for device in devices if device['vendor_id'] == constants.EPSON_VENDOR_ID)
-        epson_printer_device = next(generator, None)
-        if epson_printer_device:
-            product_id = epson_printer_device['product_id']
-            if product_id == constants.TMT20_PRODUCT_ID:
-                return EpsonTMT20()
-            if product_id == constants.TMT20II_PRODUCT_ID:
-                return EpsonTMT20II()
-            else:
-                raise PrinterModelNotRecognizedError(epson_printer_device)
-        generator = (device for device in devices if device['vendor_id'] == constants.CUSTOM_VENDOR_ID)
-        custom_printer_device = next(generator, None)
-        if custom_printer_device:
-            product_id = custom_printer_device['product_id']
-            if product_id == constants.VKP80III_PRODUCT_ID:
-                return VKP80III()
-            else:
-                raise PrinterModelNotRecognizedError(custom_printer_device)
-        raise PrinterNotFoundError()
+        def _factory():
+            """ factory method to create different types of printers based on the output of lsusb"""
+            devices = get_usb_devices()
+            # Try finding an EPSON printer
+            generator = (device for device in devices if device['vendor_id'] == constants.EPSON_VENDOR_ID)
+            epson_printer_device = next(generator, None)
+            if epson_printer_device:
+                product_id = epson_printer_device['product_id']
+                if product_id == constants.TMT20_PRODUCT_ID:
+                    return EpsonTMT20()
+                if product_id == constants.TMT20II_PRODUCT_ID:
+                    return EpsonTMT20II()
+                else:
+                    raise PrinterModelNotRecognizedError(epson_printer_device)
+            generator = (device for device in devices if device['vendor_id'] == constants.CUSTOM_VENDOR_ID)
+            custom_printer_device = next(generator, None)
+            if custom_printer_device:
+                product_id = custom_printer_device['product_id']
+                if product_id == constants.VKP80III_PRODUCT_ID:
+                    return VKP80III()
+                else:
+                    raise PrinterModelNotRecognizedError(custom_printer_device)
+            raise PrinterNotFoundError()
 
-    factory = staticmethod(factory)
+        try:
+            return _factory()
+        except Exception as e:
+            logger.error(e.message)
 
 
 class EpsonPrinter(Printer):
@@ -81,25 +90,35 @@ class EpsonPrinter(Printer):
             raise err
         return pos_data
 
-    @timeit
-    def print_image(self, image):
+    def prepare_image(self, image):
         im = Image.open(cStringIO.StringIO(image))
         im = resize_preserve_ratio(im, new_width=self.max_width)
         if im.mode is not '1':
             im = im.convert('1')
+        buf = cStringIO.StringIO()
+        im.save(buf, 'PNG')
+        im = buf.getvalue()
+        buf.close()
+        return im
+
+    @timeit
+    def print_image(self, image):
+        im = Image.open(cStringIO.StringIO(image))
         raster_data = self.image_to_raster(im)
         try:
             self.printer.write(raster_data)
             self.printer.linefeed(settings.LINE_FEED_COUNT)
             self.printer.cut()
-            (_, h) = im.size
+            _, h = im.size
             return h
         except USBError:
             # best guess is that we are out out of paper
             raise OutOfPaperError()
 
     def paper_present(self):
-        return self.printer.paper_present()
+        # TODO make this work
+        # return self.printer.paper_present()
+        return True
 
 
 class EpsonTMT20(EpsonPrinter):
@@ -137,12 +156,22 @@ class VKP80III(Printer):
     def image_to_raster(self, image):
         return custom_printer_utils.image_to_raster(image)
 
-    @timeit
-    def print_image(self, image):
+    def prepare_image(self, image):
         im = Image.open(cStringIO.StringIO(image))
+        if im.mode != '1':
+            im = im.convert('1')
         horizontal_margin = (self.max_width - im.size[0]) / 2
         border = (horizontal_margin, 20, horizontal_margin, 0)
         im = add_margin(im, border)
+        buf = cStringIO.StringIO()
+        im.save(buf, 'PNG')
+        im = buf.getvalue()
+        buf.close()
+        return im
+
+    @timeit
+    def print_image(self, image):
+        im = Image.open(cStringIO.StringIO(image))
         im = im.rotate(180)
         raster_data = custom_printer_utils.image_to_raster(im)
         xH, xL = custom_printer_utils.to_base_256(self.max_width / 8)
@@ -150,7 +179,8 @@ class VKP80III(Printer):
         try:
             self.printer.print_raster_image(0, xL, xH, yL, yH, raster_data)
             self.printer.present_paper(23, 1, 69, 0)
-            return im.size[1]
+            (_, h) = im.size
+            return h
         except USBError:
             raise OutOfPaperError()
 
