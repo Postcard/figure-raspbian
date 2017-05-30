@@ -15,7 +15,7 @@ from models import Code, Photobooth as PhotoboothModel
 import settings
 import utils
 from decorators import execute_if_not_busy
-from exceptions import OutOfPaperError, DevicesBusy
+from exceptions import OutOfPaperError, DevicesBusy, PhotoboothNotReady
 import request
 from devices.camera import Camera
 from devices.printer import Printer
@@ -55,7 +55,7 @@ class Photobooth(object):
             except DevicesBusy:
                 pass
         else:
-            logger.info("Devices not initialized properly, skipping trigger...")
+            raise PhotoboothNotReady()
 
     @execute_if_not_busy(rlock)
     def _trigger(self):

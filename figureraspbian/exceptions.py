@@ -18,6 +18,10 @@ class PrinterModelNotRecognizedError(FigureError):
         super(PrinterModelNotRecognizedError, self).__init__(msg)
 
 
+class PhotoboothNotReady(FigureError):
+    """ Error raised when a trigger occur on a non properly initialized photobooth """
+
+
 class DevicesBusy(FigureError):
     """ Error raised when trying to access devices that are locked by another thread """
 

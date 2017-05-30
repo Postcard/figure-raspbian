@@ -11,7 +11,7 @@ from threads import rlock
 from photobooth import get_photobooth
 from models import Photobooth, Portrait
 import settings
-from exceptions import DevicesBusy, OutOfPaperError
+from exceptions import DevicesBusy, PhotoboothNotReady, OutOfPaperError
 
 app = Flask(__name__)
 
@@ -33,10 +33,12 @@ def login_required(func):
 def trigger():
     try:
         photobooth = get_photobooth()
-        ticket_io = photobooth._trigger_if_ready()
-        return send_file(cStringIO.StringIO(ticket_io))
+        ticket = photobooth.trigger()
+        return send_file(cStringIO.StringIO(ticket))
     except DevicesBusy:
         return jsonify(error='the photobooth is busy'), 423
+    except PhotoboothNotReady:
+        return jsonify(erro='the photobooth is not ready or not initialized properly')
 
 
 ALLOWED_EXTENSIONS = ['jpg', 'JPEG', 'JPG', 'png', 'PNG', 'gif']
@@ -70,6 +72,7 @@ def print_image():
     if image_file and allowed_file(image_file.filename):
         try:
             photobooth = get_photobooth()
+            image_file = photobooth.printer.prepare_image(image_file)
             photobooth.printer.print_image(image_file)
         except OutOfPaperError:
             return jsonify(error='Out of paper'), 500
@@ -95,7 +98,7 @@ def logs():
 @app.route('/info')
 @login_required
 def info():
-    photobooth = Photobooth.select().get()
+    photobooth = Photobooth.get()
     place = photobooth.place.name if photobooth.place else ''
     identifier = photobooth.serial_number or settings.RESIN_UUID
     portraits_not_uploaded_count = Portrait.not_uploaded_count()
