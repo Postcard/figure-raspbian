@@ -149,6 +149,7 @@ class Photobooth(object):
                 is_online=request.is_online()
             )
             ticket = webkit2png.get_screenshot(rendered)
+            ticket = self.printer.prepare_image(ticket)
             self.printer.print_image(ticket)
 
     @property
