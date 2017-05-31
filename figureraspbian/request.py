@@ -148,12 +148,6 @@ def claim_new_codes():
         Code.bulk_insert(new_codes)
         logger.info('New codes fetched and saved !')
 
-
-def claim_new_codes_async():
-    thr = Thread(target=claim_new_codes, args=(), kwargs={})
-    thr.start()
-
-
 def is_online():
     # check if the device is online
     ping_host = '8.8.8.8'

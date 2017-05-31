@@ -11,7 +11,7 @@ from exceptions import OutOfPaperError
 from photobooth import get_photobooth
 
 from request import is_online, download_booting_ticket_template, download_ticket_stylesheet, update, upload_portraits
-from request import claim_new_codes_async, update_mac_addresses_async
+from request import claim_new_codes, update_mac_addresses_async
 from utils import set_system_time
 
 
@@ -35,8 +35,12 @@ class App(object):
             except Exception as e:
                 logger.exception(e)
 
-            claim_new_codes_async()
             update_mac_addresses_async()
+
+            try:
+                claim_new_codes()
+            except Exception as e:
+                logger.exception(e)
         else:
             rtc = RTC.factory()
             if rtc:
@@ -82,7 +86,8 @@ def set_intervals():
     """ Start tasks that are run in the background at regular intervals """
     intervals = [
         Interval(update, settings.UPDATE_POLL_INTERVAL),
-        Interval(upload_portraits, settings.UPLOAD_PORTRAITS_INTERVAL)
+        Interval(upload_portraits, settings.UPLOAD_PORTRAITS_INTERVAL),
+        Interval(claim_new_codes, settings.CLAIM_NEW_CODES_INTERVAL)
     ]
 
     for interval in intervals:

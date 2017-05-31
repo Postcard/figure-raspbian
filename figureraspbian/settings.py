@@ -29,6 +29,8 @@ TOKEN = get_env_setting('TOKEN', 'token')
 RESIN_UUID = get_env_setting('RESIN_DEVICE_UUID', 'resin_uuid')
 UPDATE_POLL_INTERVAL = int(get_env_setting('UPDATE_POLL_INTERVAL', 90))
 UPLOAD_PORTRAITS_INTERVAL = int(get_env_setting('UPLOAD_PORTRAITS_INTERVAL', 90))
+CLAIM_NEW_CODES_INTERVAL = int(get_env_setting('CLAIM_NEW_CODES_INTERVAL', 3600))
+NUMBER_OF_CODES_TO_CLAIM = int(get_env_setting('NUMBER_OF_CODES_TO_CLAIM', 5000))
 # Timezone information
 DEFAULT_TIMEZONE = 'Europe/Paris'
 ########## END API CONFIGURATION
