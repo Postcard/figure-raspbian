@@ -19,7 +19,7 @@ from ..exceptions import TimeoutWaitingForFileAdded
 logger = logging.getLogger(__name__)
 
 
-EOS_1200D_CONFIG = {
+CAMERA_CONFIG = {
     'reviewtime': 0,
     'capturetarget': 1,
     'imageformat': 6,
@@ -61,7 +61,7 @@ class Camera(object):
     def configure(self):
         with open_camera() as (camera, context):
             config = gp.check_result(gp.gp_camera_get_config(camera, context))
-            for param, choice in EOS_1200D_CONFIG.iteritems():
+            for param, choice in CAMERA_CONFIG.iteritems():
                 widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
                 value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
                 gp.gp_widget_set_value(widget, value)

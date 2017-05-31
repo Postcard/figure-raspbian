@@ -35,7 +35,7 @@ def focus():
         steps = request.values.get('focus_steps')
         photobooth = get_photobooth()
         if steps:
-            photobooth.focus_camera(steps)
+            photobooth.focus_camera(int(steps))
         else:
             photobooth.focus_camera()
         return jsonify(message='Camera focused')
