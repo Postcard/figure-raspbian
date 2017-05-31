@@ -3,21 +3,34 @@
 import os
 import time
 from contextlib import contextmanager
+import cStringIO
+import logging
 
 import gphoto2 as gp
-from pifacedigitalio import PiFaceDigital
+from PIL import Image
+import piexif
 
-from figureraspbian import settings
-from figureraspbian.utils import timeit, crop_to_square
+from .. import settings
+from ..utils import timeit, crop_to_square
+from .remote_release_connector import RemoteReleaseConnector
+from ..exceptions import TimeoutWaitingForFileAdded
 
 
-EOS_1200D_CONFIG = {
+logger = logging.getLogger(__name__)
+
+
+CAMERA_CONFIG = {
+    'reviewtime': 0,
     'capturetarget': 1,
-    'focusmode': 3,
     'imageformat': 6,
+    'imageformatsd': 6,
+    'picturestyle': 1,
+    'eosremoterelease': 0,
+    'whitebalance': settings.WHITE_BALANCE,
     'aperture': settings.APERTURE,
     'shutterspeed': settings.SHUTTER_SPEED,
-    'iso': settings.ISO}
+    'iso': settings.ISO
+}
 
 
 @contextmanager
@@ -30,37 +43,29 @@ def open_camera():
     gp.check_result(gp.gp_camera_exit(camera, context))
 
 
-def Camera():
-    """ Factory to create a camera """
-    if settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
-        return RemoteReleaseConnectorDSLRCamera()
-    return DSLRCamera()
-
-
-class DSLRCamera(object):
+class Camera(object):
     """
-    Digital Single Lens Reflex camera
-    It uses gphoto2 to communicate with the digital camera:
+    Represents a digital camera that can be controlled with libgphoto2
     http://www.gphoto.org/proj/libgphoto2/
     Lists of supported cameras:
     http://www.gphoto.org/proj/libgphoto2/support.php
     """
 
-    def __init__(self):
-
-        with open_camera() as (camera, context):
-            config = gp.check_result(gp.gp_camera_get_config(camera, context))
-            for param, choice in EOS_1200D_CONFIG.iteritems():
-                widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
-                value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
-                gp.gp_widget_set_value(widget, value)
-            gp.gp_camera_set_config(camera, config, context)
-
-            self._clear_space(camera, context)
+    def __init__(self, *args, **kwargs):
+        super(Camera, self).__init__(*args, **kwargs)
+        self.configure()
 
     def _trigger(self, camera, context):
         return gp.check_result(gp.gp_camera_capture(camera, gp.GP_CAPTURE_IMAGE, context))
 
+    def configure(self):
+        with open_camera() as (camera, context):
+            config = gp.check_result(gp.gp_camera_get_config(camera, context))
+            for param, choice in CAMERA_CONFIG.iteritems():
+                widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
+                value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
+                gp.gp_widget_set_value(widget, value)
+            gp.gp_camera_set_config(camera, config, context)
 
     @timeit
     def capture(self):
@@ -80,7 +85,20 @@ class DSLRCamera(object):
 
             file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
 
-            return crop_to_square(file_data)
+            picture = Image.open(cStringIO.StringIO(file_data))
+            exif_dict = piexif.load(picture.info["exif"])
+            cropped = crop_to_square(picture)
+
+            s, _ = cropped.size
+            exif_dict["Exif"][piexif.ExifIFD.PixelXDimension] = s
+            exif_bytes = piexif.dump(exif_dict)
+
+            buf = cStringIO.StringIO()
+            cropped.save(buf, "JPEG", exif=exif_bytes)
+            cropped = buf.getvalue()
+            buf.close()
+
+            return cropped
 
     def _clear_space(self, camera, context):
         files = self._list_files(camera, context)
@@ -122,35 +140,81 @@ class DSLRCamera(object):
         with open_camera() as (camera, context):
             return self._list_files(camera, context, path)
 
+    def focus_further(self, steps):
+        with open_camera() as (camera, context):
+            config = gp.check_result(gp.gp_camera_get_config(camera, context))
+            widget = gp.check_result(gp.gp_widget_get_child_by_name(config, 'viewfinder'))
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
+            time.sleep(0.5)
+            self._focus_further(steps, camera, config, context)
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
 
-class RemoteReleaseConnector:
-    """
-    Represents a remote release connector. http://www.doc-diy.net/photo/remote_pinout/
-    In our case the cable is just a 2.5mm jack
-    """
+    def _focus_further(self, steps, camera, config, context):
+        for i in range(0, steps):
+            self._change_focus(1, camera, config, context)
 
-    def __init__(self, pin=settings.CAMERA_REMOTE_RELEASE_CONNECTOR_PIN):
-        self.pifacedigital = PiFaceDigital()
-        self.pin = pin
+    def focus_nearer(self, steps):
+        with open_camera() as (camera, context):
+            config = gp.check_result(gp.gp_camera_get_config(camera, context))
+            widget = gp.check_result(gp.gp_widget_get_child_by_name(config, 'viewfinder'))
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
+            time.sleep(0.5)
+            self._focus_nearer(steps, camera, config, context)
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
 
-    def trigger(self):
-        self.pifacedigital.relays[self.pin].turn_on()
-        time.sleep(0.1)
-        self.pifacedigital.relays[self.pin].turn_off()
+    def _focus_nearer(self, steps, camera, config, context):
+        for i in range(0, steps):
+            self._change_focus(0, camera, config, context)
+
+    def _change_focus(self, direction, camera, config, context):
+        """
+        :param direction: 1 further, 0 nearer
+        """
+        widget = gp.check_result(gp.gp_widget_get_child_by_name(config, 'manualfocusdrive'))
+        value = gp.check_result(gp.gp_widget_get_choice(widget, 6 if direction else 2))
+        gp.gp_widget_set_value(widget, value)
+        gp.gp_camera_set_config(camera, config, context)
+        value = gp.check_result(gp.gp_widget_get_choice(widget, 3))
+        gp.gp_widget_set_value(widget, value)
+        gp.gp_camera_set_config(camera, config, context)
+
+    def focus(self, steps=settings.CAMERA_FOCUS_STEPS):
+        with open_camera() as (camera, context):
+            config = gp.check_result(gp.gp_camera_get_config(camera, context))
+            widget = gp.check_result(gp.gp_widget_get_child_by_name(config, 'viewfinder'))
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
+            time.sleep(0.5)
+            # focus is relative so we need to focus the furthest possible before adjusting
+            self._focus_further(80, camera, config, context)
+            self._focus_nearer(steps, camera, config, context)
+            gp.gp_widget_set_value(widget, 1)
+            gp.gp_camera_set_config(camera, config, context)
+
+    @classmethod
+    def factory(cls, *args, **kwargs):
+        try:
+            if settings.CAMERA_TRIGGER_TYPE == 'GPHOTO2':
+                return cls(*args, **kwargs)
+            elif settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
+                return RemoteReleaseConnectorCamera(*args, **kwargs)
+        except Exception as e:
+            logger.error(e.message)
+            return None
 
 
-class TimeoutWaitingForFileAdded(Exception):
-    pass
-
-
-class RemoteReleaseConnectorDSLRCamera(DSLRCamera):
+class RemoteReleaseConnectorCamera(Camera):
     """
     Represents a camera that is triggered with a remote release connector
     """
 
-    def __init__(self):
-        super(RemoteReleaseConnectorDSLRCamera, self).__init__()
-        self.remote_release_connector = RemoteReleaseConnector()
+    def __init__(self, *args, **kwargs):
+        super(RemoteReleaseConnectorCamera, self).__init__(*args, **kwargs)
+        self.remote_release_connector = RemoteReleaseConnector.factory(settings.REMOTE_RELEASE_CONNECTOR_PIN)
 
     def _trigger(self, camera, context):
         self.remote_release_connector.trigger()
