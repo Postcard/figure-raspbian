@@ -46,7 +46,7 @@ class Photobooth(object):
         if self.camera:
             self.camera.clear_space()
         self.printer = Printer.factory()
-        self.door_lock = DoorLock.factory()
+        self.door_lock = DoorLock.factory(settings.DOOR_LOCK_PIN)
 
     def trigger(self):
         if self.ready:
