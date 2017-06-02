@@ -24,7 +24,7 @@ class DoorLock(object):
         if settings.IO_INTERFACE == 'PIFACE':
             return PiFaceDigitalDoorLock(*args, **kwargs)
         elif settings.IO_INTERFACE == 'GPIOZERO':
-            return GPIOZeroDoorLock()
+            return GPIOZeroDoorLock(*args, **kwargs)
         else:
             raise InvalidIOInterfaceError()
 
