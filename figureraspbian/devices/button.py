@@ -25,11 +25,12 @@ class Button(object):
     button is pressed and when the button is held
     """
 
-    def __init__(self, pin, bounce_time, hold_time):
+    def __init__(self, pin, bounce_time, hold_time, pull_up=True):
         super(Button, self).__init__()
         self.pin = pin
         self.bounce_time = bounce_time
         self.hold_time = hold_time
+        self.pull_up = pull_up
         self._active_event = Event()
         self._inactive_event = Event()
         self._holding = Event()
@@ -138,7 +139,7 @@ class GPIOZeroButton(Button):
 
     def __init__(self, *args, **kwargs):
         super(GPIOZeroButton, self).__init__(*args, **kwargs)
-        self.device = gpiozero.Button(self.pin)
+        self.device = gpiozero.Button(self.pin, pull_up=self.pull_up)
 
     def value(self):
         return self.device.is_pressed

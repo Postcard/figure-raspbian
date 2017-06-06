@@ -34,7 +34,7 @@ class GracefulKiller:
 class ShutdownHook:
 
     def __init__(self):
-        self.shutdown_button = Button.factory(settings.SHUTDOWN_PIN, 0.05, 10)
+        self.shutdown_button = Button.factory(settings.SHUTDOWN_PIN, 0.05, 10, False)
         self.shutdown_button.when_pressed = self.shutdown
 
     def shutdown(self):
