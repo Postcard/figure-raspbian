@@ -161,7 +161,7 @@ class VKP80III(Printer):
         if im.mode != '1':
             im = im.convert('1')
         horizontal_margin = (self.max_width - im.size[0]) / 2
-        border = (horizontal_margin, 20, horizontal_margin, 0)
+        border = (horizontal_margin, 55, horizontal_margin, 0)
         im = add_margin(im, border)
         buf = cStringIO.StringIO()
         im.save(buf, 'PNG')
