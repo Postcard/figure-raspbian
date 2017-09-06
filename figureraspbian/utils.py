@@ -85,6 +85,8 @@ def pixels2cm(pixels):
 
 
 def new_paper_level(old_paper_level, ticket_length):
+    if old_paper_level == 0:
+        return 100.0
     cm = pixels2cm(ticket_length)
     new_paper_level = old_paper_level - (cm / float(settings.PAPER_ROLL_LENGTH)) * 100
     if new_paper_level <= 1:
