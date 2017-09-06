@@ -136,3 +136,18 @@ class TestUtils(TestCase):
         self.assertEqual(resized.size[1], 50)
         resized = utils.resize_preserve_ratio(im, new_height=10)
         self.assertEqual(resized.size[0], 20)
+
+    def test_new_paper_level_after_successful_print(self):
+        """ it should decrease the level of paper based on the ticket lenght """
+        new_paper_level = utils.new_paper_level(56.0, 1000)
+        self.assertAlmostEqual(new_paper_level, 55.83, 2)
+
+    def test_new_paper_level_when_below_1(self):
+        """ it should set paper level to 10 """
+        new_paper_level = utils.new_paper_level(1.0, 1000)
+        self.assertEqual(new_paper_level, 10.0)
+
+    def test_new_paper_level_if_previous_paper_level_is_0(self):
+        """ it should set paper level to 100 """
+        new_paper_level = utils.new_paper_level(0.0, 1000)
+        self.assertEqual(new_paper_level, 100.0)
