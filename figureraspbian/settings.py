@@ -120,6 +120,10 @@ RTC_RST_PIN = int(get_env_setting('RTC_RST_PIN', 13))
 WIFI_ON = int(get_env_setting('WIFI_ON', 0))
 ######## END WIFI CONFIGURATION
 
+######## SHUTDOWN CONFIGURATION
+SHUTDOWN_HOOK_ON = int(get_env_setting('SHUTDOWN_HOOK_ON', 0))
+######## END SHUTDOWN CONFIGURATION
+
 ####### SERVER CONFIGURATION
 SERVER_ON = int(get_env_setting('SERVER_ON', 0))
 ####### END SERVER CONFIGURATION

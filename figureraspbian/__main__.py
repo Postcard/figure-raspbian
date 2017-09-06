@@ -21,16 +21,14 @@ class GracefulKiller:
 
     kill_now = False
 
-    def __init__(self, app, hook):
+    def __init__(self, app):
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
         self.app = app
-        self.hook = hook
 
     def exit_gracefully(self, signum, frame):
         self.kill_now = True
         self.app.stop()
-        self.hook.shutdown_button.close()
         db.close_db()
 
 
@@ -60,8 +58,9 @@ if __name__ == '__main__':
     create_tables()
     Photobooth.get_or_create(uuid=settings.RESIN_UUID)
     app = App()
-    shutdown_hook = ShutdownHook()
-    killer = GracefulKiller(app, shutdown_hook)
+    if settings.SHUTDOWN_HOOK_ON:
+        shutdown_hook = ShutdownHook()
+    killer = GracefulKiller(app)
     app.start()
     signal.pause()
 
