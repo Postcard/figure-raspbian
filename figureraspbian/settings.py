@@ -135,5 +135,6 @@ LOG_FORMAT = "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(m
 ######## RESINIO SUPERVISOR CONFIGURATION
 RESIN_SUPERVISOR_ADDRESS = get_env_setting('RESIN_SUPERVISOR_ADDRESS', '')
 RESIN_SUPERVISOR_API_KEY = get_env_setting('RESIN_SUPERVISOR_API_KEY', '')
+RESIN_APP_ID = get_env_setting('RESIN_APP_ID', '')
 ######## END RESINIO SUPERVISOR CONFIGURATION
 
