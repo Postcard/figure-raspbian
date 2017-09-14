@@ -35,6 +35,7 @@ class Button(object):
         self._inactive_event = Event()
         self._holding = Event()
         self._when_pressed = None
+        self._when_unpressed = None
         self._when_held = None
         self._last_state = None
         self._event_thread = EventThread(self)
@@ -54,6 +55,14 @@ class Button(object):
     @when_pressed.setter
     def when_pressed(self, value):
         self._when_pressed = self._wrap_callback(value)
+
+    @property
+    def when_unpressed(self):
+        return self._when_unpressed
+
+    @when_unpressed.setter
+    def when_unpressed(self, value):
+        self._when_unpressed = self._wrap_callback(value)
 
     @property
     def when_held(self):
@@ -99,7 +108,9 @@ class Button(object):
             self.when_pressed()
 
     def _fire_deactivated(self):
-        pass
+        logger.info("Button unpressed")
+        if self.when_unpressed:
+            self.when_unpressed()
 
     def _fire_held(self):
         logger.info("Button held")

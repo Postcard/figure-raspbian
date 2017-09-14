@@ -122,6 +122,7 @@ WIFI_ON = int(get_env_setting('WIFI_ON', 0))
 
 ######## SHUTDOWN CONFIGURATION
 SHUTDOWN_HOOK_ON = int(get_env_setting('SHUTDOWN_HOOK_ON', 0))
+LINE_DETECT_HOLD_TIME = int(get_env_setting('LINE_DETECT_HOLD_TIME', 35))
 ######## END SHUTDOWN CONFIGURATION
 
 ####### SERVER CONFIGURATION
@@ -135,5 +136,6 @@ LOG_FORMAT = "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(m
 ######## RESINIO SUPERVISOR CONFIGURATION
 RESIN_SUPERVISOR_ADDRESS = get_env_setting('RESIN_SUPERVISOR_ADDRESS', '')
 RESIN_SUPERVISOR_API_KEY = get_env_setting('RESIN_SUPERVISOR_API_KEY', '')
+RESIN_APP_ID = get_env_setting('RESIN_APP_ID', '')
 ######## END RESINIO SUPERVISOR CONFIGURATION
 
