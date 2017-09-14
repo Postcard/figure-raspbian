@@ -35,7 +35,7 @@ class GracefulKiller:
 class ShutdownHook:
 
     def __init__(self):
-        self.shutdown_button = Button.factory(settings.SHUTDOWN_PIN, 0.05, 30, False)
+        self.shutdown_button = Button.factory(settings.SHUTDOWN_PIN, 0.05, settings.LINE_DETECT_HOLD_TIME, False)
         self.shutdown_button.when_held = self.shutdown
         self.shutdown_button.when_unpressed = self.restart
         self.shutdown_button.start()
@@ -47,7 +47,7 @@ class ShutdownHook:
         resin_supervisor_api_key = settings.RESIN_SUPERVISOR_API_KEY
         restart_url = "%s/v1/restart?apikey=%s" % (resin_supervisor_address, resin_supervisor_api_key)
         app_id = settings.RESIN_APP_ID
-        requests.post(restart_url, data={'app_id': app_id})
+        requests.post(restart_url, data={'appId': app_id})
 
     def shutdown(self):
         # Call resin.io supervisor shutdown endpoint https://docs.resin.io/runtime/supervisor-api/#post-v1-shutdown
