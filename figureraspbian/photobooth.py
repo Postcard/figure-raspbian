@@ -113,8 +113,12 @@ class Photobooth(object):
         tz = self.place.tz if self.place else settings.DEFAULT_TIMEZONE
         date = datetime.now(pytz.timezone(tz))
         counter = self.counter
-        place = {'name': self.place.name, 'code': self.place.code} if self.place else None 
-        event = {'name': self.event.name, 'code': self.event.code} if self.event else None 
+        print(self.place)
+        print(self.event)
+        place = {'name': self.place.name, 'code': 'PPPP'} if self.place else None 
+        # place = {'name': self.place.name, 'code': self.place.code} if self.place else None 
+        event = {'name': self.event.name, 'code': 'EEEE'} if self.event else None 
+        # event = {'name': self.event.name, 'code': self.event.code} if self.event else None 
         self.context = {'code': code, 'date': date, 'counter': counter, 'place': place, 'event': event}
 
     def render_ticket(self, picture):
