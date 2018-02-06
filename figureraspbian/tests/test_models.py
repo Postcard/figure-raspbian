@@ -264,12 +264,14 @@ class PhotoboothTestCase(TestCase):
                 "id": 1,
                 "name": "Atelier Commode",
                 "tz": "Europe/Paris",
-                "modified": "2017-03-18T15:20:01.711000Z"
+                "modified": "2017-03-18T15:20:01.711000Z",
+                "code":"PPPP"
             },
             "event": {
                 "id": 1,
                 "name": "Attention à la mousse",
-                "modified": "2016-09-01T08:29:21.705000Z"
+                "modified": "2016-09-01T08:29:21.705000Z",
+                "code":"EEEE"
             },
             "ticket_template": {
                 "id": 1,
