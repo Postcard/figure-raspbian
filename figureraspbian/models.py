@@ -22,9 +22,10 @@ class Place(db.Model):
             p.name = place.get('name')
             p.tz = place.get('tz')
             p.modified = place.get('modified')
+            p.code = place.get('code')
             p.save()
         except cls.DoesNotExist:
-            p = cls.create(id=place['id'], name=place.get('name'), tz=place.get('tz'), modified=place.get('modified'))
+            p = cls.create(id=place['id'], name=place.get('name'), tz=place.get('tz'), modified=place.get('modified'), code=place.get('code'))
         return p
 
 
@@ -39,9 +40,10 @@ class Event(db.Model):
             e = cls.get(id=event['id'])
             e.name = event.get('name')
             e.modified = event.get('modified')
+            e.code = event.get('code')
             e.save()
         except cls.DoesNotExist:
-            e = cls.create(id=event['id'], name=event.get('name'), modified=event.get('modified'))
+            e = cls.create(id=event['id'], name=event.get('name'), modified=event.get('modified'), code=event.get('code'))
         return e
 
 
