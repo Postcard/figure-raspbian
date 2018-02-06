@@ -90,7 +90,8 @@ class RequestTestCase(TestCase):
                 "id": 1,
                 "name": "Atelier Commode",
                 "tz": "Europe/Paris",
-                "modified": "2017-03-17T09:09:03.268825Z"
+                "modified": "2017-03-17T09:09:03.268825Z",
+                "code":"PPPP"
             },
             "event": None,
             "ticket_template": {

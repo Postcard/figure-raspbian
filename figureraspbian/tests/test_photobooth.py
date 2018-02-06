@@ -163,7 +163,8 @@ class PhotoboothTestCase(TestCase):
                 "id": 128,
                 "name": "Le Bar à Bulles",
                 "tz": "Europe/Paris",
-                "modified": "2017-05-04T09:33:21.988428Z"
+                "modified": "2017-05-04T09:33:21.988428Z",
+                "code":"PPPP"
             },
             "event": None,
             "ticket_template": {
@@ -223,7 +224,8 @@ class PhotoboothTestCase(TestCase):
                 "id": 128,
                 "name": "Le Bar à Bulles",
                 "tz": "Europe/Paris",
-                "modified": "2017-05-04T09:33:21.988428Z"
+                "modified": "2017-05-04T09:33:21.988428Z",
+                "code":"PPPP"
             },
             "event": None,
             "ticket_template": {

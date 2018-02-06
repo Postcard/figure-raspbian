@@ -238,6 +238,7 @@ class Photobooth(db.Model):
             self.place.name = place.get('name')
             self.place.tz = place.get('tz')
             self.place.modified = place.get('modified')
+            self.place.code = place.get('code')
             self.place.save()
 
         # check if we need to update the event
@@ -258,6 +259,7 @@ class Photobooth(db.Model):
         elif event and self.event and event.get('modified') > self.event.modified:
             self.event.name = event.get('name')
             self.event.modified = event.get('modified')
+            self.event.code = event.get('code')
             self.event.save()
 
         # check if we need to update the ticket template
