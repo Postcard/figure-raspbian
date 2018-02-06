@@ -14,7 +14,7 @@ class Place(db.Model):
     name = CharField()
     tz = CharField(default='Europe/Paris')
     modified = CharField()
-    code = CharField(null=True)
+    code = CharField()
 
     @classmethod
     def update_or_create(cls, place):
@@ -34,7 +34,7 @@ class Event(db.Model):
 
     name = CharField()
     modified = CharField()
-    code = CharField(null=True)
+    code = CharField()
 
     @classmethod
     def update_or_create(cls, event):
