@@ -13,6 +13,10 @@ def production():
     env.remotes = ['resinproduction_raspi2', 'resinproduction_raspi3']
 
 @task
+def production_fig():
+    env.remotes = ['resinproduction_raspi3_fig']
+
+@task
 def force():
     env.force = True
 
