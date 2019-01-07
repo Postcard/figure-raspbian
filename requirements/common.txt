@@ -1,5 +1,5 @@
 gphoto2==1.4.1
-gpiozero==1.2.0
+gpiozero==1.4.1
 Pillow==3.1.0
 https://github.com/Postcard/pifacecommon/archive/v4.3.0.zip
 pifacedigitalio==3.0.5
