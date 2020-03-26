@@ -49,7 +49,7 @@ def trigger():
     try:
         photobooth = get_photobooth()
         ticket = photobooth.trigger()
-        return send_file(cStringIO.StringIO(ticket))
+        return send_file(cStringIO.StringIO(ticket), mimetype='jpg')
     except DevicesBusy:
         return jsonify(error='the photobooth is busy'), 423
     except PhotoboothNotReady:

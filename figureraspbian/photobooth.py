@@ -113,7 +113,7 @@ class Photobooth(object):
         tz = self.place.tz if self.place else settings.DEFAULT_TIMEZONE
         date = datetime.now(pytz.timezone(tz))
         counter = self.counter
-        self.context = {'code': code, 'date': date, 'counter': counter}
+        self.context = {'code': code, 'date': date, 'counter': counter, "place": self.place, "event": self.event}
 
     def render_ticket(self, picture):
         ticket_renderer = TicketRenderer(

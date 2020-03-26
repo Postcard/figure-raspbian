@@ -8,12 +8,13 @@ import settings
 import utils
 from db import db
 
-
 class Place(db.Model):
 
     name = CharField()
     tz = CharField(default='Europe/Paris')
     modified = CharField()
+    portraits_expiration = IntegerField()
+    code = CharField()
 
     @classmethod
     def update_or_create(cls, place):
@@ -22,16 +23,29 @@ class Place(db.Model):
             p.name = place.get('name')
             p.tz = place.get('tz')
             p.modified = place.get('modified')
+            p.portraits_expiration = place.get('portraits_expiration')
+            p.code = place.get('code')
             p.save()
         except cls.DoesNotExist:
-            p = cls.create(id=place['id'], name=place.get('name'), tz=place.get('tz'), modified=place.get('modified'))
+            p = cls.create(
+                id=place['id'],
+                name=place.get('name'),
+                tz=place.get('tz'),
+                modified=place.get('modified'),
+                portraits_expiration=place.get('portraits_expiration'),
+                code=place.get('code'))
         return p
+    
+    def __getitem__(self, item):
+        return getattr(self, item)
 
 
 class Event(db.Model):
 
     name = CharField()
     modified = CharField()
+    portraits_expiration = IntegerField()
+    code = CharField()
 
     @classmethod
     def update_or_create(cls, event):
@@ -39,10 +53,20 @@ class Event(db.Model):
             e = cls.get(id=event['id'])
             e.name = event.get('name')
             e.modified = event.get('modified')
+            e.portraits_expiration = event.get('portraits_expiration')
+            e.code = event.get('code')
             e.save()
         except cls.DoesNotExist:
-            e = cls.create(id=event['id'], name=event.get('name'), modified=event.get('modified'))
+            e = cls.create(
+                id=event['id'],
+                name=event.get('name'),
+                modified=event.get('modified'),
+                portraits_expiration=event.get('portraits_expiration'),
+                code=event.get('code'))
         return e
+
+    def __getitem__(self, item):
+        return getattr(self, item)
 
 
 class TicketTemplate(db.Model):
@@ -236,6 +260,8 @@ class Photobooth(db.Model):
             self.place.name = place.get('name')
             self.place.tz = place.get('tz')
             self.place.modified = place.get('modified')
+            self.place.portraits_expiration = place.get('portraits_expiration')
+            self.place.code = place.get('code')
             self.place.save()
 
         # check if we need to update the event
@@ -256,6 +282,8 @@ class Photobooth(db.Model):
         elif event and self.event and event.get('modified') > self.event.modified:
             self.event.name = event.get('name')
             self.event.modified = event.get('modified')
+            self.event.portraits_expiration = event.get('portraits_expiration')
+            self.event.code = event.get('code')
             self.event.save()
 
         # check if we need to update the ticket template
