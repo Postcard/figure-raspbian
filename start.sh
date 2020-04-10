@@ -33,6 +33,7 @@ fi
 mkdir -p /mnt/ramdisk
 mount -t tmpfs -o size=2m tmpfs /mnt/ramdisk
 
+export PYTHONPATH=$PATH:/figureraspbian
 # Launch supervisor in the foreground
 echo 'Starting supervisor'
 supervisord --nodaemon --configuration /etc/supervisord.conf

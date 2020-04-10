@@ -7,9 +7,9 @@ import logging
 from pifacedigitalio import PiFaceDigital
 import gpiozero
 
-from ..threads import StoppableThread
-from .. import settings
-from .. exceptions import InvalidIOInterfaceError
+from threads import StoppableThread
+import settings
+from exceptions import InvalidIOInterfaceError
 
 logger = logging.getLogger(__name__)
 

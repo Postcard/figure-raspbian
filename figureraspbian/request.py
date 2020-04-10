@@ -32,7 +32,9 @@ def download_booting_ticket_template():
 def update():
     """ This will update the data in case it has been changed in the API """
     photobooth = Photobooth.get()
+    # print(settings.RESIN_UUID)
     updated = figure.Photobooth.get(settings.RESIN_UUID)
+    # print(updated)
     return photobooth.update_from_api_data(updated)
 
 

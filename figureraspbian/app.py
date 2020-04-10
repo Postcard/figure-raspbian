@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 import logging
-from .threads import Interval, rlock
+from threads import Interval, rlock
 import socket
 
 import settings

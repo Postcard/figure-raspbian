@@ -4,7 +4,7 @@ from datetime import datetime
 
 import RPi.GPIO
 
-from .. import settings
+import settings
 
 
 class RTC(object):

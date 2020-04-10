@@ -20,21 +20,21 @@ class TestUtils(TestCase):
         expected = 'ticket.css'
         self.assertEqual(name, expected)
 
-    @mock.patch('figureraspbian.utils.urllib2')
-    def test_download(self, mock_urllib2):
+    @mock.patch('figureraspbian.utils.urlopen')
+    def test_download(self, mock_urlopen):
         """ it should download file if not present in local file system and return file path """
         tempdir = tempfile.mkdtemp()
         mock_filelike = mock.Mock()
-        mock_urllib2.urlopen.return_value = mock_filelike
+        mock_urlopen.return_value = mock_filelike
         mock_filelike.read.return_value = 'file content'
         utils.download('https://path/to/some/file.txt', tempdir)
-        self.assertEqual(mock_urllib2.urlopen.call_count, 1)
+        self.assertEqual(mock_urlopen.call_count, 1)
         # try downloading again, it should do nothing as file is already present
         utils.download('https://path/to/some/file.txt', tempdir)
-        self.assertEqual(mock_urllib2.urlopen.call_count, 1)
+        self.assertEqual(mock_urlopen.call_count, 1)
         # forcing the download should overwrite the file
         utils.download('https://path/to/some/file.txt', tempdir, force=True)
-        self.assertEqual(mock_urllib2.urlopen.call_count, 2)
+        self.assertEqual(mock_urlopen.call_count, 2)
 
     @mock.patch('figureraspbian.utils.logger.info')
     def test_timeit(self, mock_info):
@@ -57,11 +57,7 @@ class TestUtils(TestCase):
         im = Image.new('L', (1, 1))
         im.format = 'JPEG'
         data_url = utils.get_data_url(im)
-        expected = ("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh"
-                    "0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQF"
-                    "BgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJi"
-                    "coKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2"
-                    "t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APn+v//Z")
+        expected = "data:image/jpeg;base64,b'/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APn+v//Z'"
         self.assertEqual(data_url, expected)
 
     def test_pixels2cm(self):
@@ -103,7 +99,7 @@ class TestUtils(TestCase):
     def test_render_jinja_template(self):
         """ it should render a jinja template stored in a file located at path with the given kwargs"""
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-            template = "{{ foo }}{{ bar }}"
+            template = b"{{ foo }}{{ bar }}"
             tmp_file.write(template)
             path = tmp_file.name
         rendered = utils.render_jinja_template(path, foo="foo", bar="bar")

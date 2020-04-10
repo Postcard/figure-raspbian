@@ -3,26 +3,28 @@
 import os
 import time
 from contextlib import contextmanager
-import cStringIO
+from io import BytesIO
+
 import logging
 
 import gphoto2 as gp
 from PIL import Image
 import piexif
 
-from .. import settings
-from ..utils import timeit, crop_to_square
+import settings
+from utils import timeit, crop_to_square
 from .remote_release_connector import RemoteReleaseConnector
-from ..exceptions import TimeoutWaitingForFileAdded
+from exceptions import TimeoutWaitingForFileAdded
 
 
 logger = logging.getLogger(__name__)
 
-
+#Try 0, 8, 9 to get the best image format
+#0 large fine jpg, 8 raw+jpg, 9 raw
 CAMERA_CONFIG = {
     'reviewtime': 0,
     'capturetarget': 1,
-    'imageformat': 6,
+    'imageformat': 6, 
     'imageformatsd': 6,
     'picturestyle': 1,
     'eosremoterelease': 0,
@@ -61,9 +63,9 @@ class Camera(object):
     def configure(self):
         with open_camera() as (camera, context):
             config = gp.check_result(gp.gp_camera_get_config(camera, context))
-            for param, choice in CAMERA_CONFIG.iteritems():
+            for param in CAMERA_CONFIG:
                 widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
-                value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
+                value = gp.check_result(gp.gp_widget_get_choice(widget, CAMERA_CONFIG[param]))
                 gp.gp_widget_set_value(widget, value)
             gp.gp_camera_set_config(camera, config, context)
 
@@ -85,7 +87,7 @@ class Camera(object):
 
             file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
 
-            picture = Image.open(cStringIO.StringIO(file_data))
+            picture = Image.open(BytesIO(file_data))
             exif_dict = piexif.load(picture.info["exif"])
             cropped = crop_to_square(picture)
 
@@ -93,7 +95,7 @@ class Camera(object):
             exif_dict["Exif"][piexif.ExifIFD.PixelXDimension] = s
             exif_bytes = piexif.dump(exif_dict)
 
-            buf = cStringIO.StringIO()
+            buf = BytesIO()
             cropped.save(buf, "JPEG", exif=exif_bytes)
             cropped = buf.getvalue()
             buf.close()
@@ -203,7 +205,7 @@ class Camera(object):
             elif settings.CAMERA_TRIGGER_TYPE == 'REMOTE_RELEASE_CONNECTOR':
                 return RemoteReleaseConnectorCamera(*args, **kwargs)
         except Exception as e:
-            logger.error(e.message)
+            logger.error(e)
             return None
 
 

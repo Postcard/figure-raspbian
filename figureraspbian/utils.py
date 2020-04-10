@@ -3,15 +3,14 @@
 import time
 import logging
 import base64
-import cStringIO
+from io import BytesIO
 import netifaces
 import re
 import subprocess
 from os.path import join, basename, exists
 import os
-from urlparse import urlsplit
-import urllib
-import urllib2
+from urllib.parse import urlsplit, unquote
+from urllib.request import Request, urlopen
 import codecs
 
 from hashids import Hashids
@@ -30,7 +29,7 @@ def url2name(url):
     Convert a file url to its base name
     http://api.figuredevices.com/static/css/ticket.css => ticket.css
     """
-    return basename(urllib.unquote(urlsplit(url)[2]))
+    return basename(unquote(urlsplit(url)[2]))
 
 
 def write_file(file, path):
@@ -45,9 +44,11 @@ def download(url, path, force=False):
     """
     local_name = url2name(url)
     path_to_file = join(path, local_name)
+    # print (url)
     if not exists(path_to_file) or force:
-        req = urllib2.Request(url)
-        r = urllib2.urlopen(req, timeout=10)
+        req = Request(url)
+        r = urlopen(req, timeout=10)
+        # print (path)
         write_file(r.read(), path_to_file)
     return path_to_file
 
@@ -71,9 +72,9 @@ def timeit(func):
 
 
 def get_data_url(picture):
-    buf = cStringIO.StringIO()
+    buf = BytesIO()
     picture.save(buf, picture.format)
-    data = base64.b64encode(buf.getvalue())
+    data = base64.b64encode(buf.getvalue()).decode('utf8')
     buf.close()
     mime_type = 'image/%s' % picture.format.lower()
     data_url = 'data:%s;base64,%s' % (mime_type, data)
@@ -125,7 +126,7 @@ def render_jinja_template(path, **kwargs):
 
 def get_usb_devices():
     pattern = re.compile("Bus\s+(?P<bus>\d+)\s+Device\s+(?P<device>\d+).+ID\s(?P<vendor_id>\w+):(?P<product_id>\w+)\s(?P<tag>.+)$", re.I)
-    df = subprocess.check_output("lsusb", shell=True)
+    df = subprocess.check_output("lsusb", shell=True).decode("utf8")
     # parse all usb devices
     devices = []
     for i in df.split('\n'):

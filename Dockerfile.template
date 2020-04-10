@@ -1,7 +1,21 @@
 # Base image 
-FROM figure/%%RESIN_MACHINE_NAME%%:1.1.0
+FROM balenalib/%%RESIN_MACHINE_NAME%%-python:3.7
 
 MAINTAINER Benoit Guigal <benoit@figure.co>
+
+RUN install_packages git build-essential wget vim 
+
+#gphoto2 dependency
+RUN install_packages libgphoto2-dev
+
+#python-imgkit dependencies
+RUN install_packages xvfb xauth
+
+#Pillow dependencies
+RUN install_packages libjpeg8-dev libopenjp2-7-dev zlib1g-dev \
+    libfreetype6-dev liblcms2-dev libwebp-dev tcl8.6-dev tk8.6-dev python3-tk \
+    libharfbuzz-dev libfribidi-dev libxcb1-dev
+
 
 RUN git clone https://github.com/Postcard/png2pos.git && \
     cd png2pos && \
@@ -10,12 +24,6 @@ RUN git clone https://github.com/Postcard/png2pos.git && \
     git submodule update && \
     make install
 
-# Install dependencies for python-webkit2png
-RUN apt-get update && apt-get install python-qt4 \
-    libqt4-webkit \
-    xvfb \
-    xauth
-    
 # Add xvfb to init.d
 ADD xvfb /etc/init.d/xvfb
 RUN chmod +x /etc/init.d/xvfb
@@ -24,7 +32,13 @@ ENV DISPLAY :1
 # Install Python dependencies
 RUN mkdir requirements
 ADD requirements ./requirements
-RUN cd requirements && pip install -r prod.txt
+RUN cd requirements && pip install --upgrade pip && pip install -r prod.txt
+
+#RUN install_packages qtbase5-dev
+#RUN pip install PyQt5==5.14
+
+RUN install_packages wkhtmltopdf
+RUN pip install imgkit
 
 ENV FIGURE_DIR /figure/figureraspbian
 ENV IMAGE_DIR /data/images

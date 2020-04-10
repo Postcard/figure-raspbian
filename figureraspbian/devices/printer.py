@@ -3,7 +3,8 @@
 import subprocess
 import os
 from os.path import join
-import cStringIO
+from io import BytesIO
+
 import logging
 
 from usb.core import USBError
@@ -13,10 +14,10 @@ from custom_printer import printers as customprinters
 from custom_printer import utils as custom_printer_utils
 from PIL import Image
 
-from .. import settings
-from ..utils import timeit, get_usb_devices, add_margin, resize_preserve_ratio
-from ..exceptions import OutOfPaperError, PrinterNotFoundError, PrinterModelNotRecognizedError
-from .. import constants
+import settings
+from utils import timeit, get_usb_devices, add_margin, resize_preserve_ratio
+from exceptions import OutOfPaperError, PrinterNotFoundError, PrinterModelNotRecognizedError
+import constants
 
 
 logger = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ class Printer(object):
         try:
             return _factory()
         except Exception as e:
-            logger.error(e.message)
+            logger.error(e)
 
 
 class EpsonPrinter(Printer):
@@ -91,11 +92,11 @@ class EpsonPrinter(Printer):
         return pos_data
 
     def prepare_image(self, image):
-        im = Image.open(cStringIO.StringIO(image))
+        im = Image.open(BytesIO(image))
         im = resize_preserve_ratio(im, new_width=self.max_width)
         if im.mode is not '1':
             im = im.convert('1')
-        buf = cStringIO.StringIO()
+        buf = BytesIO()
         im.save(buf, 'PNG')
         im = buf.getvalue()
         buf.close()
@@ -103,7 +104,7 @@ class EpsonPrinter(Printer):
 
     @timeit
     def print_image(self, image):
-        im = Image.open(cStringIO.StringIO(image))
+        im = Image.open(BytesIO(image))
         raster_data = self.image_to_raster(im)
         try:
             self.printer.write(raster_data)
@@ -157,13 +158,13 @@ class VKP80III(Printer):
         return custom_printer_utils.image_to_raster(image)
 
     def prepare_image(self, image):
-        im = Image.open(cStringIO.StringIO(image))
+        im = Image.open(BytesIO(image))
         if im.mode != '1':
             im = im.convert('1')
-        horizontal_margin = (self.max_width - im.size[0]) / 2
+        horizontal_margin = int((self.max_width - im.size[0]) / 2)
         border = (horizontal_margin, 55, horizontal_margin, 0)
         im = add_margin(im, border)
-        buf = cStringIO.StringIO()
+        buf = BytesIO()
         im.save(buf, 'PNG')
         im = buf.getvalue()
         buf.close()
@@ -171,8 +172,13 @@ class VKP80III(Printer):
 
     @timeit
     def print_image(self, image):
-        im = Image.open(cStringIO.StringIO(image))
+        im = Image.open(BytesIO(image))
         im = im.rotate(180)
+        with open('/figureraspbian/static/img.png', 'wb') as f:
+            logger.info("Image written to static folder")
+            buf = BytesIO()
+            im.save(buf, 'PNG')
+            f.write(buf.getvalue())
         raster_data = custom_printer_utils.image_to_raster(im)
         xH, xL = custom_printer_utils.to_base_256(self.max_width / 8)
         yH, yL = custom_printer_utils.to_base_256(im.size[1])

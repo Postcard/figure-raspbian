@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import pytz
-import cStringIO
+from io import BytesIO
 import logging
 from threading import Thread
 import time
@@ -21,7 +21,13 @@ from devices.camera import Camera
 from devices.printer import Printer
 from devices.door_lock import DoorLock
 from threads import rlock
-import webkit2png
+#import webkit2png
+import imgkit
+imgkit_options = {
+    "xvfb": "",
+    "quiet": "",
+    "width": settings.TICKET_TEMPLATE_PICTURE_SIZE
+}
 
 
 logger = logging.getLogger(__name__)
@@ -72,7 +78,8 @@ class Photobooth(object):
     def render_print_and_upload(self, picture):
         self.set_context()
         html = self.render_ticket(picture)
-        ticket = webkit2png.get_screenshot(html)
+        # ticket = webkit2png.get_screenshot(html)
+        ticket = imgkit.from_string(html, False, options=imgkit_options)
         try:
             ticket_length = self.print_image(ticket)
             self.update_dict['paper_level'] = utils.new_paper_level(self.paper_level, ticket_length)
@@ -122,7 +129,7 @@ class Photobooth(object):
             settings.LOCAL_TICKET_CSS_URL)
         # resize picture
         w = h = settings.TICKET_TEMPLATE_PICTURE_SIZE
-        pil_picture = Image.open(cStringIO.StringIO(picture))
+        pil_picture = Image.open(BytesIO(picture))
         resized = pil_picture.resize((w, h))
         resized.format = pil_picture.format
         data_url = utils.get_data_url(resized)
@@ -149,7 +156,8 @@ class Photobooth(object):
                 event=self.event.name if self.event else None,
                 is_online=request.is_online()
             )
-            ticket = webkit2png.get_screenshot(rendered)
+            # ticket = webkit2png.get_screenshot(rendered)
+            ticket = imgkit.from_string(rendered, False, options=imgkit_options)
             self.print_image(ticket)
 
     @execute_if_not_busy(rlock)

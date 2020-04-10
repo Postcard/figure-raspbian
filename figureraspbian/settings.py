@@ -53,7 +53,9 @@ LOCAL_LOGO_FIGURE_URL = 'file://%s/logo_figure.jpg' % STATIC_ROOT
 ######### END STATIC FILES CONFIGURATION
 
 ######### MEDIA CONFIGURATION
+
 MEDIA_ROOT = get_env_setting('MEDIA_ROOT', '/Users/benoit/git/figure-raspbian/media')
+# MEDIA_ROOT = get_env_setting('MEDIA_ROOT', "/home/myname/Projects/figure-raspbian/media")
 IMAGE_ROOT = os.path.join(MEDIA_ROOT, 'images')
 PICTURE_ROOT = os.path.join(MEDIA_ROOT, 'pictures')
 TICKET_ROOT = os.path.join(MEDIA_ROOT, 'tickets')

@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 from functools import wraps
-import cStringIO
+from io import BytesIO
 
 from flask import Flask, send_from_directory, request, jsonify, send_file
 import psutil
@@ -49,7 +49,7 @@ def trigger():
     try:
         photobooth = get_photobooth()
         ticket = photobooth.trigger()
-        return send_file(cStringIO.StringIO(ticket), mimetype='jpg')
+        return send_file(BytesIO(ticket), mimetype='jpg')
     except DevicesBusy:
         return jsonify(error='the photobooth is busy'), 423
     except PhotoboothNotReady:
@@ -154,7 +154,6 @@ def release_lock():
         pass
     finally:
         return jsonify(message='Lock released')
-
 
 def start_server():
     app.run(host='0.0.0.0', port=80)

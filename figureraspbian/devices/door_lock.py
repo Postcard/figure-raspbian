@@ -2,8 +2,8 @@
 from pifacedigitalio import PiFaceDigital
 import gpiozero
 
-from .. import settings
-from ..exceptions import InvalidIOInterfaceError
+import settings
+from exceptions import InvalidIOInterfaceError
 
 
 class DoorLock(object):

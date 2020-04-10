@@ -13,7 +13,7 @@ class Place(db.Model):
     name = CharField()
     tz = CharField(default='Europe/Paris')
     modified = CharField()
-    portraits_expiration = IntegerField()
+    portraits_expiration = IntegerField(null=True)
     code = CharField()
 
     @classmethod
@@ -44,7 +44,7 @@ class Event(db.Model):
 
     name = CharField()
     modified = CharField()
-    portraits_expiration = IntegerField()
+    portraits_expiration = IntegerField(null=True)
     code = CharField()
 
     @classmethod
@@ -77,7 +77,7 @@ class TicketTemplate(db.Model):
     modified = CharField()
 
     def serialize(self):
-        data = self.__dict__['_data']
+        data = self.__dict__['__data__']
         data['images'] = [image.serialize() for image in self.images]
         data['text_variables'] = [text_variable.serialize() for text_variable in self.text_variables]
         data['image_variables'] = [image_variable.serialize() for image_variable in self.image_variables]
@@ -111,7 +111,7 @@ class TicketTemplate(db.Model):
 class TextVariable(db.Model):
 
     name = CharField()
-    ticket_template = ForeignKeyField(TicketTemplate, null=True, related_name='text_variables')
+    ticket_template = ForeignKeyField(TicketTemplate, null=True, backref='text_variables')
     mode = CharField()
 
     def serialize(self):
@@ -145,7 +145,7 @@ class TextVariable(db.Model):
 class Text(db.Model):
 
     value = TextField()
-    variable = ForeignKeyField(TextVariable, related_name='items', null=True)
+    variable = ForeignKeyField(TextVariable, backref='items', null=True)
 
     def serialize(self):
         return {'id': self.id, 'text': self.value}
@@ -165,7 +165,7 @@ class Text(db.Model):
 class ImageVariable(db.Model):
 
     name = CharField()
-    ticket_template = ForeignKeyField(TicketTemplate, null=True, related_name='image_variables')
+    ticket_template = ForeignKeyField(TicketTemplate, null=True, backref='image_variables')
     mode = CharField()
 
     def serialize(self):
@@ -199,8 +199,8 @@ class ImageVariable(db.Model):
 class Image(db.Model):
 
     path = TextField()
-    variable = ForeignKeyField(ImageVariable, related_name='items', null=True)
-    ticket_template = ForeignKeyField(TicketTemplate, related_name='images', null=True)
+    variable = ForeignKeyField(ImageVariable, backref='items', null=True)
+    ticket_template = ForeignKeyField(TicketTemplate, backref='images', null=True)
 
     def serialize(self):
         return {'id': self.id, 'name': basename(self.path)}
@@ -306,6 +306,7 @@ class Photobooth(db.Model):
             TicketTemplate.update_or_create(ticket_template)
 
         if update_dict:
+            # print (update_dict, Photobooth.uuid, settings.RESIN_UUID)
             q = Photobooth.update(**update_dict).where(Photobooth.uuid == settings.RESIN_UUID)
             return q.execute()
         

@@ -4,6 +4,7 @@ from datetime import datetime
 import mock
 
 from .. import request
+from .. import settings
 
 
 class RequestTestCase(TestCase):
@@ -12,9 +13,9 @@ class RequestTestCase(TestCase):
     def test_upload_portrait(self, mock_figure):
         """ it should upload a portrait to Figure API """
 
-        with open("test_snapshot.jpg") as f:
+        with open("test_snapshot.jpg", 'rb') as f:
             picture = f.read()
-        with open("test_ticket.png") as f:
+        with open("test_ticket.png", 'rb') as f:
             ticket = f.read()
 
         portrait = {
@@ -41,9 +42,9 @@ class RequestTestCase(TestCase):
     @mock.patch("figureraspbian.request.Portrait")
     def test_upload_portrait_raise_exception(self, mock_Portrait, mock_write_file, mock_figure):
         """ it should save portrait to local file system """
-        with open("test_snapshot.jpg") as f:
+        with open("test_snapshot.jpg", 'rb') as f:
             picture = f.read()
-        with open("test_ticket.png") as f:
+        with open("test_ticket.png", 'rb') as f:
             ticket = f.read()
 
         portrait = {
@@ -78,42 +79,55 @@ class RequestTestCase(TestCase):
         mock_Code.bulk_insert.assert_called_once_with(codes)
 
     @mock.patch("figureraspbian.request.figure")
-    @mock.patch("figureraspbian.models.settings")
-    def test_update(self, settings, figure):
+    # @mock.patch("figureraspbian.models.settings")
+    def test_update(self, figure):
         """ it should fetch updated data from API and update local data """
 
         data = {
-            "id": 1,
+            "id": 19,
             "serial_number": "FIG.00012",
-            "resin_uuid": "8c18223ebb19aa44cb23bc8e710de4f9",
+            "resin_uuid": "fhqQkiON7ZbgZE9ejLBQLn7c2D8vYy",
             "place": {
-                "id": 1,
-                "name": "Atelier Commode",
+                "id": 47,
+                "name": "Figure",
+                "slug": "figure",
+                "link": None,
+                "google_places_id": "ChIJJ7fFF_Zt5kcRAUZ48Xo2_Dw",
                 "tz": "Europe/Paris",
-                "modified": "2017-03-17T09:09:03.268825Z"
+                "photobooth_count": 3,
+                "gif": None,
+                "modified": "2020-03-07T23:01:37.001839Z",
+                "code": "D48E",
+                "color_portraits": False,
+                "portraits_expiration": 30
             },
             "event": None,
             "ticket_template": {
-                "id": 1,
-                "modified": "2017-04-13T16:54:19.987969Z",
-                "html": "<!doctype html></html>\n",
-                "title": "Atelier Commode",
-                "description": "",
+                "id": 593,
+                "modified": "2020-03-03T15:03:59.500973Z",
+                "html": "<!doctype html>\n<html class=\"figure-ticket-container\">\n  <head>\n    <meta charset=\"utf-8\">\n    <link rel=\"stylesheet\" href=\"{{css_url}}\">\n  </head>\n  <body class=\"figure-ticket-container\"\">\n    <div class=\"figure-ticket\">\n      <div class=\"figure-header\" style=\"text-align: center;\">\n        <img class=\"figure-image\" src={{image_2103}}>\n        <p><br>{% if description %}<span class=\"figure-description\">{{description}}</span><br>{% endif %}<span class=\"figure-generic-variable figure-datetime\">{{datetime|datetimeformat()}}</span><br><br></p>\n      </div>\n      <div class=\"figure-snapshot-container\">\n        <img class=\"figure-snapshot\" src={{picture}}>\n      </div>\n      <div class=\"figure-footer\" style=\"text-align: center;\">\n        <p><br>jaiunticket.com<br>n°<span class=\"figure-generic-variable figure-code\">{{code}}</span>\n        </p>\n      </div>\n    </div>\n  </body>\n</html>",
+                "title": "",
+                "description": "Test RTC et alimentation 24V",
                 "text_variables": [],
                 "image_variables": [],
                 "images": [],
-            }
+                "is_custom": False,
+            },
         }
         figure.Photobooth.get.return_value = data
         from ..models import get_all_models
         from ..db import db
         from ..models import Photobooth
-        db.database.create_tables(get_all_models(), True)
-        uuid = "8c18223ebb19aa44cb23bc8e710de4f9"
+        db.database.create_tables(get_all_models(), safe=True)
+        uuid = "fhqQkiON7ZbgZE9ejLBQLn7c2D8vYy"
+        # import os
+        # os.environ['RESIN_UUID'] = uuid
         settings.RESIN_UUID = uuid
-        Photobooth.get_or_create(uuid=uuid)
+        photobooth, created = Photobooth.get_or_create(uuid=uuid)
         request.update()
         updated = Photobooth.get()
+        # print (updated.place)
+        # print (updated.serial_number)
         self.assertIsNotNone(updated.place)
         self.assertIsNotNone(updated.ticket_template)
         self.assertIsNotNone(updated.serial_number)
