@@ -1,7 +1,7 @@
 gphoto2==2.3.0
 gpiozero==1.6.2
 Pillow==8.3.2
-pifacecommon=4.2.2
+pifacecommon==4.2.2
 ##https://github.com/Postcard/pifacecommon/archive/v4.3.0.zip
 pifacedigitalio==3.0.5
 pytz==2021.3
