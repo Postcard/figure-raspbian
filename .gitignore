@@ -25,3 +25,4 @@ zeosocket
 ghostdriver.log
 celerybeat-schedule.db
 .cache
+.venv

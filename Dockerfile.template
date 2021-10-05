@@ -12,7 +12,7 @@ RUN git clone https://github.com/Postcard/png2pos.git && \
 
 # Install dependencies for python-webkit2png
 RUN apt-get update && apt-get install python-qt4 \
-    libqt4-webkit \
+    libqtwebkit4 \
     xvfb \
     xauth
     
