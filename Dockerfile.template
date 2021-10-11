@@ -1,7 +1,41 @@
 # Base image 
-FROM figure/%%RESIN_MACHINE_NAME%%:1.1.0
+FROM balenalib/%%BALENA_MACHINE_NAME%%-python:3.8
 
 MAINTAINER Benoit Guigal <benoit@figure.co>
+
+# Enable systemd init system
+ENV INITSYSTEM on
+
+# Install miscellanous libraries
+RUN install_packages libjpeg-dev \
+    zlib1g-dev \
+    libpng-dev \
+    usbutils \
+    libfreetype6 \
+    fontconfig \
+    libfontconfig \
+    sysstat \
+    vim \
+    wireless-tools \
+    unzip \
+    gcc
+
+RUN pip install --upgrade pip \
+    && pip install numpy==1.21.2 supervisor
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Install last version 2.5.10 of libgphoto2 and gphoto2
+RUN curl -SLO  "https://github.com/gonzalo/gphoto2-updater/archive/2.5.10.zip" \
+    && echo "3b9a88590318118c7e0dcf6dda03a58ccc43bf5eb56c8a5b4304fd835ae0bdf7 2.5.10.zip" | sha256sum -c - \
+    && unzip "2.5.10.zip" \
+    && rm -rf "2.5.10.zip" \
+    && cd "gphoto2-updater-2.5.10" \
+    && chmod +x "gphoto2-updater.sh" \
+    && ./gphoto2-updater.sh \
+    && cd .. \
+    && rm -rf "gphoto2-updater-2.5.10"
 
 RUN git clone https://github.com/Postcard/png2pos.git && \
     cd png2pos && \
@@ -10,11 +44,11 @@ RUN git clone https://github.com/Postcard/png2pos.git && \
     git submodule update && \
     make install
 
-# Install dependencies for python-webkit2png
-RUN apt-get update && apt-get install python-qt4 \
-    libqtwebkit4 \
-    xvfb \
-    xauth
+
+#Installing imgkit dependencies
+RUN install_packages xvfb libxrender1 xfonts-encodings xfonts-utils xfonts-75dpi xfonts-base
+RUN curl -LO https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.raspberrypi.buster_armhf.deb && \
+    dpkg -i ./wkhtmltox_0.12.6-1.raspberrypi.buster_armhf.deb
     
 # Add xvfb to init.d
 ADD xvfb /etc/init.d/xvfb
@@ -22,8 +56,11 @@ RUN chmod +x /etc/init.d/xvfb
 ENV DISPLAY :1
 
 # Install Python dependencies
+# adding CFLAGS is a fix to install RPi.GPIO https://forums.raspberrypi.com/viewtopic.php?t=289084
+ENV CFLAGS=-fcommon
 RUN mkdir requirements
 ADD requirements ./requirements
+RUN pip install wheel==0.37.0
 RUN cd requirements && pip install -r prod.txt
 
 ENV FIGURE_DIR /figure/figureraspbian

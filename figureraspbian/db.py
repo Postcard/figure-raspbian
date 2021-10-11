@@ -2,7 +2,7 @@
 
 from peewee import Model, SqliteDatabase
 
-import settings
+from . import settings
 
 
 class Database(object):

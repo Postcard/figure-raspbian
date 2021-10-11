@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 
-from exceptions import DevicesBusy
+from .exceptions import DevicesBusy
 
 
 def execute_if_not_busy(lock):

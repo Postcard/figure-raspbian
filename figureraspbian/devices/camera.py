@@ -3,7 +3,7 @@
 import os
 import time
 from contextlib import contextmanager
-import cStringIO
+import io
 import logging
 
 import gphoto2 as gp
@@ -61,7 +61,7 @@ class Camera(object):
     def configure(self):
         with open_camera() as (camera, context):
             config = gp.check_result(gp.gp_camera_get_config(camera, context))
-            for param, choice in CAMERA_CONFIG.iteritems():
+            for param, choice in CAMERA_CONFIG.items():
                 widget = gp.check_result(gp.gp_widget_get_child_by_name(config, param))
                 value = gp.check_result(gp.gp_widget_get_choice(widget, choice))
                 gp.gp_widget_set_value(widget, value)
@@ -85,7 +85,7 @@ class Camera(object):
 
             file_data = gp.check_result(gp.gp_file_get_data_and_size(camera_file))
 
-            picture = Image.open(cStringIO.StringIO(file_data))
+            picture = Image.open(io.BytesIO(file_data))
             exif_dict = piexif.load(picture.info["exif"])
             cropped = crop_to_square(picture)
 
@@ -93,7 +93,7 @@ class Camera(object):
             exif_dict["Exif"][piexif.ExifIFD.PixelXDimension] = s
             exif_bytes = piexif.dump(exif_dict)
 
-            buf = cStringIO.StringIO()
+            buf = io.BytesIO()
             cropped.save(buf, "JPEG", exif=exif_bytes)
             cropped = buf.getvalue()
             buf.close()

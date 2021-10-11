@@ -93,7 +93,7 @@ class PhotoboothTestCase(TestCase):
         self.assertIsNone(photobooth.context)
 
         photobooth.set_context()
-        expected = {'date': now, 'code': u'CODE1', 'counter': 0}
+        expected = {'date': now, 'code': 'CODE1', 'counter': 0}
         self.assertEqual(photobooth.context, expected)
 
 
@@ -117,7 +117,7 @@ class PhotoboothTestCase(TestCase):
 
         photobooth = Photobooth()
         now = datetime(2017, 1, 1)
-        photobooth.context = {'date': now, 'code': u'CODE1', 'counter': 0}
+        photobooth.context = {'date': now, 'code': 'CODE1', 'counter': 0}
         tt = {
             'title': 'foo',
             'description': 'bar',
@@ -184,7 +184,7 @@ class PhotoboothTestCase(TestCase):
         photobooth = Photobooth()
         photobooth.render_print_and_upload(picture)
 
-        expected = u'<!doctype html>Bar \xe0 BullesLa Machine du Moulin Rouge</html>'
+        expected = '<!doctype html>Bar \xe0 BullesLa Machine du Moulin Rouge</html>'
         webkit2png.get_screenshot.assert_called_once_with(expected)
 
         self.assertEqual(printer.print_image.call_count, 1)

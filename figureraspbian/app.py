@@ -3,16 +3,16 @@ import logging
 from .threads import Interval, rlock
 import socket
 
-import settings
-from devices.button import Button
-from devices.real_time_clock import RTC
-from api import start_server
-from exceptions import OutOfPaperError
-from photobooth import get_photobooth
+from . import settings
+from .devices.button import Button
+from .devices.real_time_clock import RTC
+from .api import start_server
+from .exceptions import OutOfPaperError
+from .photobooth import get_photobooth
 
-from request import is_online, download_booting_ticket_template, download_ticket_stylesheet, update, upload_portraits
-from request import claim_new_codes, update_mac_addresses_async
-from utils import set_system_time
+from .request import is_online, download_booting_ticket_template, download_ticket_stylesheet, update, upload_portraits
+from .request import claim_new_codes, update_mac_addresses_async
+from .utils import set_system_time
 
 
 logger = logging.getLogger(__name__)

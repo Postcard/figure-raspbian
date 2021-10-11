@@ -8,9 +8,9 @@ import errno
 import figure
 from gpiozero import PingServer
 
-import settings
-from models import Photobooth, Portrait, Code
-import utils
+from . import settings
+from .models import Photobooth, Portrait, Code
+from . import utils
 
 
 figure.api_base = settings.API_HOST

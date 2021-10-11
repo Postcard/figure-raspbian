@@ -1,17 +1,17 @@
 # -*- coding: utf8 -*-
 from functools import wraps
-import cStringIO
+import io
 
 from flask import Flask, send_from_directory, request, jsonify, send_file
 import psutil
 from PIL import Image
 
 
-from threads import rlock
-from photobooth import get_photobooth
-from models import Photobooth, Portrait
-import settings
-from exceptions import DevicesBusy, PhotoboothNotReady, OutOfPaperError
+from .threads import rlock
+from .photobooth import get_photobooth
+from .models import Photobooth, Portrait
+from . import settings
+from .exceptions import DevicesBusy, PhotoboothNotReady, OutOfPaperError
 
 app = Flask(__name__)
 
@@ -49,7 +49,7 @@ def trigger():
     try:
         photobooth = get_photobooth()
         ticket = photobooth.trigger()
-        return send_file(cStringIO.StringIO(ticket), mimetype='jpg')
+        return send_file(io.BytesIO(ticket), mimetype='jpg')
     except DevicesBusy:
         return jsonify(error='the photobooth is busy'), 423
     except PhotoboothNotReady:

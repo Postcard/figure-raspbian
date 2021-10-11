@@ -5,11 +5,11 @@ import logging
 
 import requests
 
-from app import App
-from db import db
-from devices.button import Button
-import settings
-from models import get_all_models, Photobooth
+from .app import App
+from .db import db
+from .devices.button import Button
+from . import settings
+from .models import get_all_models, Photobooth
 
 
 logging.basicConfig(format=settings.LOG_FORMAT, datefmt='%Y.%m.%d %H:%M:%S', level='INFO')
@@ -61,7 +61,7 @@ class ShutdownHook:
 def create_tables():
     db.connect_db()
     # creates tables if not exist
-    db.database.create_tables(get_all_models(), True)
+    db.database.create_tables(get_all_models())
 
 if __name__ == '__main__':
 

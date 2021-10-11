@@ -3,22 +3,22 @@
 import time
 import logging
 import base64
-import cStringIO
+import io
 import netifaces
 import re
 import subprocess
 from os.path import join, basename, exists
 import os
-from urlparse import urlsplit
-import urllib
-import urllib2
+from urllib.parse import urlsplit
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import codecs
 
 from hashids import Hashids
 from PIL import ImageOps, ImageEnhance
 from jinja2 import Environment
 
-import settings
+from . import settings
 
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def url2name(url):
     Convert a file url to its base name
     http://api.figuredevices.com/static/css/ticket.css => ticket.css
     """
-    return basename(urllib.unquote(urlsplit(url)[2]))
+    return basename(urllib.parse.unquote(urlsplit(url)[2]))
 
 
 def write_file(file, path):
@@ -46,8 +46,8 @@ def download(url, path, force=False):
     local_name = url2name(url)
     path_to_file = join(path, local_name)
     if not exists(path_to_file) or force:
-        req = urllib2.Request(url)
-        r = urllib2.urlopen(req, timeout=10)
+        req = urllib.request.Request(url)
+        r = urllib.request.urlopen(req, timeout=10)
         write_file(r.read(), path_to_file)
     return path_to_file
 
@@ -71,9 +71,9 @@ def timeit(func):
 
 
 def get_data_url(picture):
-    buf = cStringIO.StringIO()
+    buf = io.BytesIO()
     picture.save(buf, picture.format)
-    data = base64.b64encode(buf.getvalue())
+    data = base64.b64encode(buf.getvalue()).decode('utf-8')
     buf.close()
     mime_type = 'image/%s' % picture.format.lower()
     data_url = 'data:%s;base64,%s' % (mime_type, data)
@@ -125,7 +125,7 @@ def render_jinja_template(path, **kwargs):
 
 def get_usb_devices():
     pattern = re.compile("Bus\s+(?P<bus>\d+)\s+Device\s+(?P<device>\d+).+ID\s(?P<vendor_id>\w+):(?P<product_id>\w+)\s(?P<tag>.+)$", re.I)
-    df = subprocess.check_output("lsusb", shell=True)
+    df = subprocess.check_output("lsusb", shell=True).decode('utf-8')
     # parse all usb devices
     devices = []
     for i in df.split('\n'):

@@ -4,9 +4,9 @@ from peewee import CharField, TextField, ForeignKeyField, FloatField, IntegerFie
 
 from os.path import basename
 
-import settings
-import utils
-from db import db
+from . import settings
+from . import utils
+from .db import db
 
 class Place(db.Model):
 
@@ -77,7 +77,7 @@ class TicketTemplate(db.Model):
     modified = CharField()
 
     def serialize(self):
-        data = self.__dict__['_data']
+        data = self.__dict__['__data__']
         data['images'] = [image.serialize() for image in self.images]
         data['text_variables'] = [text_variable.serialize() for text_variable in self.text_variables]
         data['image_variables'] = [image_variable.serialize() for image_variable in self.image_variables]
